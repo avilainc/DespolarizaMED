@@ -27,6 +27,13 @@ export const auth = betterAuth({
   },
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
+  // Next dev falls back to 3001/3002/... whenever port 3000 is already
+  // taken by another project on this machine, so BETTER_AUTH_URL alone
+  // (fixed at :3000) isn't enough — trust the common dev ports too.
+  trustedOrigins:
+    process.env.NODE_ENV === "production"
+      ? undefined
+      : Array.from({ length: 10 }, (_, i) => `http://localhost:${3000 + i}`),
 });
 
 export type Session = typeof auth.$Infer.Session;
