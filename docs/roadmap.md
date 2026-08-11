@@ -201,7 +201,10 @@ Estes são o diferencial competitivo do produto — não procurar biblioteca pro
 - Scripts (`package.json`):
   - `pnpm dev` / `pnpm build` / `pnpm start` — Next.js
   - `pnpm db:generate` / `pnpm db:migrate` / `pnpm db:push` / `pnpm db:studio` — Drizzle (schema transacional)
-  - `pnpm payload <comando>` — CLI do Payload (schema de conteúdo) — **verificar se voltou a funcionar após o downgrade do Next antes de confiar nele**
+  - `pnpm payload:migrate:create` / `pnpm payload:migrate` — migrations do Payload (schema de conteúdo); ver seção 3 "Bloqueios" para o porquê de não usar `pnpm payload migrate:create` direto
+  - `pnpm seed:biologia <staff-email> <staff-password>` — popula a disciplina Biologia (2 módulos, 10 aulas) via API REST do Payload; idempotente, serve de molde para Física/Química
+- **`pnpm dev` e `pnpm build` não podem rodar ao mesmo tempo** — ambos escrevem no mesmo diretório `.next` e um build rodando com o dev server ativo falha com `TypeError: Cannot read properties of undefined (reading 'call')` no webpack-runtime. Sempre parar o `pnpm dev` (ou rodar `rm -rf .next`) antes de um `pnpm build` de verificação.
+- **Encoding UTF-8 ao chamar a API do Payload via `curl` no Windows/Git Bash**: strings inline (`-d '{"name":"Bioquímica"}'`) corrompem acentos. Sempre escrever o payload em um arquivo `.json` (UTF-8) e usar `--data-binary "@arquivo.json"`, ou usar `fetch` do Node (como em `scripts/seed-biologia.mjs`) em vez de `curl` inline.
 
 ---
 

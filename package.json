@@ -13,7 +13,8 @@
     "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
     "payload": "dotenv -e .env.local -- payload",
     "payload:migrate:create": "cross-env PAYLOAD_DISABLE_PUSH=true dotenv -e .env.local -- node --require ./scripts/next-env-shim.cjs --import tsx scripts/gen-migration.mjs",
-    "payload:migrate": "cross-env PAYLOAD_DISABLE_PUSH=true dotenv -e .env.local -- node --require ./scripts/next-env-shim.cjs --import tsx scripts/run-migrate.mjs"
+    "payload:migrate": "cross-env PAYLOAD_DISABLE_PUSH=true dotenv -e .env.local -- node --require ./scripts/next-env-shim.cjs --import tsx scripts/run-migrate.mjs",
+    "seed:biologia": "node scripts/seed-biologia.mjs"
   },
   "dependencies": {
     "@aarkue/tiptap-math-extension": "^1.4.0",
