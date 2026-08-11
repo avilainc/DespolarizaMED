@@ -15,9 +15,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-screen flex-col">
       <header className="border-b bg-background">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link href="/dashboard" className="text-lg font-bold tracking-tight text-primary">
-            DespolarizaMED
-          </Link>
+          <div className="flex items-center gap-8">
+            <Link href="/dashboard" className="text-lg font-bold tracking-tight text-primary">
+              DespolarizaMED
+            </Link>
+            <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
+              <Link href="/dashboard" className="transition-colors hover:text-foreground">
+                Dashboard
+              </Link>
+              <Link href="/disciplinas" className="transition-colors hover:text-foreground">
+                Disciplinas
+              </Link>
+            </nav>
+          </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">{session.user.name}</span>
             <SignOutButton />

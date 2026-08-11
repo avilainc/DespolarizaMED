@@ -95,6 +95,9 @@ importers:
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
+      vidstack:
+        specifier: ^0.6.15
+        version: 0.6.15
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -132,6 +135,9 @@ importers:
       eslint-config-next:
         specifier: 15.5.22
         version: 15.5.22(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3)
+      hls.js:
+        specifier: ^1.6.17
+        version: 1.6.17
       tailwindcss:
         specifier: ^4
         version: 4.3.3
@@ -3464,6 +3470,9 @@ packages:
 
   help-me@5.0.0:
     resolution: {integrity: sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg==}
+
+  hls.js@1.6.17:
+    resolution: {integrity: sha512-NUplVGVuc1hSPwdB/9/cbRkUmLrYi75/hqiXKdA+l300pJNxDu96R7jRb2imDzWJqIUF4I5ThmAdp9GvOCXsuQ==}
 
   hoist-non-react-statics@3.3.2:
     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
@@ -8729,6 +8738,8 @@ snapshots:
       function-bind: 1.1.2
 
   help-me@5.0.0: {}
+
+  hls.js@1.6.17: {}
 
   hoist-non-react-statics@3.3.2:
     dependencies:

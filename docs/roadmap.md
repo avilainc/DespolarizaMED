@@ -104,6 +104,11 @@ Ao recriar o banco `despolarizamed` manualmente (`DROP DATABASE` / `CREATE DATAB
 
 **Lição**: depois de qualquer `DROP DATABASE`/recreate manual do Postgres em dev, **sempre** testar um fluxo real (não só que a página carrega) antes de considerar a stack funcional — build verde e HTTP 200 não garantem que o schema/dados estão corretos. Se isso acontecer de novo: `DELETE FROM drizzle.__drizzle_migrations;` seguido de `pnpm db:migrate` recria as tabelas do zero (idempotente, seguro em dev sem dados reais).
 
+### [RESOLVIDO 2026-08-11] Tipos incompletos do `@vidstack/react` 0.6.15
+O `MediaPlayerElement` exportado por `vidstack` 0.6.15 não expõe `currentTime` (setter), `addEventListener`/`removeEventListener` através da sua cadeia de generics (`HTMLCustomElement<Player>`), mesmo esses existindo em runtime — é uma limitação de tipagem da lib nessa versão, não um erro de uso. Também: os estilos CSS ficam no pacote `vidstack` (`vidstack/styles/base.css`, `vidstack/styles/community-skin/video.css`), não em `@vidstack/react` como a doc mais recente sugere; os componentes desta versão se chamam `MediaPlayer`/`MediaOutlet`/`MediaCommunitySkin` (não `MediaPlayer`/`MediaProvider` como em versões mais novas); atributos HTML nativos como `crossorigin`/`playsinline` devem ir em lowercase (não `crossOrigin`/`playsInline` como no React DOM padrão); os tipos referenciam `hls.js` mesmo sem HLS configurado, então é preciso instalá-lo como devDependency só para o build não quebrar.
+
+**Solução aplicada** em `src/features/courses/components/lesson-player.tsx`: usa `useMediaStore(playerRef)` para ler `canPlay`/`currentTime`/`duration`/`ended` (via store, sempre bem tipado) em vez de `addEventListener`, e um cast pontual e documentado (`player as unknown as { currentTime: number }`) só para o seek inicial de retomar o vídeo de onde o aluno parou.
+
 ---
 
 ## 4. Estrutura de pastas
@@ -150,12 +155,14 @@ Cada pasta de feature tem um `README.md` curto explicando seu escopo e de onde v
 - [x] Payload CMS configurado e funcional — `/admin/login` responde 200, todas as tabelas criadas
 - [x] Site público (landing completa: hero, disciplinas, professores, planos, depoimentos, FAQ, CTA; blog placeholder)
 - [x] Login / Cadastro (telas com Better Auth, testado ponta a ponta: cadastro → login → sessão com RBAC)
-- [x] Área do aluno (layout autenticado + dashboard placeholder, redireciona pra /login se não autenticado)
+- [x] Área do aluno (layout autenticado + dashboard mostrando disciplinas reais do Payload)
+- [x] Disciplinas → Módulos → Aulas (`/disciplinas`, `/disciplinas/[slug]`, `/aulas/[slug]`) consumindo o Payload via Local API
+- [x] Player de vídeo (Vidstack) com resume/progresso — testado ponta a ponta: posição salva a cada ~10s e ao terminar, restaurada ao reabrir a aula
+- [x] Progresso básico (`lesson_progress` via `POST /api/progress/lesson`, autenticado com Better Auth)
+- [x] Conteúdo real de Biologia populado (ver `pnpm seed:biologia`)
 - [ ] Área do professor (usar `/admin` do Payload para conteúdo; telas próprias só se o Payload não cobrir)
 - [ ] Área do administrador
-- [ ] Integração Mercado Pago (planos, assinatura, webhook)
-- [ ] Player de vídeo (Vidstack) com resume/progresso
-- [ ] Progresso básico (lesson_progress → student_progress)
+- [ ] Integração Mercado Pago (planos, assinatura, webhook) — **adiada a pedido do usuário**, sem credenciais de teste disponíveis ainda; retomar quando houver conta Mercado Pago Developers
 
 ### Fase 2 — Aprendizado
 - [ ] Banco de questões (filtros, CRUD via `features/questions`)
