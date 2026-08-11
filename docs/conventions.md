@@ -1,51 +1,82 @@
-# Convenções de código — DespolarizaMED
+# Convenções — DespolarizaMED
 
-Leia isto depois do `docs/roadmap.md`. São regras práticas para manter o código consistente entre humanos e agentes trabalhando neste repositório.
+Padrões de código e regras práticas para manter consistência entre features e entre agentes/devs diferentes. Ler junto com [`docs/roadmap.md`](./roadmap.md) (que tem o "porquê" das decisões de stack) e [`docs/product-plan.md`](./product-plan.md) (visão de produto).
 
-## Decisão mais importante: Payload vs Drizzle
+---
 
-Antes de criar qualquer tabela nova, pergunte: **"isso é conteúdo editorial que um professor/admin precisa cadastrar por uma tela, ou é dado transacional gerado pelo sistema/aluno?"**
+## 1. "Isso é Drizzle ou Payload?"
 
-- Conteúdo editorial (professor cadastra aula, glossário, material) → **Payload CMS**, nova collection em `src/payload/collections/`, registrada em `src/payload/payload.config.ts`.
-- Dado transacional (progresso, tentativa de prova, assinatura, evento de pagamento) → **Drizzle**, novo arquivo/tabela em `src/lib/db/schema/`.
+Regra rápida antes de criar qualquer tabela/collection nova:
 
-Nunca modele a mesma entidade nos dois lados. Ver `docs/roadmap.md` seção 2 para a lista atual de quem é dono do quê.
+- **É conteúdo que um professor/admin edita pelo painel visual, sem tocar em código?** → Payload (`src/payload/collections/`).
+- **É dado gerado pelo sistema, transacional, ou específico de um aluno (progresso, tentativa de prova, assinatura)?** → Drizzle (`src/lib/db/schema/`).
 
-Ao referenciar uma collection do Payload a partir de uma tabela Drizzle, use `integer` (não `uuid`) sem `.references()` — Payload usa IDs seriais e Drizzle não pode ter FK real para uma tabela que não gerencia. Comente a coluna explicando a que collection ela se refere (ver `src/lib/db/schema/questions.ts` como exemplo).
+Nunca crie a mesma entidade nos dois lados. Ver `docs/roadmap.md` seção 2 para a lista atual de quem é dono do quê.
 
-## Schema Drizzle
+Ao referenciar uma entidade do Payload a partir de uma tabela Drizzle, use `integer` sem foreign key do Drizzle (Payload usa serial/integer, e Drizzle não pode ter FK para uma tabela que não gerencia):
 
-- Um arquivo por domínio em `src/lib/db/schema/` (`auth.ts`, `questions.ts`, `exams.ts`, `learning.ts`, `events.ts`, `billing.ts`). Não criar um único arquivo gigante nem um arquivo por tabela.
-- Todo novo arquivo de schema precisa ser reexportado em `src/lib/db/schema/index.ts` (`export * from "./nome"`).
-- IDs: `uuid("id").primaryKey().defaultRandom()` para tabelas Drizzle. Exceção: `users`/`sessions`/`accounts`/`verifications` usam `text("id")` porque são gerenciadas pelo Better Auth (que gera seus próprios IDs).
-- Depois de mudar o schema: `pnpm db:generate` (gera SQL em `src/lib/db/migrations`) e `pnpm db:migrate` (aplica no Postgres local). Nunca editar um arquivo de migration já gerado — gerar um novo.
-- Enums usam `pgEnum` com valores em `MAIUSCULO_SNAKE_CASE` (ex: `"ADMIN" | "TEACHER" | "STUDENT"`, `"PENDING" | "ACTIVE"`) — já é o padrão usado em todo o schema, manter consistência.
+```ts
+// subjectId references Payload's "subjects" collection (owned by Payload, not a Drizzle FK).
+subjectId: integer("subject_id").notNull(),
+```
 
-## Payload CMS
+---
 
-- Uma collection por arquivo em `src/payload/collections/`, nome do arquivo em PascalCase igual ao nome exportado (`Subjects.ts` exporta `Subjects`).
-- `slug` da collection em kebab-case no plural (`lesson-materials`, não `LessonMaterials` nem `lesson_material`).
-- Toda collection precisa de `access` explícito (`read`/`create`/`update`/`delete`) — não deixar no default do Payload (que é liberado para autenticados). Seguir o padrão já usado: leitura pública quando fizer sentido (conteúdo publicado), escrita restrita a `req.user` autenticado, delete restrito a `role === "ADMIN"`.
-- Login do painel `/admin` é feito pela collection `Staff` (Payload nativo), **não** pelo Better Auth. Isso é intencional — ver `docs/roadmap.md` seção 1.
+## 2. Mudando o schema do Payload (collections)
 
-## Auth / RBAC
+**Nunca** dependa do push automático de dev — está desligado de propósito (`PAYLOAD_DISABLE_PUSH=true` em `.env.local`/`.env.example`) porque exige TTY interativo e quebra em shells não-interativos. Ver `docs/roadmap.md` seção 3 para o diagnóstico completo.
 
-- Sessão do aluno/professor/admin (lado do produto, não do `/admin` do Payload): Better Auth, configurado em `src/lib/auth/index.ts`.
-- Checagem de permissão: usar `hasRole`/`requireRole` de `src/lib/auth/rbac.ts`, nunca comparar strings de role manualmente espalhado pelo código.
-- Hierarquia de papéis é cumulativa: `ADMIN > TEACHER > STUDENT` (`hasRole("ADMIN", "STUDENT")` é `true`). Se um novo papel for adicionado (`CONTENT_MANAGER`, `SUPPORT`, etc. — ver `product-plan.md` seção 19), decidir explicitamente onde ele entra na hierarquia ou se RBAC hierárquico simples deixa de ser suficiente (nesse caso, migrar para permissões granulares por ação, não continuar empilhando na hierarquia).
+Fluxo correto sempre que uma collection mudar (novo campo, nova collection, campo removido):
 
-## Estrutura de features (`src/features/*`)
+```bash
+pnpm payload:migrate:create nome-descritivo-da-mudanca
+pnpm payload:migrate
+```
 
-- Cada pasta é um domínio de produto, não uma camada técnica (não criar `src/features/components` ou `src/features/hooks` genéricos).
-- Cada pasta tem um `README.md` curto (2-4 linhas) dizendo o escopo e de onde vêm os dados. Ler o README da feature antes de adicionar código nela; atualizar o README se o escopo mudar.
-- Código client-side (componentes, hooks) fica na feature. Lógica de servidor que pertence claramente a um domínio também pode ficar lá (ex: `features/billing/webhook-handler.ts`); lógica compartilhada entre features vai em `src/lib/`.
+Isso gera um arquivo em `src/migrations/` (SQL real, revisável) e aplica no Postgres. Commitar o arquivo gerado junto com a mudança na collection.
 
-## Estilo geral
+Se `pnpm payload:migrate` perguntar sobre "dev mode... data loss" (aparece quando alguém rodou `pnpm dev` sem `PAYLOAD_DISABLE_PUSH`, e o Payload fez um push automático), responda considerando se há dados reais no banco que não podem ser perdidos. Em dev local isso normalmente é seguro de aceitar.
 
-- TypeScript estrito (`strict: true` já configurado) — não usar `any` sem justificar com comentário.
-- Sem comentários explicando o óbvio. Comentar apenas o não-óbvio: por que uma decisão foi tomada, um workaround, uma limitação de dependência externa (ver exemplos em `src/payload/payload.config.ts` e nos arquivos de schema que referenciam collections do Payload).
-- Nomes de arquivo de componente React: PascalCase. Nomes de arquivo utilitário/lib: kebab-case ou camelCase conforme o resto do arquivo (não há um padrão rígido ainda pois pouco código de UI existe — ao criar o primeiro conjunto de componentes de verdade, manter consistência com o que já existir).
+---
 
-## Antes de declarar algo "funcionando"
+## 3. Mudando o schema do Drizzle (tabelas transacionais)
 
-Se você (agente ou dev) alterar dependências, configuração de build, ou versões de pacotes: rodar `pnpm build` com `.next` limpo (`rm -rf .next && pnpm build`) e conferir o output real antes de reportar sucesso. O histórico deste projeto já teve mais de uma vez onde um bug parecia resolvido mas só tinha mudado de forma — ver `docs/roadmap.md` seção 3 para o caso real.
+```bash
+pnpm db:generate   # gera migration a partir do diff em src/lib/db/schema/*.ts
+pnpm db:migrate    # aplica no Postgres
+```
+
+Sem bloqueios conhecidos aqui — `drizzle-kit generate`/`migrate` funcionam normalmente em qualquer shell.
+
+---
+
+## 4. Nomenclatura
+
+- **Arquivos de schema Drizzle**: um arquivo por domínio (`auth.ts`, `questions.ts`, `exams.ts`, `learning.ts`, `events.ts`, `billing.ts`), reexportados via `src/lib/db/schema/index.ts`. Não criar um arquivo por tabela individual.
+- **Tabelas Drizzle**: `snake_case` no banco (via `pgTable("nome_tabela", ...)`), `camelCase` no código TS.
+- **Collections Payload**: `slug` em `kebab-case` (ex: `lesson-materials`), nome do arquivo/export em `PascalCase` (ex: `LessonMaterials.ts`).
+- **Enums**: `SCREAMING_SNAKE_CASE` para os valores (ex: `ADMIN`, `TEACHER`, `STUDENT`, `MULTIPLA_ESCOLHA`) — já é o padrão usado no `product-plan.md` original, mantido por consistência com a documentação de produto.
+
+---
+
+## 5. Onde colocar código novo
+
+- **UI/lógica client-side de uma feature de produto** → `src/features/<nome>/`. Cada pasta já tem um `README.md` curto explicando escopo e fonte de dados — ler antes de adicionar código.
+- **Lógica de servidor compartilhada entre features** (ex: cálculo de progresso, motor de correção de prova) → `src/lib/` ou um novo módulo dedicado, não dentro de `features/`.
+- **Workers/processadores em background** (vídeo, transcrição, e-mail) → `src/server/jobs/`.
+- **Config de filas BullMQ/Redis** → `src/server/queue/`.
+- **Scripts de infraestrutura/dev tooling** (como os de migration do Payload) → `scripts/`, documentados no roadmap se resolverem algum bloqueio não óbvio.
+
+---
+
+## 6. Segredos e ambiente
+
+- `.env.local` e `.env.production` **nunca** são commitados (já no `.gitignore`) — contêm valores reais.
+- `.env.example` é a fonte de verdade de quais variáveis existem, sempre sem valores. Ao adicionar uma variável de ambiente nova, adicionar em ambos os arquivos.
+- Nunca commitar CPF, tokens, ou qualquer credencial real em qualquer arquivo versionado, mesmo que pareça "só de exemplo".
+
+---
+
+## 7. Antes de abrir mão de uma decisão já tomada
+
+Se algo neste documento ou no roadmap parecer errado ou limitante, é permitido reconsiderar — mas documentar o motivo da mudança no roadmap (seção "Rejeitado conscientemente" ou nova entrada de bloqueio), não simplesmente silenciosamente fazer diferente. O objetivo é que o próximo agente/dev entenda o histórico de decisão, não precise re-descobrir os mesmos bugs (como o do Payload+TTY, que levou horas de investigação).

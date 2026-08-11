@@ -11,7 +11,9 @@
     "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate",
     "db:push": "dotenv -e .env.local -- drizzle-kit push",
     "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
-    "payload": "dotenv -e .env.local -- payload"
+    "payload": "dotenv -e .env.local -- payload",
+    "payload:migrate:create": "cross-env PAYLOAD_DISABLE_PUSH=true dotenv -e .env.local -- node --require ./scripts/next-env-shim.cjs --import tsx scripts/gen-migration.mjs",
+    "payload:migrate": "cross-env PAYLOAD_DISABLE_PUSH=true dotenv -e .env.local -- node --require ./scripts/next-env-shim.cjs --import tsx scripts/run-migrate.mjs"
   },
   "dependencies": {
     "@aarkue/tiptap-math-extension": "^1.4.0",
@@ -40,10 +42,12 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.6",
+    "@next/env": "^15.5.22",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
     "dotenv-cli": "^11.0.0",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",

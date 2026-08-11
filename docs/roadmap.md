@@ -79,17 +79,25 @@ Ajustes feitos por causa do downgrade:
 
 **Se, ao ler isto, o build ainda falhar**: rode `pnpm build` (com `.next` limpo) e confira o output real antes de assumir que segue resolvido — versões de dependências mudam.
 
-### [ABERTO] Push automático do schema do Payload exige TTY interativo real
-O modo dev do Payload (disparado ao acessar `/admin` pela primeira vez, ou quando o schema das collections muda) chama internamente `drizzle-kit`'s `pushSchema`, que — mesmo sem haver warnings de perda de dados — depende de um terminal interativo real (`process.stdin.isTTY`) em certas negociações de schema, e lança `Error: Interactive prompts require a TTY terminal` em qualquer shell não-interativo. Testado e confirmado sem sucesso em: shell da ferramenta Bash (stdin `/dev/null` ou herdado), processo em background via `nohup`, e `winpty` (que por sua vez falha porque o processo pai da ferramenta também não fornece um pty real de origem).
+### [RESOLVIDO 2026-08-11] Payload CLI/push quebrado em shells não-interativos
+O modo dev do Payload (disparado ao acessar `/admin`) chama `drizzle-kit`'s `pushSchema` internamente, que exige um TTY real (`Error: Interactive prompts require a TTY terminal`) mesmo sem warnings de perda de dados — falha em qualquer shell não-interativo (background, `nohup`, `winpty` sem pty de origem, terminal integrado de algumas IDEs). Separadamente, o CLI oficial (`payload migrate:create`, `payload migrate`) falha com `ERR_REQUIRE_ASYNC_MODULE` ao carregar `@payloadcms/richtext-lexical` (usa top-level-await; o bin do Payload tenta `require()` síncrono dele) — reproduzido em Node 22 e 24, é bug de como o CLI standalone consome o pacote, não versão de Node.
 
-O caminho alternativo — migrations formais (`payload migrate:create`, ou chamando `createMigration` de `payload` via script próprio) — falha com um bug **diferente e não relacionado**: `ERR_REQUIRE_ASYNC_MODULE` ao carregar `@payloadcms/richtext-lexical` (usa top-level-await; `tsx`/o bin do Payload tentam `require()` síncrono dele). Reproduzido tanto em Node 24 quanto em Node 22.20.0 (testado via binário portátil) — não é versão de Node, é como o pacote é transpilado/consumido pelo CLI do Payload standalone.
+**Solução aplicada — dois scripts próprios que chamam a API programática do adapter diretamente, contornando o CLI quebrado:**
 
-**Consequência prática**: as tabelas do Payload (`subjects`, `modules`, `lessons`, `lesson-materials`, `captions`, `transcripts`, `glossary-terms`, `media`, `staff`) **ainda não existem no Postgres**. O restante da stack (Next.js, Drizzle, Better Auth, o próprio `/admin` do Payload servido pelo Next) está validado e funcional — só falta este passo pontual de criação de tabelas.
+- `scripts/next-env-shim.cjs`: intercepta `Module._load` para adicionar `.default` ao módulo `@next/env` quando ausente. Necessário porque `payload/dist/bin/loadEnv.js` faz `import nextEnvImport from '@next/env'` assumindo interop ESM/CJS que só funciona dentro do bundler do Next — em runtime standalone (`tsx`/`node`), `@next/env` é CJS puro (`module.exports = n`, sem `.default`) e a desestruturação quebra. Carregado via `node --require`.
+- `scripts/gen-migration.mjs`: inicializa o Payload via `getPayload({ config })` e chama `payload.db.createMigration({ forceAcceptWarning: true, migrationName, payload })` — o método real do adapter Postgres (**não** a função solta `createMigration` exportada por `payload`, que é só um fallback genérico com template hardcoded para MongoDB e não gera SQL nenhum). `forceAcceptWarning: true` pula qualquer prompt de confirmação.
+- `scripts/run-migrate.mjs`: idem, chamando `payload.db.migrate()` para aplicar as migrations pendentes.
+- Env var `PAYLOAD_DISABLE_PUSH=true` (já lida em `payload.config.ts`) desliga o push automático de dev, forçando o fluxo de migrations formais mesmo rodando `pnpm dev`.
 
-**Como desbloquear** (precisa de um terminal genuinamente interativo, que este ambiente de agente não fornece):
-1. Em um terminal normal do Windows (PowerShell ou cmd, aberto diretamente pelo usuário — não via ferramenta de agente), rodar `pnpm dev` e acessar `http://localhost:3000/admin/login` no navegador. Isso deve disparar o push do schema; se aparecer prompt no terminal, responder `y`/aceitar.
-2. Criar o primeiro usuário `Staff` (role `ADMIN`) pela tela de setup do Payload.
-3. Para produção — **não usar push automático**; gerar migrations formais rodando `pnpm payload migrate:create` num terminal interativo real e commitar os arquivos gerados em `src/payload/migrations`. Se o bug do `ERR_REQUIRE_ASYNC_MODULE` persistir mesmo em terminal interativo, é um bug a reportar upstream no repositório do Payload (versão 3.87.0), não algo para contornar com patches em `node_modules`.
+**Scripts npm disponíveis** (ver `package.json`):
+```bash
+pnpm payload:migrate:create <nome>   # gera uma nova migration a partir do diff do schema das collections
+pnpm payload:migrate                  # aplica as migrations pendentes no Postgres
+```
+
+Ambos funcionam em qualquer shell, incluindo não-interativo — não dependem mais de TTY. A migration inicial (`src/migrations/<timestamp>_init.ts`) já foi gerada e aplicada; todas as 43 tabelas (Payload + Drizzle) existem no Postgres e `/admin/login` responde HTTP 200.
+
+**Nota para o futuro**: sempre que uma collection do Payload mudar (novo campo, nova collection), rodar `pnpm payload:migrate:create <nome-descritivo>` e depois `pnpm payload:migrate` — nunca depender do push automático de dev em produção nem contar com ele funcionar de novo se o TTY não estiver disponível.
 
 ---
 

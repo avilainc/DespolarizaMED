@@ -1,16 +1,8 @@
-// KNOWN BLOCKER (2026-08-07): tables for the collections below are NOT yet
-// created in Postgres. Two separate issues were found and only the first is
-// fixed — see docs/roadmap.md "Bloqueios" for full details and next steps:
-//  1. [FIXED by downgrading Next 16->15] payload/dist/bin/loadEnv.js's default
-//     import of @next/env threw at runtime under Next 16.
-//  2. [STILL OPEN] Payload's dev-mode schema push (triggered by visiting
-//     /admin) always calls drizzle-kit's pushSchema, which requires a real
-//     TTY to prompt — it fails non-interactively even with an empty/no-op
-//     diff. `payload migrate:create` also fails standalone (ERR_REQUIRE_ASYNC_MODULE,
-//     a tsx/Node ESM-CJS interop issue unrelated to this app's code). Needs a
-//     real interactive terminal (not this harness) to run once, OR the
-//     migration files can be generated on a machine/shell with a real TTY and
-//     committed under src/payload/migrations.
+// Dev-mode auto schema push is disabled via PAYLOAD_DISABLE_PUSH (set in
+// .env.local/.env.example) — it requires an interactive TTY prompt that
+// breaks non-interactive shells. Use `pnpm payload:migrate:create` /
+// `pnpm payload:migrate` instead. See docs/roadmap.md "Bloqueios" for the
+// full diagnosis and why those scripts exist.
 import { postgresAdapter } from "@payloadcms/db-postgres";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { buildConfig } from "payload";
@@ -46,6 +38,7 @@ export default buildConfig({
     pool: {
       connectionString: process.env.DATABASE_URL,
     },
+    push: process.env.PAYLOAD_DISABLE_PUSH === "true" ? false : undefined,
   }),
   typescript: {
     outputFile: "src/payload/payload-types.ts",
