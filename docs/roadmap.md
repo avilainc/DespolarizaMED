@@ -99,6 +99,11 @@ Ambos funcionam em qualquer shell, incluindo não-interativo — não dependem m
 
 **Nota para o futuro**: sempre que uma collection do Payload mudar (novo campo, nova collection), rodar `pnpm payload:migrate:create <nome-descritivo>` e depois `pnpm payload:migrate` — nunca depender do push automático de dev em produção nem contar com ele funcionar de novo se o TTY não estiver disponível.
 
+### [RESOLVIDO 2026-08-11] `__drizzle_migrations` dessincronizado do banco real
+Ao recriar o banco `despolarizamed` manualmente (`DROP DATABASE` / `CREATE DATABASE`) numa sessão anterior de debugging do bloqueio do Payload, a tabela de controle `drizzle.__drizzle_migrations` acabou registrando a migration `0000_tan_alex_power.sql` como já aplicada sem as tabelas (`users`, `sessions`, `questions`, etc.) terem sido de fato recriadas — `pnpm db:migrate` reportava sucesso mas pulava silenciosamente por achar que não havia nada a fazer. Só foi percebido ao testar `POST /api/auth/sign-up/email` de verdade e receber `relation "users" does not exist`.
+
+**Lição**: depois de qualquer `DROP DATABASE`/recreate manual do Postgres em dev, **sempre** testar um fluxo real (não só que a página carrega) antes de considerar a stack funcional — build verde e HTTP 200 não garantem que o schema/dados estão corretos. Se isso acontecer de novo: `DELETE FROM drizzle.__drizzle_migrations;` seguido de `pnpm db:migrate` recria as tabelas do zero (idempotente, seguro em dev sem dados reais).
+
 ---
 
 ## 4. Estrutura de pastas
@@ -142,10 +147,10 @@ Cada pasta de feature tem um `README.md` curto explicando seu escopo e de onde v
 - [x] Estrutura do projeto Next.js + TypeScript + pnpm
 - [x] Schema Drizzle (auth, questões, provas, aprendizado, eventos, billing)
 - [x] Better Auth configurado com RBAC (ADMIN/TEACHER/STUDENT)
-- [x] Payload CMS configurado (collections de conteúdo) — **pendente**: confirmar que roda após downgrade do Next e gerar as tabelas no Postgres
-- [ ] Site público (landing, planos, FAQ)
-- [ ] Login / Cadastro (telas, usando Better Auth)
-- [ ] Área do aluno (dashboard básico)
+- [x] Payload CMS configurado e funcional — `/admin/login` responde 200, todas as tabelas criadas
+- [x] Site público (landing completa: hero, disciplinas, professores, planos, depoimentos, FAQ, CTA; blog placeholder)
+- [x] Login / Cadastro (telas com Better Auth, testado ponta a ponta: cadastro → login → sessão com RBAC)
+- [x] Área do aluno (layout autenticado + dashboard placeholder, redireciona pra /login se não autenticado)
 - [ ] Área do professor (usar `/admin` do Payload para conteúdo; telas próprias só se o Payload não cobrir)
 - [ ] Área do administrador
 - [ ] Integração Mercado Pago (planos, assinatura, webhook)
