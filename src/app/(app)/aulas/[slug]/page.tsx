@@ -30,16 +30,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function AulaPage({ params }: Props) {
   const { slug } = await params;
-  const lesson = await getLessonBySlug(slug);
 
+  // O portão vem antes de qualquer consulta ao conteúdo: sem assinatura
+  // vigente o aluno vai para /planos sem que a aula chegue a ser carregada.
+  // ADMIN e TEACHER passam sem assinar (ver require-subscription).
+  const { session } = await requireAssinatura();
+
+  const lesson = await getLessonBySlug(slug);
   if (!lesson) {
     notFound();
   }
 
   const materials = await getLessonMaterials(lesson.id);
-  // A aula é o conteúdo pago: sem assinatura vigente o aluno vai para /planos.
-  // ADMIN e TEACHER passam sem assinar (ver require-subscription).
-  const { session } = await requireAssinatura();
 
   let initialPositionSeconds = 0;
   {

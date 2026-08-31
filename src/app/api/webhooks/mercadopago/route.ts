@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { payments, paymentEvents, subscriptions } from "@/lib/db/schema";
+import { payments, paymentEvents, subscriptions, users } from "@/lib/db/schema";
 import { validarAssinatura } from "@/lib/mercadopago/webhook";
 import { obterAssinatura, obterPagamento } from "@/lib/mercadopago/client";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * `subscriptions.id` é uuid no Postgres: comparar com um texto que não é uuid
+ * não devolve vazio, levanta erro de cast e derruba o processamento. O
+ * external_reference vem pela query string do checkout, então pode chegar
+ * qualquer coisa.
+ */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Webhook do Mercado Pago: a única fonte que libera acesso pago.
@@ -78,8 +86,14 @@ export async function POST(request: Request) {
 /** Lê o estado real no MP e reflete na nossa assinatura. */
 async function sincronizarAssinatura(preapprovalId: string) {
   const remota = await obterAssinatura(preapprovalId);
-  const nossoId = remota.external_reference;
-  if (!nossoId) return;
+
+  const nossoId = await localizarAssinatura(remota);
+  if (!nossoId) {
+    // Sem par local a cobrança existe no MP e não existe aqui: gritar é melhor
+    // que ignorar, porque é um aluno que pagou e não recebeu acesso.
+    console.error("[mp] preapproval sem assinatura local:", preapprovalId, remota.payer_email);
+    return;
+  }
 
   const status =
     remota.status === "authorized"
@@ -101,11 +115,54 @@ async function sincronizarAssinatura(preapprovalId: string) {
     .where(eq(subscriptions.id, nossoId));
 }
 
+/**
+ * Acha a nossa linha a partir do que o MP devolve.
+ *
+ * `external_reference` é o caminho normal, mas ele viaja como query string no
+ * checkout hospedado e nem todo fluxo do MP o preserva. O e-mail do pagador é
+ * o plano B: mais frágil (o aluno pode ter trocado), então só vale para uma
+ * assinatura PENDING, que é exatamente a que acabou de sair daqui.
+ */
+async function localizarAssinatura(remota: {
+  external_reference?: string;
+  payer_email?: string;
+  id: string;
+}): Promise<string | null> {
+  if (remota.external_reference && UUID.test(remota.external_reference)) {
+    const [linha] = await db
+      .select({ id: subscriptions.id })
+      .from(subscriptions)
+      .where(eq(subscriptions.id, remota.external_reference))
+      .limit(1);
+    if (linha) return linha.id;
+  }
+
+  // Já sincronizada antes por este mesmo preapproval.
+  const [porMp] = await db
+    .select({ id: subscriptions.id })
+    .from(subscriptions)
+    .where(eq(subscriptions.mercadoPagoSubscriptionId, remota.id))
+    .limit(1);
+  if (porMp) return porMp.id;
+
+  if (!remota.payer_email) return null;
+
+  const [porEmail] = await db
+    .select({ id: subscriptions.id })
+    .from(subscriptions)
+    .innerJoin(users, eq(users.id, subscriptions.studentId))
+    .where(and(eq(users.email, remota.payer_email), eq(subscriptions.status, "PENDING")))
+    .orderBy(desc(subscriptions.createdAt))
+    .limit(1);
+
+  return porEmail?.id ?? null;
+}
+
 /** Registra a cobrança e estende o período de acesso quando aprovada. */
 async function registrarPagamento(pagamentoId: string) {
   const pago = await obterPagamento(pagamentoId);
   const nossoId = pago.external_reference;
-  if (!nossoId) return;
+  if (!nossoId || !UUID.test(nossoId)) return;
 
   const [assinatura] = await db
     .select()

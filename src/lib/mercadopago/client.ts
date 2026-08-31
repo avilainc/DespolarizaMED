@@ -94,27 +94,25 @@ export function criarPlano(input: {
 }
 
 /**
- * Inicia a assinatura de um aluno. `externalReference` é o id da nossa
- * `subscriptions`, e é o que amarra o webhook do MP à linha do nosso banco
- * sem depender de e-mail (que o aluno pode trocar).
+ * Link de checkout da assinatura.
+ *
+ * POST /preapproval **não** serve aqui: ele exige `card_token_id`, ou seja, o
+ * cartão já tokenizado no navegador, e não devolve link nenhum. Testado
+ * contra a API: responde `400 card_token_id is required`.
+ *
+ * O caminho de checkout hospedado é o `init_point` do preapproval_plan, com o
+ * nosso id de assinatura em `external_reference` — é o que o Mercado Pago
+ * devolve depois no webhook, e o que amarra a cobrança à linha do nosso banco
+ * sem depender do e-mail (que o aluno troca).
  */
-export function criarAssinatura(input: {
-  planId: string;
-  payerEmail: string;
-  externalReference: string;
-  backUrl: string;
-}) {
-  return chamar<Preapproval>(
-    "POST",
-    "/preapproval",
-    {
-      preapproval_plan_id: input.planId,
-      payer_email: input.payerEmail,
-      external_reference: input.externalReference,
-      back_url: input.backUrl,
-    },
-    input.externalReference,
-  );
+export function linkDeAssinatura(input: { initPoint: string; externalReference: string }) {
+  const url = new URL(input.initPoint);
+  url.searchParams.set("external_reference", input.externalReference);
+  return url.toString();
+}
+
+export function obterPlano(planId: string) {
+  return chamar<PreapprovalPlan>("GET", `/preapproval_plan/${planId}`);
 }
 
 export function obterAssinatura(id: string) {
