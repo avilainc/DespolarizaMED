@@ -1,6 +1,6 @@
 A estrutura mais consistente para o **DespolarizaMED** é tratá-lo como uma **plataforma educacional própria**, e não como um simples portal de vídeos. O YouTube fica como aquisição; o produto pago concentra conteúdo, estudo, exercícios, provas, acompanhamento e plantões.
 
-# DespolarizaMED — Estrutura do Projeto
+# DespolarizaMED: Estrutura do Projeto
 
 ## 1. Visão do produto
 
@@ -143,19 +143,19 @@ Exemplo real utilizando o conteúdo que já existe:
 ```text
 BIOLOGIA
 
-├── Módulo 1 — Bioquímica
-│   ├── Aula 01 — Bioquímica
-│   ├── Aula 02 — Carboidratos
-│   ├── Aula 03 — Lipídios
-│   ├── Aula 04 — Proteínas
-│   └── Aula 05 — Vitaminas
+├── Módulo 1, Bioquímica
+│   ├── Aula 01, Bioquímica
+│   ├── Aula 02, Carboidratos
+│   ├── Aula 03, Lipídios
+│   ├── Aula 04, Proteínas
+│   └── Aula 05, Vitaminas
 │
 └── Módulo 2
-    ├── Aula 06 — Ácido nucleico
-    ├── Aula 07 — Síntese proteica
-    ├── Aula 08 — Célula e organelas
-    ├── Aula 09 — Membrana plasmática e transportes
-    └── Aula 10 — Respiração celular
+    ├── Aula 06, Ácido nucleico
+    ├── Aula 07, Síntese proteica
+    ├── Aula 08, Célula e organelas
+    ├── Aula 09, Membrana plasmática e transportes
+    └── Aula 10, Respiração celular
 ```
 
 Essa estrutura já corresponde ao padrão encontrado no Google Drive atual.
@@ -259,7 +259,7 @@ Quando disponível:
 Estrutura:
 
 ```text
-Aula 03 — Lipídios
+Aula 03, Lipídios
 
 ▶ Assistir aula
 
@@ -392,13 +392,13 @@ Exemplo:
 ```text
 SEGUNDA
 
-08:00 — Biologia
-Módulo 1 / Aula 03 — Lipídios
+08:00, Biologia
+Módulo 1 / Aula 03, Lipídios
 
-09:10 — Exercícios
+09:10, Exercícios
 10 questões de Bioquímica
 
-19:00 — Revisão
+19:00, Revisão
 Questões erradas
 ```
 
@@ -518,7 +518,7 @@ Materiais do plantão
 📄 Anotações
 📊 Slides
 📚 Exercícios
-🎥 Gravação — caso disponível
+🎥 Gravação, caso disponível
 ```
 
 ---
@@ -773,7 +773,7 @@ NÃO → página de planos
 
 ---
 
-# 23. Banco de dados — entidades principais
+# 23. Banco de dados: entidades principais
 
 ## Autenticação
 
@@ -911,7 +911,7 @@ DESPOLARIZAMED
 
 O trabalho de organização das provas deve seguir um processo.
 
-## Etapa 1 — Inventário
+## Etapa 1: Inventário
 
 Identificar:
 
@@ -923,7 +923,7 @@ Identificar:
 * Arquivo
 * Gabarito
 
-## Etapa 2 — Classificação
+## Etapa 2: Classificação
 
 Cada questão deverá receber:
 
@@ -937,7 +937,7 @@ Vestibular
 Ano
 ```
 
-## Etapa 3 — Padronização
+## Etapa 3: Padronização
 
 Criar documentos mantendo uma mesma identidade visual.
 
@@ -950,7 +950,7 @@ Banco de Questões
 BIOLOGIA
 Citologia
 
-Questão 01 — FUVEST 2025
+Questão 01, FUVEST 2025
 
 [enunciado]
 
@@ -1007,7 +1007,7 @@ Módulo
 [ Bioquímica ]
 
 Título
-[ Aula 05 — Vitaminas ]
+[ Aula 05, Vitaminas ]
 
 Professor
 [ ... ]
@@ -1206,7 +1206,7 @@ Indicadores:
 
 Não é recomendável desenvolver tudo simultaneamente.
 
-## Fase 1 — Fundação
+## Fase 1: Fundação
 
 Entregar:
 
@@ -1226,7 +1226,7 @@ Entregar:
 * Materiais
 * Progresso básico
 
-## Fase 2 — Aprendizado
+## Fase 2: Aprendizado
 
 Adicionar:
 
@@ -1238,7 +1238,7 @@ Adicionar:
 * Favoritos
 * Busca
 
-## Fase 3 — Organização
+## Fase 3: Organização
 
 Adicionar:
 
@@ -1248,7 +1248,7 @@ Adicionar:
 * Histórico
 * Dashboard de desempenho
 
-## Fase 4 — Ao vivo
+## Fase 4: Ao vivo
 
 Adicionar:
 
@@ -1257,7 +1257,7 @@ Adicionar:
 * Palestras
 * Notificações
 
-## Fase 5 — Inteligência educacional
+## Fase 5: Inteligência educacional
 
 Posteriormente:
 

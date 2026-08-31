@@ -1,0 +1,1 @@
+ALTER TABLE "library_questions" ADD COLUMN "tipo" text DEFAULT 'objetiva' NOT NULL;

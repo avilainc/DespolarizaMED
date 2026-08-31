@@ -8,6 +8,41 @@
       "when": 1786120723199,
       "tag": "0000_tan_alex_power",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786735775066,
+      "tag": "0001_hard_nitro",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786756164187,
+      "tag": "0002_magical_black_bird",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786772440466,
+      "tag": "0003_chunky_quicksilver",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787194222125,
+      "tag": "0004_unknown_thaddeus_ross",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787199215230,
+      "tag": "0005_sticky_butterfly",
+      "breakpoints": true
     }
   ]
 }

@@ -37,3 +37,12 @@ yarn-error.log*
 
 # Claude Code internal
 .claude/
+
+# Acervo de provas (PDFs originais, hoje em D:/projetos/conteudo, ver ACERVO_DIR)
+# e artefatos do pipeline de ingestão (regeneráveis)
+/Conteudo/
+/data/
+__pycache__/
+
+# Rascunhos de trabalho, não documentação
+docs/Untitled-*.txt
