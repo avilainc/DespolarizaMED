@@ -1098,7 +1098,7 @@ Live
 Google Meet
 
 E-mail
-Resend
+mail.avilaops.com (MTA proprio)
 
 Automação
 n8n

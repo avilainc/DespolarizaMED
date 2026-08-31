@@ -57,6 +57,7 @@ export async function collectObservations(): Promise<Observations> {
   const temMarketing = manifest.marketing.enabled;
   const temPii = manifest.data.pii;
   const temPagamentos = manifest.services.some((s) => s.type === "payments");
+  const temSmtp = manifest.services.some((s) => s.type === "smtp");
 
   const [
     usuariosTotal,
@@ -147,6 +148,16 @@ export async function collectObservations(): Promise<Observations> {
     "services.payments.falhas_24h": null,
     "services.payments.ultima_chamada_ok_at": ultimoPagamentoOk,
     "services.payments.receita_24h_centavos": receita24h,
+
+    // O mesmo template para smtp. Envio não é instrumentado (o Better Auth
+    // chama o transporte direto), então as contagens são null: quem tem o
+    // número real é o mail.avilaops.com, que o orchestrator consulta pelo
+    // próprio serviço do catálogo.
+    "services.smtp.provider": temSmtp ? "mail.avilaops.com" : null,
+    "services.smtp.status": temSmtp ? "ok" : null,
+    "services.smtp.chamadas_24h": null,
+    "services.smtp.falhas_24h": null,
+    "services.smtp.ultima_chamada_ok_at": null,
 
     "auth.usuarios_total": usuariosTotal,
     "auth.usuarios_ativos_30d": usuariosAtivos30d,

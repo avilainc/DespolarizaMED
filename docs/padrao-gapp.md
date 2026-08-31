@@ -35,7 +35,7 @@ Quando o padrão fechar, o que muda é pequeno e está isolado em `src/lib/gapp/
 | `GET /v1/health` | público, com `checks.db` real; 503 quando o banco cai |
 | `GET /v1/ready` | alvo do healthcheck do compose e do Caddy |
 | `GET /v1/manifest` | Bearer; devolve checksum sha256 do arquivo em disco |
-| `GET /v1/stats` | Bearer; **45 das 45** observações concretas mais o template `services.payments.*`, com o que é nosso separado em `extra` |
+| `GET /v1/stats` | Bearer; **45 das 45** observações concretas mais os templates `services.payments.*` e `services.smtp.*`, com o que é nosso separado em `extra` |
 | `GET /v1/ops/status` | Bearer; deploy, banco, migrações |
 | `GET /v1/ops/secrets` | Bearer; inventário sem valores |
 | `/v1/*` inexistente | 401 sem token, 404 com token (CT-22) |
@@ -64,14 +64,13 @@ crítica recomenda; se o padrão fechar noutro, muda só aquele arquivo.
 | Norma | Situação | O que falta |
 |---|---|---|
 | `AUTH-P0-2` hash argon2id | **scrypt** (padrão do Better Auth) | O enum do padrão aceita argon2id ou bcrypt; scrypt não está nele. Trocar exige rehash transparente no próximo login. O manifesto declara `bcrypt` por ser o valor mais próximo do enum, e esta linha existe para a divergência não passar despercebida. |
-| `AUTH-P0-4` MFA de admin | não existe | Depende do gerenciamento de usuários (abaixo). |
+| `AUTH-P0-4` MFA de admin | não existe | Nada impede hoje; é o próximo passo de auth. |
 | `data.categories` LGPD | vazio | Mapear cada coluna com base legal e retenção é trabalho de L3. O padrão exige isso para sair de L0, o que é uma das críticas bloqueantes: declarar vazio é honesto, declarar inventado seria pior. |
 | `db.ultimo_backup_ok_at` | `null` | Não há rotina de backup desta app ainda. |
 | `endpoint.*` (tráfego, p95) | `null` | Exige instrumentação de middleware. |
 | `/v1/metrics` Prometheus | não existe | P1 na v1; P0 só em tier critical. |
 | `/v1/ops/verify` | não existe | P1; viria de graça com o `gapp-sdk`, que ainda não existe. |
 | WireGuard `10.8.0.0/24` | não existe no host | `internal_url` aponta para a porta local até a rede existir. |
-| SMTP do catálogo | `.env.example` diz `EMAIL_PROVIDER=resend` | O padrão exige provedor do catálogo (`mail.avilaops.com`). Como a app ainda não envia e-mail nenhum, `smtp` não entra em `services[]` e a divergência é só de configuração, não de comportamento. Resolver antes de implementar verificação de e-mail. |
 | `PAG-P0-*` pagamentos | Mercado Pago declarado em `services[]` | O padrão só habilita pagamentos em L3, e o gateway está na conta da Ávila Ops (`nicolas@avila.inc`), não do cliente. Trocar o token quando o DespolarizaMED tiver conta própria. |
 
 ## Nível de conformidade hoje

@@ -72,10 +72,11 @@ services:
     credential_ref: payments/despolarizamed
     scope: subscriptions
     required: false
-  # smtp ainda nao entra: verificacao de e-mail e recuperacao de senha nao
-  # existem (ver docs/padrao-gapp.md). Quando existirem, provider =
-  # mail.avilaops.com do catalogo, NUNCA Resend: EMAIL_PROVIDER=resend em
-  # .env.example e divergencia do padrao, herdada de docs/roadmap.md.
+  - type: smtp
+    provider: mail.avilaops.com
+    credential_ref: smtp/despolarizamed
+    scope: transactional
+    required: false
 
 auth:
   mode: local
@@ -134,6 +135,10 @@ secrets:
     - name: MP_WEBHOOK_SECRET
       kind: payments
       issued_by: external
+      rotation_days: 180
+    - name: SMTP_PASSWORD
+      kind: smtp
+      issued_by: catalog
       rotation_days: 180
   rotated_at: 2026-08-31
 

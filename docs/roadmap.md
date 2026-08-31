@@ -25,7 +25,7 @@ Para a visão de produto completa (o que cada tela faz, jornada do usuário, mod
 | Calendário | react-big-calendar | 100% MIT, sem paywall (ao contrário do FullCalendar em features avançadas). |
 | Busca | Postgres full-text search nativo no MVP; Meilisearch quando crescer | Zero infra extra no início. |
 | Pagamentos | Mercado Pago | Gateway brasileiro, requisito do produto. |
-| E-mail | Resend | Já decidido antes deste roadmap. |
+| E-mail | `mail.avilaops.com` (MTA próprio, SMTP submission na 587) | Provedor do catálogo da casa, como manda o padrão. Resend foi descartado: não usamos serviço de e-mail de terceiro. |
 | Automação | n8n | Já decidido antes deste roadmap. |
 | Deploy | VPS próprio (Hetzner) | Já decidido antes deste roadmap. |
 
@@ -181,7 +181,7 @@ Cada pasta de feature tem um `README.md` curto explicando seu escopo e de onde v
 ### Fase 4: Ao vivo
 - [ ] Plantões (agendamento, link Google Meet, materiais pós-sessão)
 - [ ] Palestras
-- [ ] Notificações (Resend + n8n)
+- [ ] Notificações (mail.avilaops.com + n8n)
 
 ### Fase 5: Inteligência educacional (pós-MVP)
 - [ ] Pipeline de vídeo completo (FFmpeg worker + BullMQ: transcodificação/HLS/thumbnail)

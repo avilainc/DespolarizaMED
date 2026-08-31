@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
+import { enviarEmail, moldeEmail } from "@/lib/email";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -15,6 +16,38 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    // Verificação não bloqueia o login: o aluno que acabou de pagar precisa
+    // entrar agora, e um e-mail preso no spam viraria um chamado de suporte.
+    // O aviso "não verificado" aparece na gestão de usuários.
+    requireEmailVerification: false,
+    sendResetPassword: async ({ user, url }) => {
+      await enviarEmail({
+        para: user.email,
+        assunto: "Redefinir sua senha",
+        texto: `Para criar uma nova senha, acesse: ${url}`,
+        html: moldeEmail({
+          titulo: "Redefinir sua senha",
+          corpo: "Recebemos um pedido para trocar a senha da sua conta. O link vale por uma hora.",
+          botao: { texto: "Criar nova senha", url },
+        }),
+      });
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      await enviarEmail({
+        para: user.email,
+        assunto: "Confirme seu e-mail",
+        texto: `Confirme seu e-mail acessando: ${url}`,
+        html: moldeEmail({
+          titulo: `Boas-vindas, ${user.name.split(" ")[0]}`,
+          corpo: "Confirme seu e-mail para garantir que você receba avisos de plantão, novas aulas e recibos de pagamento.",
+          botao: { texto: "Confirmar e-mail", url },
+        }),
+      });
+    },
   },
   user: {
     additionalFields: {

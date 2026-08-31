@@ -1,5 +1,5 @@
 # server/jobs
 
-Workers/processors do BullMQ: transcodificação de vídeo (FFmpeg), transcrição (faster-whisper), envio de e-mail (Resend).
+Workers/processors do BullMQ: transcodificação de vídeo (FFmpeg), transcrição (faster-whisper), envio de e-mail (mail.avilaops.com).
 
 Rodam como processo Node separado do Next.js (não dentro do request handler). Ver `docs/roadmap.md`.
