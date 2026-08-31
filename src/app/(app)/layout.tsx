@@ -34,6 +34,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                   Professor
                 </Link>
               )}
+              <Link href="/planos" className="transition-colors hover:text-foreground">
+                Planos
+              </Link>
               {/* /gestao, nao /admin: /admin e do painel do Payload CMS e as
                   duas rotas colidem (optional catch-all), derrubando o app. */}
               {hasRole(role, "ADMIN") && (

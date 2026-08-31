@@ -1,9 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { headers } from "next/headers";
 import { getLessonBySlug, getLessonMaterials } from "@/lib/payload/queries";
-import { auth } from "@/lib/auth";
+import { requireAssinatura } from "@/lib/auth/require-subscription";
 import { db } from "@/lib/db";
 import { lessonProgress } from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
@@ -38,10 +37,12 @@ export default async function AulaPage({ params }: Props) {
   }
 
   const materials = await getLessonMaterials(lesson.id);
-  const session = await auth.api.getSession({ headers: await headers() });
+  // A aula é o conteúdo pago: sem assinatura vigente o aluno vai para /planos.
+  // ADMIN e TEACHER passam sem assinar (ver require-subscription).
+  const { session } = await requireAssinatura();
 
   let initialPositionSeconds = 0;
-  if (session) {
+  {
     const progress = await db
       .select({ positionSeconds: lessonProgress.positionSeconds })
       .from(lessonProgress)

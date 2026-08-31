@@ -34,7 +34,8 @@
     "ingest:discursivas": "python scripts/pdf-ingest/16_parse_discursivas.py",
     "lista": "python scripts/pdf-ingest/17_gerar_lista.py",
     "ingest:all": "pnpm ingest:inventory && pnpm ingest:text && pnpm ingest:ocr && pnpm ingest:dataset && pnpm ingest:load",
-    "user:role": "dotenv -e .env.local -- node scripts/user-role.mjs"
+    "user:role": "dotenv -e .env.local -- node scripts/user-role.mjs",
+    "seed:planos": "dotenv -e .env.local -- node scripts/seed-planos.mjs"
   },
   "dependencies": {
     "@aarkue/tiptap-math-extension": "^1.4.0",
