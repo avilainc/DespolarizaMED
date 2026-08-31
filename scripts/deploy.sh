@@ -42,10 +42,21 @@ cd ctx
 docker build -t $APP:$VERSAO .
 cd /opt/$APP
 sed -i "s|image: $APP:.*|image: $APP:$VERSAO|" compose.yaml
+# version/commit são lidos em runtime: não são NEXT_PUBLIC_, então o build não
+# os inlina. O orchestrator compara /v1/health.version com a versão implantada
+# no gate pós-deploy, e sem isso o gate nunca fecha.
+sed -i "s|APP_VERSION: .*|APP_VERSION: \"$VERSAO\"|" compose.yaml
+sed -i "s|GIT_COMMIT: .*|GIT_COMMIT: \"$COMMIT\"|" compose.yaml
 docker compose up -d
 REMOTE
 
+# O gate: a app só está no ar se /v1/health responder E a versão for a que
+# acabou de subir. Health 200 com a versão antiga significa que o container
+# velho continua atendendo, que é uma falha silenciosa de deploy.
 echo "==> verificando"
-sleep 10
-ssh "$HOST" "curl -sf http://127.0.0.1:3100/v1/health | head -c 300; echo"
-echo "==> ok"
+sleep 12
+ssh "$HOST" "curl -sf http://127.0.0.1:3100/v1/health" | tee /tmp/$APP-health.json
+grep -q "\"version\":\"$VERSAO\"" /tmp/$APP-health.json || {
+  echo; echo "FALHOU: /v1/health não reporta a versão $VERSAO"; exit 1;
+}
+echo; echo "==> $VERSAO no ar ($COMMIT)"
