@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
+import { hasRole, type UserRole } from "@/lib/auth/rbac";
 import { SignOutButton } from "@/features/auth/components/sign-out-button";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -10,6 +11,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!session) {
     redirect("/login");
   }
+
+  const role = (session.user as { role?: UserRole }).role ?? "STUDENT";
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -26,6 +29,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               <Link href="/disciplinas" className="transition-colors hover:text-foreground">
                 Disciplinas
               </Link>
+              {hasRole(role, "TEACHER") && (
+                <Link href="/professor" className="transition-colors hover:text-foreground">
+                  Professor
+                </Link>
+              )}
+              {hasRole(role, "ADMIN") && (
+                <Link href="/admin" className="transition-colors hover:text-foreground">
+                  Administração
+                </Link>
+              )}
             </nav>
           </div>
           <div className="flex items-center gap-4">
