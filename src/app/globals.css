@@ -29,6 +29,10 @@
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
+  /* Cores da marca disponíveis como utilitário: text-brand-orange, bg-brand-teal. */
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-teal: var(--brand-teal);
+  --color-brand-blue: var(--brand-blue);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -48,25 +52,37 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Paleta medida no emblema da marca, não escolhida a olho:
+     #184878 azul-marinho  -> primary    (o contorno do emblema)
+     #4884c0 azul do disco -> ring/chart
+     #fc7824 laranja "MED" -> destaque   (a única cor quente da marca)
+     #549c9c teal do fundo -> accent
+     #182430 azul-escuro   -> foreground e fundo do tema escuro
+   Convertidas para oklch por scripts/testes/oklch.mjs. O primary usa o
+   azul-marinho e não o azul do disco porque texto branco sobre #4884c0 não
+   alcança contraste 4.5:1. */
 :root {
   --background: oklch(1 0 0);
-  --foreground: oklch(0.18 0.02 240);
+  --foreground: oklch(0.255 0.028 249);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.02 240);
+  --card-foreground: oklch(0.255 0.028 249);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.02 240);
-  --primary: oklch(0.42 0.14 245);
+  --popover-foreground: oklch(0.255 0.028 249);
+  --primary: oklch(0.396 0.096 251.6);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.96 0.02 245);
-  --secondary-foreground: oklch(0.3 0.08 245);
-  --muted: oklch(0.96 0.01 240);
-  --muted-foreground: oklch(0.5 0.02 240);
-  --accent: oklch(0.94 0.05 165);
-  --accent-foreground: oklch(0.25 0.08 165);
+  --secondary: oklch(0.96 0.02 250);
+  --secondary-foreground: oklch(0.396 0.096 251.6);
+  --muted: oklch(0.965 0.008 250);
+  --muted-foreground: oklch(0.5 0.02 250);
+  --accent: oklch(0.94 0.03 195.5);
+  --accent-foreground: oklch(0.35 0.06 195.5);
+  --brand-orange: oklch(0.717 0.183 47.5);
+  --brand-teal: oklch(0.646 0.072 195.5);
+  --brand-blue: oklch(0.600 0.111 250.2);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.9 0.01 240);
-  --input: oklch(0.9 0.01 240);
-  --ring: oklch(0.42 0.14 245);
+  --border: oklch(0.9 0.01 250);
+  --input: oklch(0.9 0.01 250);
+  --ring: oklch(0.600 0.111 250.2);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -83,25 +99,32 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+/* O tema escuro estava em cinza puro (croma 0), o padrão do scaffold. Agora
+   usa o azul-escuro do fundo do emblema (#182430), e o primary passa a ser o
+   azul do disco: sobre fundo escuro ele tem contraste de sobra, e é a cor que
+   o aluno reconhece da marca. */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: oklch(0.255 0.028 249);
+  --foreground: oklch(0.97 0.005 250);
+  --card: oklch(0.295 0.028 249);
+  --card-foreground: oklch(0.97 0.005 250);
+  --popover: oklch(0.295 0.028 249);
+  --popover-foreground: oklch(0.97 0.005 250);
+  --primary: oklch(0.600 0.111 250.2);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.34 0.03 249);
+  --secondary-foreground: oklch(0.97 0.005 250);
+  --muted: oklch(0.34 0.03 249);
+  --muted-foreground: oklch(0.72 0.02 250);
+  --accent: oklch(0.38 0.05 195.5);
+  --accent-foreground: oklch(0.97 0.005 250);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.600 0.111 250.2);
+  --brand-orange: oklch(0.717 0.183 47.5);
+  --brand-teal: oklch(0.646 0.072 195.5);
+  --brand-blue: oklch(0.600 0.111 250.2);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);

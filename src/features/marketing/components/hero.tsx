@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
@@ -13,7 +14,7 @@ export function Hero() {
     <section className="relative overflow-hidden bg-gradient-to-b from-secondary/60 to-background">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 sm:px-6 md:grid-cols-2 md:items-center md:py-28">
         <div>
-          <span className="inline-flex items-center rounded-full bg-accent px-3 py-1 text-sm font-medium text-accent-foreground">
+          <span className="inline-flex items-center rounded-full bg-brand-orange/15 px-3 py-1 text-sm font-medium text-brand-orange">
             Preparação para vestibulares de Medicina
           </span>
           <h1 className="mt-6 text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
@@ -44,12 +45,19 @@ export function Hero() {
           </div>
         </div>
 
-        <div className="relative mx-auto aspect-square w-full max-w-sm overflow-hidden rounded-2xl border bg-card shadow-xl sm:max-w-md">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/perfil.jpg"
-            alt="Professor do DespolarizaMED"
-            className="h-full w-full object-cover"
+        {/* Era um <img> para /perfil.jpg, que nunca existiu em public/ (404 em
+            produção) e, mesmo se existisse, era o próprio logo em 128 px
+            servindo de "foto do professor". Enquanto não houver foto real da
+            equipe, o emblema da marca em alta é mais honesto que um retrato
+            que não existe. */}
+        <div className="relative mx-auto flex aspect-square w-full max-w-sm items-center justify-center overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-card to-accent/20 shadow-xl sm:max-w-md">
+          <Image
+            src="/logo.png"
+            alt="DespolarizaMED"
+            width={512}
+            height={512}
+            priority
+            className="w-3/4 drop-shadow-xl"
           />
         </div>
       </div>

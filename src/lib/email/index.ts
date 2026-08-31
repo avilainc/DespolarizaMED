@@ -52,6 +52,13 @@ export async function enviarEmail(input: {
  * ignora flex, grid e boa parte de `<style>`. Tabela e atributo inline é o que
  * chega igual no Gmail, no Outlook e no app do iPhone.
  */
+/**
+ * URL absoluta do emblema. E-mail não tem origem: caminho relativo não
+ * resolve em cliente nenhum, então a imagem precisa vir de um endereço
+ * público completo.
+ */
+const LOGO = `${process.env.BETTER_AUTH_URL ?? "https://despolarizamed.com.br"}/logo.png`;
+
 export function moldeEmail(input: { titulo: string; corpo: string; botao?: { texto: string; url: string } }) {
   const botao = input.botao
     ? `<tr><td style="padding:24px 0">
@@ -71,6 +78,10 @@ export function moldeEmail(input: { titulo: string; corpo: string; botao?: { tex
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:32px 16px">
     <tr><td align="center">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fff;border-radius:12px;padding:32px">
+        <tr><td style="padding-bottom:14px">
+          <img src="${LOGO}" width="44" height="44" alt=""
+               style="display:block;border:0">
+        </td></tr>
         <tr><td style="font-size:20px;font-weight:700;color:#0f172a;padding-bottom:8px">DespolarizaMED</td></tr>
         <tr><td style="font-size:17px;font-weight:600;color:#0f172a;padding-bottom:12px">${input.titulo}</td></tr>
         <tr><td style="color:#475569;font-size:15px;line-height:1.6">${input.corpo}</td></tr>

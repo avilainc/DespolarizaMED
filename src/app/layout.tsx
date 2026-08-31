@@ -28,6 +28,24 @@ export const metadata: Metadata = {
   },
   manifest: "/site.webmanifest",
   appleWebApp: { title: "DespolarizaMED" },
+  // metadataBase resolve as URLs relativas de openGraph/twitter para absolutas.
+  // Sem ele o Next avisa no build e o WhatsApp recebe um caminho relativo, que
+  // não resolve para imagem nenhuma.
+  metadataBase: new URL("https://despolarizamed.com.br"),
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    siteName: "DespolarizaMED",
+    title: "DespolarizaMED",
+    description: "Plataforma de preparação para vestibulares de Medicina",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "DespolarizaMED" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DespolarizaMED",
+    description: "Plataforma de preparação para vestibulares de Medicina",
+    images: ["/og.png"],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "./logo";
 
 const columns = [
   {
@@ -31,7 +32,7 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
           <div>
-            <p className="text-lg font-bold text-primary">DespolarizaMED</p>
+            <Logo tamanho={32} href={null} />
             <p className="mt-2 text-sm text-muted-foreground">
               Plataforma completa de preparação para vestibulares de Medicina.
             </p>
