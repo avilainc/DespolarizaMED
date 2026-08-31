@@ -210,6 +210,25 @@ Estes são o diferencial competitivo do produto, não procurar biblioteca pronta
   - `pnpm db:generate` / `pnpm db:migrate` / `pnpm db:push` / `pnpm db:studio` - Drizzle (schema transacional)
   - `pnpm payload:migrate:create` / `pnpm payload:migrate` - migrations do Payload (schema de conteúdo); ver seção 3 "Bloqueios" para o porquê de não usar `pnpm payload migrate:create` direto
   - `pnpm seed:biologia <staff-email> <staff-password>` - popula a disciplina Biologia (2 módulos, 10 aulas) via API REST do Payload; idempotente, serve de molde para Física/Química
+- **`pnpm build` precisa de um Postgres alcançável.** O Payload conecta durante
+  o build (coleta de rotas e prerender) e, sem banco, o processo morre em
+  "Collecting build traces" sem gerar `.next/standalone` — o erro real
+  (`ECONNREFUSED 127.0.0.1:5432`) aparece dezenas de linhas antes, então é fácil
+  culpar a fase errada. Se o Postgres local estiver parado, aponte o build para
+  o de produção por um túnel:
+
+  ```bash
+  ssh -f -N -L 15432:127.0.0.1:5432 applications
+  DATABASE_URL="postgres://despolarizamed:<senha>@127.0.0.1:15432/despolarizamed"     PAYLOAD_DISABLE_PUSH=true pnpm build
+  ```
+
+  `PAYLOAD_DISABLE_PUSH=true` é obrigatório aí: sem ele o Payload tentaria
+  sincronizar o schema do banco de produção a partir do código local.
+- **Não use `MSYS_NO_PATHCONV=1` ao chamar `pnpm` no Git Bash.** Ele corrompe o
+  caminho do corepack (`Cannot find module 'D:\c\Program Files
+odejs\...'`).
+  A variável só é necessária para `curl`/`ssh` com argumentos que começam com
+  `/`; nunca para o build.
 - **`pnpm dev` e `pnpm build` não podem rodar ao mesmo tempo**, ambos escrevem no mesmo diretório `.next` e um build rodando com o dev server ativo falha com `TypeError: Cannot read properties of undefined (reading 'call')` no webpack-runtime. Sempre parar o `pnpm dev` (ou rodar `rm -rf .next`) antes de um `pnpm build` de verificação.
 - **Encoding UTF-8 ao chamar a API do Payload via `curl` no Windows/Git Bash**: strings inline (`-d '{"name":"Bioquímica"}'`) corrompem acentos. Sempre escrever o payload em um arquivo `.json` (UTF-8) e usar `--data-binary "@arquivo.json"`, ou usar `fetch` do Node (como em `scripts/seed-biologia.mjs`) em vez de `curl` inline.
 

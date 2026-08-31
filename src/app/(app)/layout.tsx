@@ -47,7 +47,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">{session.user.name}</span>
+            <Link
+              href="/minha-conta"
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {session.user.name}
+            </Link>
             <SignOutButton />
           </div>
         </div>
