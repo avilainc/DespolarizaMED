@@ -1,0 +1,11 @@
+# .env.local envenena o build/imagem: em outro projeto da casa ele vazou para
+# dentro da imagem e sobrescreveu a config de producao. Fica de fora sempre.
+.env
+.env.local
+.env.*.local
+.git
+node_modules
+Conteudo
+data
+docs
+scripts/pdf-ingest

@@ -34,8 +34,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                   Professor
                 </Link>
               )}
+              {/* /gestao, nao /admin: /admin e do painel do Payload CMS e as
+                  duas rotas colidem (optional catch-all), derrubando o app. */}
               {hasRole(role, "ADMIN") && (
-                <Link href="/admin" className="transition-colors hover:text-foreground">
+                <Link href="/gestao" className="transition-colors hover:text-foreground">
                   Administração
                 </Link>
               )}

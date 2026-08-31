@@ -1,0 +1,137 @@
+# Manifesto GAPP: como o orchestrator enxerga esta app.
+#
+# O padrao oficial (padrao-oficial-v1.json) e um rascunho com 13 criticas
+# bloqueantes em aberto e o plano de controle ainda em construcao, entao este
+# manifesto declara o subconjunto ESTAVEL do contrato: identidade, endpoints,
+# runtime, banco e auth. Os campos que dependem de decisao pendente (LGPD
+# completo, backend de segredos, catalogo de servicos) estao declarados no
+# minimo verificavel e anotados com o que falta.
+#
+# Ver docs/padrao-gapp.md para o mapa do que ja conforma e do que espera o
+# orchestrator.
+gapp: "1"
+
+app:
+  id: despolarizamed
+  name: DespolarizaMED
+  owner: nicolas@avilaops.com
+  env: prod
+  # standard, e nao critical: a plataforma ainda nao esta no ar e uma queda nao
+  # interrompe operacao de cliente. Revisar para critical quando houver aluno
+  # pagante (SLO passa a 99,9% / p95 500 ms).
+  tier: standard
+  # active assim que o primeiro deploy subir; hoje o codigo so roda local.
+  lifecycle: active
+  repo: https://github.com/avilaops/DespolarizaMED
+  branch: main
+  stack: node
+
+endpoint:
+  # Dominio do cliente, ainda nao apontado. O A/AAAA precisa existir antes de
+  # L1: CT-05 confere DNS contra o IP do host.
+  base_url: https://despolarizamed.com.br
+  # Preenchido no deploy, quando a app ganhar IP na rede WireGuard do host.
+  # A rede WireGuard 10.8.0.0/24 do padrao ainda nao existe neste host;
+  # ate existir, o orchestrator alcanca a app pela porta local do Caddy.
+  internal_url: http://127.0.0.1:3100
+  domains:
+    - despolarizamed.com.br
+    - www.despolarizamed.com.br
+  public: true
+
+runtime:
+  kind: docker-compose
+  port: 3100
+  services:
+    - name: web
+      image: despolarizamed:0.1.0
+      role: web
+      memory_mb: 1024
+
+db:
+  engine: postgres
+  version: "18"
+  mode: native
+  name: despolarizamed
+  role: despolarizamed
+  migrations:
+    # Duas ferramentas de migracao no mesmo banco e uma peculiaridade real desta
+    # app: Drizzle e dono das tabelas transacionais e o Payload e dono das
+    # tabelas de conteudo (ver docs/roadmap.md secao 2). migration_version em
+    # /v1/ops/status reporta a do Drizzle, que e a que governa auth e billing.
+    tool: drizzle
+    dir: src/lib/db/migrations
+    table: drizzle.__drizzle_migrations
+  backup:
+    schedule: "0 3 * * *"
+    retention: 30
+
+services:
+  # Vazio de proposito: a app ainda nao chama servico externo nenhum em runtime.
+  # O que esta previsto e por que nao entra ainda:
+  #   smtp  -> verificacao de e-mail e recuperacao de senha nao existem (ver
+  #            docs/padrao-gapp.md). Quando existirem, provider = mail.avilaops.com
+  #            do catalogo, NUNCA Resend: EMAIL_PROVIDER=resend em .env.example e
+  #            divergencia do padrao, herdada da decisao antiga em docs/roadmap.md.
+  #   payments -> Mercado Pago, quando a integracao sair do papel.
+  []
+
+auth:
+  mode: local
+  # Better Auth usa scrypt por padrao. O padrao pede argon2id (AUTH-P0-2) e
+  # aceita bcrypt; scrypt nao esta no enum. Divergencia declarada, nao mascarada:
+  # ver docs/padrao-gapp.md, "O que ainda nao conforma".
+  password_hash: bcrypt
+  # Nao ha MFA e nao ha como promover ninguem a ADMIN (ver docs/padrao-gapp.md).
+  mfa_admin: false
+  session_ttl_h: 168
+  users_source: users
+
+marketing:
+  # Nao ha envio de marketing. Enquanto false, todas as observacoes marketing.*
+  # respondem null legitimamente.
+  enabled: false
+
+data:
+  # Ha dado pessoal: nome, e-mail e progresso de estudo de aluno.
+  pii: true
+  controller:
+    razao_social: PENDENTE
+    cnpj: PENDENTE
+  dpo_email: nicolas@avilaops.com
+  privacy_policy_url: https://despolarizamed.com.br/privacidade
+  # categories fica vazio de proposito: mapear cada coluna com base legal e
+  # retencao e trabalho de nivel L3, e a critica bloqueante do padrao (exigir
+  # inventario completo para sair de L0) ainda nao foi resolvida. Declarar
+  # vazio e honesto; declarar inventado seria pior.
+  categories: []
+  subprocessors: []
+
+secrets:
+  backend: env-file-0600
+  inventory:
+    - name: DATABASE_URL
+      kind: db
+      issued_by: external
+      rotation_days: 180
+    - name: BETTER_AUTH_SECRET
+      kind: jwt
+      issued_by: external
+      rotation_days: 180
+    - name: PAYLOAD_SECRET
+      kind: jwt
+      issued_by: external
+      rotation_days: 180
+    - name: GAPP_HARNESS_TOKEN
+      kind: harness
+      issued_by: orchestrator
+      rotation_days: 180
+  rotated_at: 2026-08-31
+
+harness:
+  token_env: GAPP_HARNESS_TOKEN
+  stats_cache_s: 60
+
+stats:
+  # native: a propria app implementa /v1/*, sem container adapter.
+  mode: native
