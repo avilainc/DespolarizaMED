@@ -15,6 +15,19 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "DespolarizaMED",
   description: "Plataforma de preparação para vestibulares de Medicina",
+  // Ícones e manifesto declarados pelo metadata do Next em vez de <link> solto
+  // no JSX: o Next injeta as tags no <head> de toda página, deduplica e mantém
+  // a ordem. Os arquivos vêm do RealFaviconGenerator e ficam em public/.
+  icons: {
+    icon: [
+      { url: "/favicon-96x96.png", type: "image/png", sizes: "96x96" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: { url: "/apple-touch-icon.png", sizes: "180x180" },
+  },
+  manifest: "/site.webmanifest",
+  appleWebApp: { title: "DespolarizaMED" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
