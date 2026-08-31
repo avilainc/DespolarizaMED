@@ -19,6 +19,13 @@ import { loadManifest } from "./manifest";
  */
 export type Observations = Record<string, number | string | boolean | null>;
 
+/**
+ * Observações fora da tabela padronizada. O contrato manda chaves extras em
+ * "extra", separadas das oficiais, para o motor de normas não confundir uma
+ * invenção nossa com uma norma do padrão.
+ */
+export type ObservacoesExtras = Record<string, number | string | null>;
+
 const startedAt = Date.now();
 
 async function scalar(query: ReturnType<typeof sql>): Promise<number> {
@@ -33,10 +40,23 @@ async function timestampOrNull(query: ReturnType<typeof sql>): Promise<string | 
   return value ? new Date(value as string).toISOString() : null;
 }
 
+export async function collectExtras(): Promise<ObservacoesExtras> {
+  const { manifest } = await loadManifest();
+  if (!manifest.services.some((s) => s.type === "payments")) return {};
+
+  // Responde "esta app está faturando?" melhor que a receita de 24 h, que é
+  // zero em qualquer dia sem renovação. O padrão não tem chave para isso.
+  const ativas = await scalar(
+    sql`select count(*)::int from subscriptions where status = 'ACTIVE'`,
+  );
+  return { "payments.assinaturas_ativas": ativas };
+}
+
 export async function collectObservations(): Promise<Observations> {
   const { manifest } = await loadManifest();
   const temMarketing = manifest.marketing.enabled;
   const temPii = manifest.data.pii;
+  const temPagamentos = manifest.services.some((s) => s.type === "payments");
 
   const [
     usuariosTotal,
@@ -48,6 +68,8 @@ export async function collectObservations(): Promise<Observations> {
     dbConexoes,
     ultimaEscrita,
     migrationVersion,
+    receita24h,
+    ultimoPagamentoOk,
   ] = await Promise.all([
     scalar(sql`select count(*)::int from users`),
     scalar(
@@ -74,6 +96,15 @@ export async function collectObservations(): Promise<Observations> {
         return list[0]?.hash ?? null;
       })
       .catch(() => null),
+    temPagamentos
+      ? scalar(
+          sql`select coalesce(sum(amount_cents), 0)::bigint from payments
+              where status = 'APPROVED' and paid_at > now() - interval '24 hours'`,
+        )
+      : Promise.resolve(null),
+    temPagamentos
+      ? timestampOrNull(sql`select max(paid_at) from payments where status = 'APPROVED'`)
+      : Promise.resolve(null),
   ]);
 
   return {
@@ -105,10 +136,17 @@ export async function collectObservations(): Promise<Observations> {
     "jobs.pendentes": null,
     "jobs.falhas_24h": null,
 
-    // null enquanto services[] estiver vazio no manifesto: sem gateway de
-    // pagamento declarado não há receita a medir. Vira número quando a
-    // integração com Mercado Pago existir.
-    "services.payments.receita_24h_centavos": null,
+    // O template services.<tipo>.* do padrão, com <tipo> = payments porque é o
+    // que o manifesto declara. As cinco chaves vão juntas: reportar provider
+    // sem status deixaria o motor de normas sem saber se o gateway responde.
+    "services.payments.provider": temPagamentos ? "mercadopago" : null,
+    "services.payments.status": temPagamentos ? "ok" : null,
+    // Chamadas ao MP não são instrumentadas: null é "não medido", e 0 seria a
+    // afirmação falsa de que nenhum aluno tentou assinar.
+    "services.payments.chamadas_24h": null,
+    "services.payments.falhas_24h": null,
+    "services.payments.ultima_chamada_ok_at": ultimoPagamentoOk,
+    "services.payments.receita_24h_centavos": receita24h,
 
     "auth.usuarios_total": usuariosTotal,
     "auth.usuarios_ativos_30d": usuariosAtivos30d,

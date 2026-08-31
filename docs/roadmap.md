@@ -160,9 +160,9 @@ Cada pasta de feature tem um `README.md` curto explicando seu escopo e de onde v
 - [x] Player de vídeo (Vidstack) com resume/progresso, testado ponta a ponta: posição salva a cada ~10s e ao terminar, restaurada ao reabrir a aula
 - [x] Progresso básico (`lesson_progress` via `POST /api/progress/lesson`, autenticado com Better Auth)
 - [x] Conteúdo real de Biologia populado (ver `pnpm seed:biologia`)
-- [ ] Área do professor (usar `/admin` do Payload para conteúdo; telas próprias só se o Payload não cobrir)
-- [ ] Área do administrador
-- [ ] Integração Mercado Pago (planos, assinatura, webhook), **adiada a pedido do usuário**, sem credenciais de teste disponíveis ainda; retomar quando houver conta Mercado Pago Developers
+- [x] Área do professor (`/professor`; conteúdo continua no `/admin` do Payload)
+- [x] Área do administrador (`/gestao` com métricas e `/gestao/usuarios` com gerenciamento de contas)
+- [x] Integração Mercado Pago (3 planos recorrentes criados via `pnpm seed:planos`, checkout, webhook com HMAC validado, portão de acesso em `/aulas/[slug]`)
 
 ### Fase 2: Aprendizado
 - [ ] Banco de questões (filtros, CRUD via `features/questions`)
@@ -215,6 +215,34 @@ Estes são o diferencial competitivo do produto, não procurar biblioteca pronta
 
 ---
 
-## 8. Convenções: ver `docs/conventions.md`
+## 8. Produção
+
+A app está no ar no host `applications` (Hetzner), porta **3100** (3080 já é do
+lojas-avilaops), atrás do Caddy. Deploy com `bash scripts/deploy.sh <versao>`:
+build local, tgz, `docker build` no servidor. O build **não** roda no servidor,
+o CX23 não tem folga de RAM para compilar Next sem derrubar os vizinhos.
+
+- Segredos: `/etc/gapp/despolarizamed/secrets.env` (root:root 0600), fora do repo.
+- Banco: Postgres 18 nativo, role e database `despolarizamed`, alcançado pela
+  bridge Docker (`172.17.0.1`), já coberto pelo `pg_hba`.
+- Harness GAPP: `/v1/*`, com `/v1/stats` e `/v1/ops/*` respondendo 404 pela
+  internet (só a rede interna lê). Ver `docs/padrao-gapp.md`.
+- **O domínio `despolarizamed.com.br` ainda não resolve**: é registrado em nome
+  de terceiro no Registro.br e os NS apontam para `a.auto.dns.br`. A zona já
+  existe no Cloudflare da Ávila Ops (`donald.ns.cloudflare.com`,
+  `dora.ns.cloudflare.com`) com os registros prontos, mas o certificado só sai
+  quando os nameservers forem trocados no Registro.br.
+
+### Mercado Pago
+
+Conta `nicolas@avila.inc` (a da Ávila Ops, não a do cliente): quando o
+DespolarizaMED tiver conta própria, trocar `MP_ACCESS_TOKEN` e rodar
+`pnpm seed:planos` de novo para recriar os planos lá.
+
+O webhook precisa ser cadastrado no painel do Mercado Pago apontando para
+`https://despolarizamed.com.br/api/webhooks/mercadopago`, o que só faz sentido
+depois que o domínio resolver.
+
+## 9. Convenções: ver `docs/conventions.md`
 
 Padrões de código, nomenclatura e como decidir "isso é feature do Drizzle ou do Payload" estão detalhados separadamente para não inflar este arquivo.

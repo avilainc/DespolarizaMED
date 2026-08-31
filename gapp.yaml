@@ -67,14 +67,15 @@ db:
     retention: 30
 
 services:
-  # Vazio de proposito: a app ainda nao chama servico externo nenhum em runtime.
-  # O que esta previsto e por que nao entra ainda:
-  #   smtp  -> verificacao de e-mail e recuperacao de senha nao existem (ver
-  #            docs/padrao-gapp.md). Quando existirem, provider = mail.avilaops.com
-  #            do catalogo, NUNCA Resend: EMAIL_PROVIDER=resend em .env.example e
-  #            divergencia do padrao, herdada da decisao antiga em docs/roadmap.md.
-  #   payments -> Mercado Pago, quando a integracao sair do papel.
-  []
+  - type: payments
+    provider: mercadopago
+    credential_ref: payments/despolarizamed
+    scope: subscriptions
+    required: false
+  # smtp ainda nao entra: verificacao de e-mail e recuperacao de senha nao
+  # existem (ver docs/padrao-gapp.md). Quando existirem, provider =
+  # mail.avilaops.com do catalogo, NUNCA Resend: EMAIL_PROVIDER=resend em
+  # .env.example e divergencia do padrao, herdada de docs/roadmap.md.
 
 auth:
   mode: local
@@ -125,6 +126,14 @@ secrets:
     - name: GAPP_HARNESS_TOKEN
       kind: harness
       issued_by: orchestrator
+      rotation_days: 180
+    - name: MP_ACCESS_TOKEN
+      kind: payments
+      issued_by: external
+      rotation_days: 180
+    - name: MP_WEBHOOK_SECRET
+      kind: payments
+      issued_by: external
       rotation_days: 180
   rotated_at: 2026-08-31
 
