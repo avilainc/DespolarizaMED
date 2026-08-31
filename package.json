@@ -33,7 +33,8 @@
     "ingest:disciplina": "python scripts/pdf-ingest/15_classify_subject.py",
     "ingest:discursivas": "python scripts/pdf-ingest/16_parse_discursivas.py",
     "lista": "python scripts/pdf-ingest/17_gerar_lista.py",
-    "ingest:all": "pnpm ingest:inventory && pnpm ingest:text && pnpm ingest:ocr && pnpm ingest:dataset && pnpm ingest:load"
+    "ingest:all": "pnpm ingest:inventory && pnpm ingest:text && pnpm ingest:ocr && pnpm ingest:dataset && pnpm ingest:load",
+    "user:role": "dotenv -e .env.local -- node scripts/user-role.mjs"
   },
   "dependencies": {
     "@aarkue/tiptap-math-extension": "^1.4.0",

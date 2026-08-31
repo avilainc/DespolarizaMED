@@ -6,6 +6,7 @@ import {
   getFinancialMetrics,
   getEngagementMetrics,
 } from "@/features/admin/queries";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, BookOpen, DollarSign, TrendingUp } from "lucide-react";
 
@@ -33,6 +34,15 @@ export default async function AdminPage() {
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <h1 className="text-2xl font-bold text-foreground">Administração</h1>
       <p className="mt-1 text-muted-foreground">Visão geral da plataforma.</p>
+
+      <nav className="mt-6 flex flex-wrap gap-2">
+        <Link
+          href="/gestao/usuarios"
+          className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-muted"
+        >
+          Usuários
+        </Link>
+      </nav>
 
       <div className="mt-8 space-y-10">
         <section>
