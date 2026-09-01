@@ -46,3 +46,6 @@ __pycache__/
 
 # Rascunhos de trabalho, não documentação
 docs/Untitled-*.txt
+
+# Trabalho do pipeline de video (originais baixados e HLS gerado)
+/video-pipeline.log
