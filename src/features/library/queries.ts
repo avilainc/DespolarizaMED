@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, isNull, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, or, sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
@@ -92,7 +92,10 @@ export async function buscarQuestoes(filtro: FiltroQuestoes = {}) {
   const opcoes = await db
     .select()
     .from(libraryQuestionOptions)
-    .where(sql`${libraryQuestionOptions.questionId} = any(${ids})`)
+    // inArray, e não `= any(${ids})`: o Drizzle expande um array dentro de
+    // sql`` como lista de placeholders, gerando `any(($1,$2,…))`, que o
+    // Postgres recusa porque any() espera um array e não uma lista.
+    .where(inArray(libraryQuestionOptions.questionId, ids))
     .orderBy(asc(libraryQuestionOptions.ordem));
 
   const porQuestao = new Map<string, typeof opcoes>();
