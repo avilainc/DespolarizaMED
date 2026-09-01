@@ -228,3 +228,68 @@ export async function filaDeRevisao(limite = 50) {
     .orderBy(desc(libraryQuestions.conflitoDuplicata), desc(libraryQuestions.ano))
     .limit(Math.min(limite, 200));
 }
+
+/**
+ * Opções dos filtros, tiradas do próprio acervo.
+ *
+ * Nada de lista fixa no código: o acervo cresce quando entram provas novas, e
+ * uma lista escrita à mão ficaria oferecendo instituição que não tem questão
+ * validada nenhuma — filtro que devolve vazio parece defeito.
+ */
+export async function facetasDoAcervo() {
+  const base = and(
+    eq(libraryQuestions.validada, true),
+    isNull(libraryQuestions.duplicataDe),
+    eq(libraryQuestions.tipo, "objetiva"),
+  );
+
+  const [instituicoes, anos, disciplinas] = await Promise.all([
+    db
+      .select({
+        // `library_questions` guarda só o slug; o nome por extenso vive em
+        // `source_documents`. O join custaria caro num group by sobre 26 mil
+        // linhas, e o slug em maiúsculas ("FUVEST") já é como a banca é
+        // conhecida — a tela formata.
+        valor: libraryQuestions.instituicaoSlug,
+        total: sql<number>`count(*)::int`,
+      })
+      .from(libraryQuestions)
+      .where(base)
+      .groupBy(libraryQuestions.instituicaoSlug)
+      .orderBy(desc(sql`count(*)`))
+      .limit(40),
+    db
+      .select({ ano: libraryQuestions.ano, total: sql<number>`count(*)::int` })
+      .from(libraryQuestions)
+      .where(base)
+      .groupBy(libraryQuestions.ano)
+      .orderBy(desc(libraryQuestions.ano)),
+    db
+      .select({
+        disciplina: libraryQuestions.disciplinaSugerida,
+        total: sql<number>`count(*)::int`,
+      })
+      .from(libraryQuestions)
+      .where(base)
+      .groupBy(libraryQuestions.disciplinaSugerida)
+      .orderBy(desc(sql`count(*)`)),
+  ]);
+
+  return {
+    instituicoes: instituicoes.filter((i) => i.valor),
+    anos: anos.filter((a) => a.ano),
+    // A disciplina é *sugerida* por classificador com 75,5% de acerto medido,
+    // não rótulo curado: por isso o filtro existe, mas a tela avisa.
+    disciplinas: disciplinas.filter((d) => d.disciplina),
+  };
+}
+
+/** Quantas questões um filtro devolve, para paginar sem trazer tudo. */
+export async function contarQuestoes(filtro: FiltroQuestoes = {}) {
+  const cond = condicoes(filtro);
+  const [linha] = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(libraryQuestions)
+    .where(cond.length ? and(...cond) : undefined);
+  return linha?.total ?? 0;
+}

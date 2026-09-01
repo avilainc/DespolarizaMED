@@ -34,6 +34,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                   Professor
                 </Link>
               )}
+              <Link href="/questoes" className="transition-colors hover:text-foreground">
+                Questões
+              </Link>
               <Link href="/planos" className="transition-colors hover:text-foreground">
                 Planos
               </Link>

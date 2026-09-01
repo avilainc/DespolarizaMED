@@ -68,6 +68,21 @@ async function duracao(arquivo) {
  * que libx264 e a diferença de qualidade em slide é imperceptível.
  */
 async function paraHls(entrada, saida, usarQsv) {
+  try {
+    await encodar(entrada, saida, usarQsv);
+  } catch (erro) {
+    // O Quick Sync aloca buffers grandes e falha com "Cannot allocate memory"
+    // quando a máquina está apertada (esta tem 7,7 GB). O libx264 usa bem
+    // menos RAM em troca de ser mais lento: melhor lento que interrompido no
+    // meio de um lote de 29 aulas.
+    if (!usarQsv || !/allocate memory|Error allocating/i.test(String(erro))) throw erro;
+    console.log("\n  QSV sem memória; refazendo com libx264 (mais lento)");
+    await rm(saida, { recursive: true, force: true });
+    await encodar(entrada, saida, false);
+  }
+}
+
+async function encodar(entrada, saida, usarQsv) {
   await mkdir(saida, { recursive: true });
 
   const video = usarQsv
