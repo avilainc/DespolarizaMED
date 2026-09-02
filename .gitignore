@@ -3,6 +3,8 @@
 .env.local
 .env.production
 .env.*.local
+.prod-db.env
+*.env
 *.pem
 *.key
 
