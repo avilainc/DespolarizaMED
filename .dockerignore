@@ -9,3 +9,7 @@ Conteudo
 data
 docs
 scripts/pdf-ingest
+
+**/.env*
+**/.next
+**/node_modules

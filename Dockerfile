@@ -1,8 +1,14 @@
-# Imagem de runtime: o build acontece na maquina de desenvolvimento e so o
-# resultado (.next/standalone) entra aqui. O padrao da casa e build local ->
-# tgz -> docker load, porque o CX23 do Hetzner nao tem folga de RAM para
-# compilar Next.js sem derrubar os outros containers.
-FROM node:24-slim
+# Compilacao executada pelo GitHub Actions.
+FROM node:24-slim AS build
+WORKDIR /app
+RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY . .
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN pnpm build
+
+FROM node:24-slim AS runtime
 
 # Usuario nao root: exigencia do padrao GAPP (runtime.uid != 0). A imagem
 # node ja traz o usuario "node" com uid 1000.
@@ -10,12 +16,12 @@ WORKDIR /app
 
 # O standalone traz server.js e as dependencias resolvidas; static e public
 # ficam fora dele e precisam ser copiados a parte.
-COPY --chown=node:node .next/standalone ./
-COPY --chown=node:node .next/static ./.next/static
-COPY --chown=node:node public ./public
+COPY --from=build --chown=node:node /app/.next/standalone ./
+COPY --from=build --chown=node:node /app/.next/static ./.next/static
+COPY --from=build --chown=node:node /app/public ./public
 # O manifesto e lido em runtime por GET /v1/manifest, e o checksum precisa
 # bater com o do repositorio: copiado cru, sem reserializar.
-COPY --chown=node:node gapp.yaml ./gapp.yaml
+COPY --from=build --chown=node:node /app/gapp.yaml ./gapp.yaml
 
 USER node
 
