@@ -6,7 +6,12 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN pnpm build
+# Valores exclusivos da compilacao. O runtime recebe as credenciais do servidor.
+RUN DATABASE_URL=postgresql://build:build@127.0.0.1:1/build \
+    BETTER_AUTH_SECRET=compilacao-sem-acesso-a-producao-0000000000 \
+    BETTER_AUTH_URL=https://despolarizamed.com.br \
+    PAYLOAD_SECRET=compilacao-sem-acesso-a-producao-0000000000 \
+    PAYLOAD_DISABLE_PUSH=true pnpm build
 
 FROM node:24-slim AS runtime
 
