@@ -55,18 +55,47 @@ function revalidar() {
 }
 
 /**
- * Curadoria de uma questão do acervo. Só ADMIN. Cada chamada grava uma linha
- * em `library_reviews` com o diff, o revisor e a hora — é o que responde
- * "quem fez o quê, quando, em qual questão".
+ * A sessão já conferida pelo portão de ADMIN.
+ *
+ * `aplicar()` recebe isto em vez de chamar o guard por conta própria: quem
+ * exportou a action é que precisa barrar o anônimo, na primeira linha, antes
+ * de qualquer leitura. Ver o comentário de `revisor()`.
+ */
+type Revisor = Awaited<ReturnType<typeof requireSessionWithRole>>["session"];
+
+/**
+ * Portão de toda action deste módulo — e a **primeira** instrução de cada uma.
+ *
+ * Antes, o guard morava só dentro de `aplicar()`, e `aprovarQuestao`/
+ * `corrigirGabarito` liam o banco antes de chegar lá. Como o retorno delas
+ * distingue "não encontrada" de "defina o gabarito antes de aprovar" e de "a
+ * questão não tem alternativa X", um anônimo conseguia sondar o acervo pelo
+ * texto do erro — e fazia o servidor consultar o banco sem nunca se
+ * autenticar. Escrever a mutação continuava barrado; a leitura e o oráculo,
+ * não.
+ *
+ * Por isso o guard não fica mais escondido num helper interno: fica à vista,
+ * na primeira linha de cada action exportada, onde a revisão (e o teste em
+ * src/lib/auth/ordem-da-guarda.test.ts) consegue enxergar.
+ */
+async function revisor(): Promise<Revisor> {
+  const { session } = await requireSessionWithRole("ADMIN");
+  return session;
+}
+
+/**
+ * Curadoria de uma questão do acervo. Cada chamada grava uma linha em
+ * `library_reviews` com o diff, o revisor e a hora — é o que responde "quem
+ * fez o quê, quando, em qual questão".
  */
 async function aplicar(
+  session: Revisor,
   id: string,
   acao: "APROVOU" | "REJEITOU" | "CORRIGIU_GABARITO" | "REABRIU",
   mudancas: Partial<Snapshot>,
   observacao: string | undefined,
   gabaritoNovo?: string,
 ): Promise<ActionResult<{ depois: Snapshot }>> {
-  const { session } = await requireSessionWithRole("ADMIN");
   if (!uuid.safeParse(id).success) return { ok: false, erro: "questão inválida" };
 
   const antes = await snapshot(id);
@@ -119,12 +148,14 @@ async function aplicar(
 
 /** Aprova: a questão passa a valer para o aluno, sem problemas nem conflito. */
 export async function aprovarQuestao(input: { id: string; nota?: string }) {
+  const session = await revisor();
   const p = z.object({ id: uuid, nota }).safeParse(input);
   if (!p.success) return { ok: false, erro: "dados inválidos" } as const;
   const atual = await snapshot(p.data.id);
   if (!atual) return { ok: false, erro: "questão não encontrada" } as const;
   if (!atual.gabaritoLetra) return { ok: false, erro: "defina o gabarito antes de aprovar" } as const;
   return aplicar(
+    session,
     p.data.id,
     "APROVOU",
     { validada: true, rejeitada: false, conflitoDuplicata: false, problemas: [] },
@@ -134,9 +165,10 @@ export async function aprovarQuestao(input: { id: string; nota?: string }) {
 
 /** Rejeita: some da fila e nunca vai para o aluno. */
 export async function rejeitarQuestao(input: { id: string; nota?: string }) {
+  const session = await revisor();
   const p = z.object({ id: uuid, nota }).safeParse(input);
   if (!p.success) return { ok: false, erro: "dados inválidos" } as const;
-  return aplicar(p.data.id, "REJEITOU", { validada: false, rejeitada: true }, p.data.nota || undefined);
+  return aplicar(session, p.data.id, "REJEITOU", { validada: false, rejeitada: true }, p.data.nota || undefined);
 }
 
 /**
@@ -144,6 +176,7 @@ export async function rejeitarQuestao(input: { id: string; nota?: string }) {
  * fica validada: um humano acabou de olhar para ela.
  */
 export async function corrigirGabarito(input: { id: string; letra: string; nota?: string }) {
+  const session = await revisor();
   const p = z.object({ id: uuid, letra, nota }).safeParse(input);
   if (!p.success) return { ok: false, erro: "dados inválidos" } as const;
   const [alt] = await db
@@ -153,6 +186,7 @@ export async function corrigirGabarito(input: { id: string; letra: string; nota?
     .limit(1);
   if (!alt) return { ok: false, erro: `a questão não tem alternativa ${p.data.letra}` } as const;
   return aplicar(
+    session,
     p.data.id,
     "CORRIGIU_GABARITO",
     { gabaritoLetra: p.data.letra, validada: true, rejeitada: false, conflitoDuplicata: false, problemas: [] },
@@ -163,9 +197,11 @@ export async function corrigirGabarito(input: { id: string; letra: string; nota?
 
 /** Desfaz uma rejeição/aprovação: volta para a fila como não validada. */
 export async function reabrirQuestao(input: { id: string; nota?: string }) {
+  const session = await revisor();
   const p = z.object({ id: uuid, nota }).safeParse(input);
   if (!p.success) return { ok: false, erro: "dados inválidos" } as const;
   return aplicar(
+    session,
     p.data.id,
     "REABRIU",
     { validada: false, rejeitada: false, problemas: ["reaberta para revisão"] },

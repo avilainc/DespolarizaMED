@@ -212,6 +212,21 @@ Cada pasta de feature tem um `README.md` curto explicando seu escopo e de onde v
 
 **Gap de UX da fila de revisão, também fechado depois**: `/gestao/acervo` só mostrava as outras versões de uma questão quando o item exibido era a **canônica**. A fila traz as duas pontas do conflito (a canônica e as cópias, todas marcadas com `conflito_duplicata`), e a busca era "quem aponta para este id" — que não devolve nada para uma cópia. Resultado: no caso em que o revisor mais precisa do contraste, ele decidia qual gabarito está certo sem ver o gabarito divergente. Agora o grupo é resolvido pela raiz (`duplicata_de ?? id`), a canônica vem marcada como tal, e o item exibido ganha um selo "cópia" quando é uma. Lógica de agrupamento em `features/library/duplicatas.ts` (pura, testada com `node:test`), fora do `queries.ts` que exige banco.
 
+**Falha de autenticação nas actions do acervo, encontrada ao trocar leitura de código por teste de runtime**: o relatório da auditoria dava a matriz de segurança como correta, mas ressalvava que a parte de "chamar server action sem sessão" tinha sido verificada **lendo o código**, não exercitando o servidor. Ao exercitar, a ressalva se mostrou justificada.
+
+Toda action exportada é um endpoint HTTP: o Next registra um id para cada uma em `server-reference-manifest.json`, o id vai para o bundle do cliente, e um anônimo faz `POST` com o header `Next-Action`. Em `features/library/actions.ts` a guarda de ADMIN morava dentro do helper `aplicar()`, e `aprovarQuestao`/`corrigirGabarito` consultavam o acervo *antes* de chegar nela. A escrita seguia barrada — mas, sem cookie nenhum:
+
+- `aprovarQuestao` distinguia `questão não encontrada` de `defina o gabarito antes de aprovar`, e `corrigirGabarito` respondia `a questão não tem alternativa X` — um oráculo sobre o acervo pelo texto do erro;
+- as duas faziam o servidor ir ao Postgres (4 `SELECT` medidos com `log_statement=all` para 6 chamadas anônimas);
+- e as quatro actions do módulo respondiam `dados inválidos` quando o argumento não casava com o zod, porque a validação também vinha antes da guarda.
+
+Ler o código não pegava isso: cada função parecia correta, `aplicar()` também. Errada era só a **ordem** entre elas, que só aparece seguindo a chamada. Corrigido tornando a guarda a primeira instrução de cada action exportada (`revisor()`), com `aplicar()` recebendo a sessão já conferida em vez de buscá-la. Depois da correção, as mesmas 6 chamadas anônimas resultam em redirect para `/login` e **zero** query no banco.
+
+Duas verificações ficaram no repositório, porque uma sozinha não basta:
+
+- `src/lib/auth/ordem-da-guarda.test.ts` — varredura estática (AST do TypeScript) de todo `features/*/actions.ts`, resolvendo as chamadas locais para achar qualquer leitura de banco anterior à guarda. Roda no CI, sem banco e sem build. Mesma ideia do guarda de fusos: pega a classe do bug, não a instância.
+- `scripts/testes/actions-sem-sessao.mjs` — sonda HTTP real contra `pnpm start`, sem cookie, em todas as actions do manifest. Exige build e Postgres, então não roda no CI; é a confirmação de que a leitura do código corresponde ao comportamento. Verificado nos dois sentidos: acusa as actions no código com o bug e passa nas 25 depois da correção.
+
 ### Fase 5: Inteligência educacional (pós-MVP)
 - [ ] Pipeline de vídeo completo (FFmpeg worker + BullMQ: transcodificação/HLS/thumbnail)
 - [ ] Transcrição automática (faster-whisper) + legendas `.vtt`
