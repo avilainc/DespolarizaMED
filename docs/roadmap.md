@@ -210,6 +210,8 @@ Cada pasta de feature tem um `README.md` curto explicando seu escopo e de onde v
 
 **Bug real encontrado nesta rodada e corrigido em seguida**: ver "`timestamp` sem timezone lido com deslocamento de fuso" na seção 3 (Bloqueios conhecidos).
 
+**Gap de UX da fila de revisão, também fechado depois**: `/gestao/acervo` só mostrava as outras versões de uma questão quando o item exibido era a **canônica**. A fila traz as duas pontas do conflito (a canônica e as cópias, todas marcadas com `conflito_duplicata`), e a busca era "quem aponta para este id" — que não devolve nada para uma cópia. Resultado: no caso em que o revisor mais precisa do contraste, ele decidia qual gabarito está certo sem ver o gabarito divergente. Agora o grupo é resolvido pela raiz (`duplicata_de ?? id`), a canônica vem marcada como tal, e o item exibido ganha um selo "cópia" quando é uma. Lógica de agrupamento em `features/library/duplicatas.ts` (pura, testada com `node:test`), fora do `queries.ts` que exige banco.
+
 ### Fase 5: Inteligência educacional (pós-MVP)
 - [ ] Pipeline de vídeo completo (FFmpeg worker + BullMQ: transcodificação/HLS/thumbnail)
 - [ ] Transcrição automática (faster-whisper) + legendas `.vtt`

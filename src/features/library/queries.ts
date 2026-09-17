@@ -3,6 +3,7 @@ import "server-only";
 import { and, asc, desc, eq, inArray, isNull, notInArray, or, sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/lib/db";
+import { agruparPorRaiz, raizDoGrupo, type MembroDoGrupo } from "./duplicatas";
 import {
   documentPages,
   libraryFigures,
@@ -460,10 +461,32 @@ export async function alternativasDe(ids: string[]) {
   return mapa;
 }
 
-/** Gabaritos que as cópias de uma questão apontam — é isso que "conflito" significa. */
-export async function gabaritosDasCopias(ids: string[]) {
-  const mapa = new Map<string, { id: string; gabarito: string | null; instituicao: string | null; ano: number | null }[]>();
-  if (!ids.length) return mapa;
+export type VersaoDaQuestao = {
+  id: string;
+  duplicataDe: string | null;
+  gabarito: string | null;
+  instituicao: string | null;
+  ano: number | null;
+  /** É a questão que as outras apontam como original. */
+  canonica: boolean;
+};
+
+/**
+ * As outras versões da mesma questão, com o gabarito que cada uma traz — é
+ * isso que "conflito de duplicata" significa, e é o que o revisor precisa ver
+ * na tela para decidir qual gabarito está certo.
+ *
+ * O grupo é resolvido pela raiz (`duplicata_de ?? id`), não pelo id exibido,
+ * porque a fila de revisão traz as duas pontas: a questão canônica **e** as
+ * cópias dela, que também entram marcadas com `conflito_duplicata`. Procurar
+ * só por `duplicata_de = <id exibido>` acha as irmãs quando o item é a
+ * canônica e **nada** quando o item é uma cópia — que era o caso em que o
+ * revisor mais precisa do contraste, e ficava decidindo às cegas.
+ */
+export async function versoesDaQuestao(itens: MembroDoGrupo[]): Promise<Map<string, VersaoDaQuestao[]>> {
+  if (!itens.length) return new Map();
+
+  const raizes = [...new Set(itens.map(raizDoGrupo))];
   const linhas = await db
     .select({
       id: libraryQuestions.id,
@@ -474,13 +497,21 @@ export async function gabaritosDasCopias(ids: string[]) {
     })
     .from(libraryQuestions)
     .innerJoin(sourceDocuments, eq(sourceDocuments.id, libraryQuestions.documentId))
-    .where(inArray(libraryQuestions.duplicataDe, ids));
-  for (const l of linhas) {
-    const lista = mapa.get(l.duplicataDe!) ?? [];
-    lista.push({ id: l.id, gabarito: l.gabarito, instituicao: l.instituicao, ano: l.ano });
-    mapa.set(l.duplicataDe!, lista);
-  }
-  return mapa;
+    .where(
+      or(inArray(libraryQuestions.id, raizes), inArray(libraryQuestions.duplicataDe, raizes)),
+    );
+
+  return agruparPorRaiz(
+    itens,
+    linhas.map((l) => ({
+      id: l.id,
+      duplicataDe: l.duplicataDe,
+      gabarito: l.gabarito,
+      instituicao: l.instituicao,
+      ano: l.ano,
+      canonica: l.duplicataDe === null,
+    })),
+  );
 }
 
 /** Trilha de auditoria: as últimas revisões, com o nome de quem fez. */
