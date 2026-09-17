@@ -6,6 +6,19 @@ import { hasRole, type UserRole } from "@/lib/auth/rbac";
 import { SignOutButton } from "@/features/auth/components/sign-out-button";
 import { Search, Star } from "lucide-react";
 import { MobileNav } from "@/features/auth/components/mobile-nav";
+import type { Metadata } from "next";
+
+/**
+ * Nada da área logada entra em índice de buscador.
+ *
+ * Toda rota aqui já exige sessão e devolveria um redirect para o login, mas
+ * aparecer no índice com título de página privada é ruim de qualquer forma e
+ * gasta orçamento de rastreio. O `robots.txt` também pede isso; esta é a
+ * segunda camada, porque `robots.txt` é pedido, não garantia.
+ */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth.api.getSession({ headers: await headers() });

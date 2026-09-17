@@ -59,7 +59,7 @@ export function SignupForm({ planoEscolhido }: { planoEscolhido?: string }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">Criar conta</CardTitle>
+        <CardTitle className="text-2xl"><h1>Criar conta</h1></CardTitle>
         <CardDescription>
           {planoEscolhido
             ? "Crie sua conta para concluir a assinatura."

@@ -5,6 +5,7 @@ import { PlansSection } from "@/features/marketing/components/plans-section";
 import { TestimonialsSection } from "@/features/marketing/components/testimonials-section";
 import { FaqSection } from "@/features/marketing/components/faq-section";
 import { CtaSection } from "@/features/marketing/components/cta-section";
+import { DadosEstruturados } from "@/features/marketing/components/dados-estruturados";
 
 /**
  * A landing lê os preços da tabela `plans` (antes eram constantes que
@@ -29,6 +30,7 @@ export const dynamic = "force-dynamic";
 export default function Home() {
   return (
     <>
+      <DadosEstruturados />
       <Hero />
       <SubjectsSection />
       <TeachersSection />

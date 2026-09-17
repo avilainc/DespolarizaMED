@@ -33,7 +33,7 @@ export function ForgotPasswordForm() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Verifique seu e-mail</CardTitle>
+          <CardTitle><h1>Verifique seu e-mail</h1></CardTitle>
           <CardDescription>
             Se houver uma conta com <strong>{email}</strong>, o link para criar uma nova senha
             chegou lá. Ele vale por uma hora.
@@ -51,7 +51,7 @@ export function ForgotPasswordForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Esqueceu a senha?</CardTitle>
+        <CardTitle><h1>Esqueceu a senha?</h1></CardTitle>
         <CardDescription>Enviamos um link para você criar uma nova.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>

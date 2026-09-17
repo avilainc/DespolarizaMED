@@ -44,7 +44,7 @@ export function LoginForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">Entrar</CardTitle>
+        <CardTitle className="text-2xl"><h1>Entrar</h1></CardTitle>
         <CardDescription>Acesse sua conta para continuar seus estudos.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
