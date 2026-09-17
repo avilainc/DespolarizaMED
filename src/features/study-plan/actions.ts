@@ -8,13 +8,16 @@ import { db } from "@/lib/db";
 import { studentActivities, studyPlanItems, studyPlans } from "@/lib/db/schema";
 import { requireAssinatura } from "@/lib/auth/require-subscription";
 import { getLessonsByModule, getModulesBySubject, getSubjects } from "@/lib/payload/queries";
+import { chaveDia, diaParaData, ehDiaCalendario } from "@/lib/datas";
 import { montarCronograma, type AulaParaPlano } from "./engine";
 
 export type ActionResult<T = null> = { ok: true; dados: T } | { ok: false; erro: string };
 
 const schema = z.object({
   targetVestibular: z.string().trim().min(2).max(80),
-  examDate: z.coerce.date(),
+  // Dia de calendário vindo de <input type="date">: fica string "YYYY-MM-DD"
+  // do formulário até o banco, sem virar Date (e sem ganhar fuso) no meio.
+  examDate: z.string().refine(ehDiaCalendario, "data inválida"),
   daysPerWeek: z.coerce.number().int().min(1).max(7),
   hoursPerDay: z.coerce.number().min(0.5).max(12),
   disciplinasDificeis: z.array(z.coerce.number().int().positive()).max(20).default([]),
@@ -60,12 +63,13 @@ export async function salvarPlano(formData: FormData): Promise<ActionResult> {
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
-  if (d.examDate <= hoje) return { ok: false, erro: "a data da prova precisa estar no futuro" };
+  // Comparação lexicográfica: "YYYY-MM-DD" ordena igual à ordem cronológica.
+  if (d.examDate <= chaveDia(hoje)) return { ok: false, erro: "a data da prova precisa estar no futuro" };
 
   const aulas = await aulasPublicadas();
   const itens = montarCronograma({
     inicio: hoje,
-    dataProva: d.examDate,
+    dataProva: diaParaData(d.examDate),
     diasPorSemana: d.daysPerWeek,
     horasPorDia: d.hoursPerDay,
     aulas,

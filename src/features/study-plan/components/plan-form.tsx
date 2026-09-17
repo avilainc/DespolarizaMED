@@ -16,7 +16,7 @@ export function PlanForm({
   disciplinas: { id: number; name: string }[];
   inicial?: {
     targetVestibular: string | null;
-    examDate: Date | null;
+    examDate: string | null;
     daysPerWeek: number | null;
     hoursPerDay: number | null;
   } | null;
@@ -34,8 +34,6 @@ export function PlanForm({
     });
   }
 
-  const dataInicial = inicial?.examDate ? new Date(inicial.examDate).toISOString().slice(0, 10) : "";
-
   return (
     <form onSubmit={enviar} className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
@@ -50,7 +48,7 @@ export function PlanForm({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="examDate">Data da prova</Label>
-          <Input id="examDate" name="examDate" type="date" defaultValue={dataInicial} required />
+          <Input id="examDate" name="examDate" type="date" defaultValue={inicial?.examDate ?? ""} required />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="daysPerWeek">Dias de estudo por semana</Label>

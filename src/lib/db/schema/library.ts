@@ -77,7 +77,7 @@ export const sourceDocuments = pgTable(
     ocrConfMedia: real("ocr_conf_media"),
     pdfMetadata: jsonb("pdf_metadata").$type<Record<string, string>>(),
 
-    ingestedAt: timestamp("ingested_at").notNull().defaultNow(),
+    ingestedAt: timestamp("ingested_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     uniqueIndex("source_documents_sha256_uq").on(t.sha256),
@@ -217,7 +217,7 @@ export const libraryQuestions = pgTable(
      */
     rejeitada: boolean("rejeitada").notNull().default(false),
     revisadaPor: text("revisada_por").references(() => users.id, { onDelete: "set null" }),
-    revisadaEm: timestamp("revisada_em"),
+    revisadaEm: timestamp("revisada_em", { withTimezone: true }),
 
     search: tsvector("search").generatedAlwaysAs(
       (): SQL => sql`to_tsvector('portuguese', coalesce(enunciado, ''))`,
@@ -303,7 +303,7 @@ export const libraryReviews = pgTable(
     antes: jsonb("antes").$type<Record<string, unknown>>(),
     depois: jsonb("depois").$type<Record<string, unknown>>(),
     nota: text("nota"),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index("library_reviews_question_idx").on(t.questionId, t.createdAt),

@@ -4,7 +4,7 @@ import { requireSessionWithRole } from "@/lib/auth/require-session";
 import {
   alternativasDe,
   filaDeRevisao,
-  gabaritosDasCopias,
+  versoesDaQuestao,
   historicoDeRevisoes,
   resumoDoAcervo,
 } from "@/features/library/queries";
@@ -32,7 +32,10 @@ export default async function AcervoPage({ searchParams }: { searchParams: Promi
   const fila = filaCompleta.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
   const paginas = Math.ceil(filaCompleta.length / POR_PAGINA);
   const ids = fila.map((f) => f.id);
-  const [alternativas, copias] = await Promise.all([alternativasDe(ids), gabaritosDasCopias(ids)]);
+  const [alternativas, versoes] = await Promise.all([
+    alternativasDe(ids),
+    versoesDaQuestao(fila.map((f) => ({ id: f.id, duplicataDe: f.duplicataDe }))),
+  ]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -77,11 +80,12 @@ export default async function AcervoPage({ searchParams }: { searchParams: Promi
           <div className="space-y-3">
             {fila.map((item) => {
               const alts = alternativas.get(item.id) ?? [];
-              const cop = copias.get(item.id) ?? [];
+              const outrasVersoes = versoes.get(item.id) ?? [];
               return (
                 <article key={item.id} className="rounded-lg border border-border bg-card p-4" data-testid="fila-item" data-question-id={item.id}>
                   <header className="flex flex-wrap items-center gap-2 text-xs">
                     {item.conflitoDuplicata && <Badge variant="destructive">conflito de duplicata</Badge>}
+                    {item.duplicataDe && <Badge variant="outline">cópia</Badge>}
                     {item.problemas.map((p) => (
                       <Badge key={p} variant="outline">
                         {p}
@@ -114,10 +118,15 @@ export default async function AcervoPage({ searchParams }: { searchParams: Promi
                       Gabarito lido: <strong className="text-foreground">{item.gabaritoLetra?.toUpperCase() ?? "nenhum"}</strong>
                       {item.motivoLigacao && <> ({item.motivoLigacao})</>}
                     </span>
-                    {cop.length > 0 && (
+                    {outrasVersoes.length > 0 && (
                       <span>
-                        Cópias:{" "}
-                        {cop.map((c) => `${c.instituicao ?? "?"} ${c.ano ?? ""} → ${c.gabarito?.toUpperCase() ?? "?"}`).join(" · ")}
+                        Outras versões:{" "}
+                        {outrasVersoes
+                          .map(
+                            (v) =>
+                              `${v.instituicao ?? "?"} ${v.ano ?? ""}${v.canonica ? " (canônica)" : ""} → ${v.gabarito?.toUpperCase() ?? "?"}`,
+                          )
+                          .join(" · ")}
                       </span>
                     )}
                     <Link href={`/questoes/${item.id}`} className="text-primary hover:underline">

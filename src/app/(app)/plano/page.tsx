@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAssinatura } from "@/lib/auth/require-subscription";
+import { chaveDia, diasAte } from "@/lib/datas";
 import { getSubjects } from "@/lib/payload/queries";
 import { getPayloadClient } from "@/lib/payload";
 import { itensDoPeriodo, planoDoAluno } from "@/features/study-plan/queries";
@@ -12,10 +13,6 @@ import { CalendarDays } from "lucide-react";
 export const metadata: Metadata = { title: "Plano de estudos — DespolarizaMED" };
 
 const DIAS = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
-
-function chaveDia(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
 
 /**
  * Link de cada item: aula → /aulas/slug; exercícios → banco filtrado pela
@@ -70,9 +67,7 @@ export default async function PlanoPage({ searchParams }: { searchParams: Promis
   });
   const hojeChave = chaveDia(new Date());
 
-  const diasAteProva = plano?.examDate
-    ? Math.max(0, Math.ceil((new Date(plano.examDate).getTime() - Date.now()) / 86_400_000))
-    : null;
+  const diasAteProva = plano?.examDate ? diasAte(plano.examDate) : null;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">

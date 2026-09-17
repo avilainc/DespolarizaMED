@@ -1,5 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { chaveDia } from "@/lib/datas";
 import { montarCronograma, type AulaParaPlano } from "./engine";
 
 function aulas(disciplinas: Record<string, number>, minutos = 30): AulaParaPlano[] {
@@ -17,7 +18,6 @@ function aulas(disciplinas: Record<string, number>, minutos = 30): AulaParaPlano
 // segunda-feira, 2026-09-14
 const INICIO = new Date(2026, 8, 14);
 const diasDepois = (n: number) => new Date(2026, 8, 14 + n);
-const chaveDia = (d: Date) => d.toISOString().slice(0, 10);
 
 describe("montarCronograma", () => {
   it("1 disciplina: só estuda nos N primeiros dias da semana e cada dia termina em exercícios", () => {

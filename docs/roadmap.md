@@ -114,15 +114,22 @@ O `MediaPlayerElement` exportado por `vidstack` 0.6.15 não expõe `currentTime`
 
 **Solução aplicada** em `src/features/courses/components/lesson-player.tsx`: usa `useMediaStore(playerRef)` para ler `canPlay`/`currentTime`/`duration`/`ended` (via store, sempre bem tipado) em vez de `addEventListener`, e um cast pontual e documentado (`player as unknown as { currentTime: number }`) só para o seek inicial de retomar o vídeo de onde o aluno parou.
 
-### [ABERTO 2026-09-16] `timestamp` sem timezone lido com deslocamento de fuso
+### [RESOLVIDO 2026-09-17] `timestamp` sem timezone lido com deslocamento de fuso
 
-Reproduzido ao validar `live_sessions` em runtime: um plantão criado às 01:07 (hora local, UTC-3) é escrito corretamente no Postgres (`timestamp without time zone`, literal `2026-09-17 01:07:00` quando o instante UTC real é `04:07:00Z`), mas ao ser **lido de volta** pelo driver `postgres.js`, o valor retorna deslocado em +3h adicionais (`07:07:00Z` em vez de `04:07:00Z`). Causa raiz confirmada por teste isolado (grava um instante conhecido via SQL cru, lê de volta com `select ... ::text` e comparando com o `Date` que o driver constrói): o `postgres.js`, ao converter o literal `timestamp` (sem fuso) de volta para `Date`, usa um parsing de string não-ISO ("YYYY-MM-DD HH:mm:ss", sem "T") que o V8 interpreta como **hora local do processo Node**, ignorando a sessão Postgres (que está com `TimeZone=GMT`). Em uma máquina com fuso UTC-3, isso soma +3h no sentido errado sobre um valor que já tinha sido escrito corretamente.
+Reproduzido ao validar `live_sessions` em runtime: um plantão criado às 01:07 (hora local, UTC-3) é escrito corretamente no Postgres (`timestamp without time zone`, literal `2026-09-17 01:07:00` quando o instante UTC real é `04:07:00Z`), mas ao ser **lido de volta** pelo driver `postgres.js`, o valor retornava deslocado em +3h adicionais (`07:07:00Z` em vez de `04:07:00Z`). Causa raiz: o `postgres.js`, ao converter o literal `timestamp` (sem fuso) de volta para `Date`, usa um parsing de string não-ISO ("YYYY-MM-DD HH:mm:ss", sem "T") que o V8 interpreta como **hora local do processo Node**, ignorando a sessão Postgres (que está com `TimeZone=GMT`).
 
-**Por que ainda não quebrou em produção**: a imagem roda em `node:24-slim`, cujo fuso padrão é UTC — nesse caso a "hora local do processo" coincide com UTC e o bug fica invisível. Ele se manifesta em qualquer ambiente onde o processo Node não roda em UTC: todo `pnpm dev`/`pnpm start` local no Brasil (confirmado), e produção também quebraria se algum dia o `TZ` do container for setado para `America/Sao_Paulo` (mudança plausível, já que é comum querem log em hora local).
+Não quebrava em produção por acaso: a imagem roda em `node:24-slim`, cujo fuso padrão é UTC, e aí a "hora local do processo" coincide com UTC. Quebrava em todo `pnpm dev`/`pnpm start` local no Brasil, e quebraria em produção se algum dia o `TZ` do container fosse setado para `America/Sao_Paulo`.
 
-**Escopo**: toda coluna `timestamp(...)` sem `{ withTimezone: true }` no schema Drizzle é suscetível quando lida via `postgres.js` — não só `live_sessions`, mas potencialmente `study_plan_items.scheduled_for`, `practice_attempts.started_at/finished_at`, `sessions.expiresAt`, etc. Só ficou comprovado por teste isolado em `live_sessions`; as outras tabelas têm o mesmo padrão de coluna e o mesmo driver, mas não foram testadas uma a uma.
+**Solução aplicada** (migration `0009`):
 
-**Fix recomendado, não aplicado nesta auditoria** (mudança de schema, merece PR própria): migrar as colunas que representam um instante absoluto (não um "dia calendário") para `timestamp with time zone` (`timestamptz`), que remove a ambiguidade — Postgres sempre normaliza para UTC internamente e a conversão de volta para `Date` do driver não depende do fuso do processo que está lendo.
+- **Todas as 53 colunas de instante** do schema Drizzle passaram a ser `timestamptz` (`timestamp(..., { withTimezone: true })`). O Postgres normaliza para UTC internamente e a conversão de volta para `Date` deixa de depender do fuso de quem lê. Não é só `live_sessions`: `study_plan_items.scheduled_for`, `practice_attempts.*`, `sessions.expires_at`, billing, acervo — o schema inteiro.
+- **`study_plans.exam_date` virou `date`**, não `timestamptz`: é dia de calendário (vem de um `<input type="date">`), não instante. Guardar um dia como instante é o mesmo erro de categoria por outro caminho — "2026-12-01T00:00:00Z" exibido em hora local no Brasil vira 30/11. O tipo em TypeScript agora é a string `"YYYY-MM-DD"`, e `src/lib/datas.ts` (`chaveDia`, `diaParaData`, `diasAte`) é a única fronteira entre dia de calendário e `Date`. A armadilha que esses helpers existem para evitar: `new Date("2026-12-01")` ancora em UTC.
+- **A migration converte com `USING "coluna" AT TIME ZONE 'UTC'` explícito.** Sem isso o Postgres reinterpretaria os literais já gravados usando o `TimeZone` da *sessão que roda a migration*, e todo o histórico sairia deslocado se ela fosse aplicada de um cliente fora de UTC. Os valores existentes são hora UTC (o driver serializa `Date` com offset e a sessão está em UTC).
+- **Teste-guarda** em `src/lib/db/schema/fusos.test.ts`: varre o schema inteiro e falha nomeando qualquer coluna `timestamp` sem fuso. Basta esquecer `{ withTimezone: true }` numa coluna nova para reintroduzir o bug em 2 caracteres, e o sintoma é silencioso (build passa, tela carrega) — por isso é teste, não revisão.
+
+**Validado**: instante conhecido gravado com o schema antigo, migration aplicada com o cliente em `America/Sao_Paulo` (pior caso), e conferido que o dado histórico **não** se deslocou e que a leitura passou a bater em UTC e fora dele. Suíte roda em UTC, `America/Sao_Paulo`, `Asia/Tokyo` e `Pacific/Kiritimati` (UTC+14).
+
+**Regra daqui em diante**: instante → `timestamp(..., { withTimezone: true })`; dia de calendário → `date(..., { mode: "string" })` + `src/lib/datas.ts`. Nunca `timestamp` puro.
 
 ---
 
@@ -201,7 +208,9 @@ Cada pasta de feature tem um `README.md` curto explicando seu escopo e de onde v
 - [x] Palestras (mesmas telas), inclusive aparecendo no calendário do aluno quando têm `scheduledFor`.
 - [x] Notificações por e-mail — disparo **manual** pelo botão "Avisar alunos", confirmado que só conta assinantes vigentes (aluno sem assinatura excluído da contagem) e não dispara sozinho ao criar o plantão.
 
-**Bug real encontrado e não corrigido nesta rodada**: ver "`timestamp` sem timezone lido com deslocamento de fuso" na seção 3 (Bloqueios conhecidos).
+**Bug real encontrado nesta rodada e corrigido em seguida**: ver "`timestamp` sem timezone lido com deslocamento de fuso" na seção 3 (Bloqueios conhecidos).
+
+**Gap de UX da fila de revisão, também fechado depois**: `/gestao/acervo` só mostrava as outras versões de uma questão quando o item exibido era a **canônica**. A fila traz as duas pontas do conflito (a canônica e as cópias, todas marcadas com `conflito_duplicata`), e a busca era "quem aponta para este id" — que não devolve nada para uma cópia. Resultado: no caso em que o revisor mais precisa do contraste, ele decidia qual gabarito está certo sem ver o gabarito divergente. Agora o grupo é resolvido pela raiz (`duplicata_de ?? id`), a canônica vem marcada como tal, e o item exibido ganha um selo "cópia" quando é uma. Lógica de agrupamento em `features/library/duplicatas.ts` (pura, testada com `node:test`), fora do `queries.ts` que exige banco.
 
 ### Fase 5: Inteligência educacional (pós-MVP)
 - [ ] Pipeline de vídeo completo (FFmpeg worker + BullMQ: transcodificação/HLS/thumbnail)

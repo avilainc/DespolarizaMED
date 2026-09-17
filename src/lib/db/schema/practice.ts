@@ -23,8 +23,8 @@ export const practiceAttempts = pgTable(
     documentId: uuid("document_id")
       .notNull()
       .references(() => sourceDocuments.id, { onDelete: "cascade" }),
-    startedAt: timestamp("started_at").notNull().defaultNow(),
-    finishedAt: timestamp("finished_at"),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
     totalQuestoes: integer("total_questoes").notNull().default(0),
     acertos: integer("acertos").notNull().default(0),
   },
@@ -49,7 +49,7 @@ export const practiceAnswers = pgTable(
     attemptId: uuid("attempt_id").references(() => practiceAttempts.id, { onDelete: "cascade" }),
     letra: text("letra").notNull(),
     correta: boolean("correta").notNull(),
-    answeredAt: timestamp("answered_at").notNull().defaultNow(),
+    answeredAt: timestamp("answered_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index("practice_answers_student_question_idx").on(t.studentId, t.questionId),

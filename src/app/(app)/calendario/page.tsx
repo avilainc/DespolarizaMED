@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAssinatura } from "@/lib/auth/require-subscription";
+import { diaParaData } from "@/lib/datas";
 import { itensDoPeriodo, planoDoAluno } from "@/features/study-plan/queries";
 import { palestrasNoPeriodo, plantoesNoPeriodo } from "@/features/live/queries";
 import { CalendarView, type EventoCalendario } from "@/features/study-plan/components/calendar-view";
@@ -66,7 +67,7 @@ export default async function CalendarioPage() {
   ];
 
   if (plano?.examDate) {
-    const inicio = new Date(plano.examDate);
+    const inicio = diaParaData(plano.examDate);
     inicio.setHours(8, 0, 0, 0);
     const fim = new Date(inicio);
     fim.setHours(18);
