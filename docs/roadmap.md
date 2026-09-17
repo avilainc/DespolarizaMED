@@ -52,6 +52,11 @@ Esta é a decisão arquitetural mais importante do projeto e a mais fácil de vi
 - **Aprendizado**: `lesson_progress`, `student_progress`, `study_plans`, `study_plan_items`, `student_activities`, `student_notes`, `favorites` - `src/lib/db/schema/learning.ts`
 - **Eventos/calendário**: `live_sessions`, `lectures`, `events` - `src/lib/db/schema/events.ts`
 - **Billing**: `plans`, `subscriptions`, `payments`, `coupons`, `payment_events` - `src/lib/db/schema/billing.ts`
+- **Acervo de provas (extraído por pipeline)**: `source_documents`, `document_pages`, `library_questions`, `library_question_options`, `library_figures` - `src/lib/db/schema/library.ts`. Populado por `scripts/pdf-ingest/*` (ver `docs/acervo-provas.md`). Só sai para o aluno o que está `validada = true` e sem `duplicata_de`.
+- **Prática do aluno**: `practice_attempts` (uma prova resolvida), `practice_answers` (cada resposta, avulsa ou dentro de uma prova) - `src/lib/db/schema/practice.ts`. Apontam para `library_questions`, **não** para `questions`: o acervo é o que está no ar, e esperar a curadoria de 26 mil questões deixaria o aluno sem histórico.
+
+### `questions` (curada) × `library_questions` (extraída)
+São duas fontes de propósito. `library_questions` tem volume (26 mil, com figuras e gabarito conferido) mas disciplina/tema apenas *sugeridos* por classificador. `questions` é escrita pelo professor no editor (TipTap + KaTeX, `/professor/questoes`) com disciplina e tema curados. O aluno vê as duas: `/questoes` (acervo, com histórico de respostas) e `/questoes/autorais` (curadas, sem histórico por enquanto). Promover uma questão do acervo para `questions` é passo humano, ainda sem tela.
 
 ### Regra prática ao referenciar uma entidade do Payload a partir do Drizzle:
 Payload usa `integer` (serial) como tipo de ID. Ao referenciar (ex: `questions.subjectId` apontando pra `subjects` do Payload), use uma coluna `integer` **sem** foreign key do Drizzle (Drizzle não pode ter FK para uma tabela que ele não gerencia). Exemplo já aplicado em `src/lib/db/schema/questions.ts`:
@@ -109,6 +114,16 @@ O `MediaPlayerElement` exportado por `vidstack` 0.6.15 não expõe `currentTime`
 
 **Solução aplicada** em `src/features/courses/components/lesson-player.tsx`: usa `useMediaStore(playerRef)` para ler `canPlay`/`currentTime`/`duration`/`ended` (via store, sempre bem tipado) em vez de `addEventListener`, e um cast pontual e documentado (`player as unknown as { currentTime: number }`) só para o seek inicial de retomar o vídeo de onde o aluno parou.
 
+### [ABERTO 2026-09-16] `timestamp` sem timezone lido com deslocamento de fuso
+
+Reproduzido ao validar `live_sessions` em runtime: um plantão criado às 01:07 (hora local, UTC-3) é escrito corretamente no Postgres (`timestamp without time zone`, literal `2026-09-17 01:07:00` quando o instante UTC real é `04:07:00Z`), mas ao ser **lido de volta** pelo driver `postgres.js`, o valor retorna deslocado em +3h adicionais (`07:07:00Z` em vez de `04:07:00Z`). Causa raiz confirmada por teste isolado (grava um instante conhecido via SQL cru, lê de volta com `select ... ::text` e comparando com o `Date` que o driver constrói): o `postgres.js`, ao converter o literal `timestamp` (sem fuso) de volta para `Date`, usa um parsing de string não-ISO ("YYYY-MM-DD HH:mm:ss", sem "T") que o V8 interpreta como **hora local do processo Node**, ignorando a sessão Postgres (que está com `TimeZone=GMT`). Em uma máquina com fuso UTC-3, isso soma +3h no sentido errado sobre um valor que já tinha sido escrito corretamente.
+
+**Por que ainda não quebrou em produção**: a imagem roda em `node:24-slim`, cujo fuso padrão é UTC — nesse caso a "hora local do processo" coincide com UTC e o bug fica invisível. Ele se manifesta em qualquer ambiente onde o processo Node não roda em UTC: todo `pnpm dev`/`pnpm start` local no Brasil (confirmado), e produção também quebraria se algum dia o `TZ` do container for setado para `America/Sao_Paulo` (mudança plausível, já que é comum querem log em hora local).
+
+**Escopo**: toda coluna `timestamp(...)` sem `{ withTimezone: true }` no schema Drizzle é suscetível quando lida via `postgres.js` — não só `live_sessions`, mas potencialmente `study_plan_items.scheduled_for`, `practice_attempts.started_at/finished_at`, `sessions.expiresAt`, etc. Só ficou comprovado por teste isolado em `live_sessions`; as outras tabelas têm o mesmo padrão de coluna e o mesmo driver, mas não foram testadas uma a uma.
+
+**Fix recomendado, não aplicado nesta auditoria** (mudança de schema, merece PR própria): migrar as colunas que representam um instante absoluto (não um "dia calendário") para `timestamp with time zone` (`timestamptz`), que remove a ambiguidade — Postgres sempre normaliza para UTC internamente e a conversão de volta para `Date` do driver não depende do fuso do processo que está lendo.
+
 ---
 
 ## 4. Estrutura de pastas
@@ -123,10 +138,12 @@ src/
 ├── features/                  # Uma pasta por domínio de produto (UI + lógica client-side)
 │   ├── auth/
 │   ├── courses/                # consome dados do Payload (subjects/modules/lessons)
-│   ├── questions/               # banco de questões (Drizzle) + editor TipTap/KaTeX
-│   ├── exams/                   # provas/simulados (Drizzle)
-│   ├── study-plan/              # plano de estudos + calendário (Drizzle)
-│   ├── live/                    # plantões/palestras (Drizzle)
+│   ├── library/                 # acervo extraído: consultas, card de questão, fila de revisão
+│   ├── practice/                # respostas, favoritos, tentativas de prova, desempenho (Drizzle)
+│   ├── questions/               # questões autorais: editor TipTap/KaTeX + CRUD do professor
+│   ├── exams/                   # (vazio) o fluxo de prova roda em practice/ sobre o acervo
+│   ├── study-plan/              # motor de cronograma (engine.ts), plano, calendário (react-big-calendar)
+│   ├── live/                    # plantões/palestras: CRUD do professor, aviso por e-mail
 │   ├── billing/                 # assinaturas/Mercado Pago (Drizzle)
 │   ├── students/                # área do aluno
 │   └── admin/                   # dashboard admin do DespolarizaMED (métricas, não conteúdo)
@@ -164,24 +181,27 @@ Cada pasta de feature tem um `README.md` curto explicando seu escopo e de onde v
 - [x] Área do administrador (`/gestao` com métricas e `/gestao/usuarios` com gerenciamento de contas)
 - [x] Integração Mercado Pago (3 planos recorrentes criados via `pnpm seed:planos`, checkout, webhook com HMAC validado, portão de acesso em `/aulas/[slug]`)
 
-### Fase 2: Aprendizado
-- [ ] Banco de questões (filtros, CRUD via `features/questions`)
-- [ ] Editor de questões com LaTeX (TipTap + KaTeX)
-- [ ] Provas antigas + resolução/correção (`features/exams`)
-- [ ] Glossário (consumindo collection do Payload)
-- [ ] Favoritos
-- [ ] Busca (Postgres full-text search)
+### Fase 2: Aprendizado **(validada em runtime, 2026-09-16)**
+- [x] Banco de questões sobre o acervo (`/questoes`): busca full-text, filtros por banca/ano/disciplina/tema e por situação (não respondidas, respondidas, erradas, favoritas), todos conferidos com `count()` direto no banco. Responder registra em `practice_answers`, corrige no servidor e só então revela — HTML/RSC da listagem provadamente não carregam gabarito; `/questoes/[id]` mostra texto-base e figuras (servidas por `/api/figuras/**`, 401 sem login, 403 sem assinatura, path traversal bloqueado).
+- [x] Editor de questões com LaTeX (`/professor/questoes`, TipTap + `@aarkue/tiptap-math-extension`); testado publicando `$E=mc^2$` e a fórmula de Bhaskara, confirmado `data-latex` salvo e KaTeX renderizado no servidor (`src/lib/math-html.ts`) tanto no editor quanto em `/questoes/autorais`. Gabarito/explicação só chegam ao cliente via `revelarQuestaoAutoral` (HTML/RSC da listagem sem isCorrect/explanation).
+- [x] Provas antigas + resolução/correção (`/provas`, `/provas/[documentId]`, folha de respostas, `/…/resultado`). Prova completa resolvida ponta a ponta (1 errada, 1 trocada, 1 em branco): nota, correção por questão e classificação por tema batem exatamente com o esperado; gabarito confirmado ausente do HTML/RSC durante a resolução.
+- [x] Glossário (`/glossario`): contagem de termos bate com o Payload, busca bate com `ilike`, favoritar persiste.
+- [x] Favoritos (`/favoritos`: questões, termos e aulas), favoritar/desfavoritar testado com reload em cada tipo.
+- [x] Busca (`/busca`): Postgres full-text (`websearch_to_tsquery`) para questões e páginas das provas (com `ts_headline`), `like` do Payload para aulas/glossário — não é `.includes()` no cliente.
+- [x] Fila de revisão do acervo (`/gestao/acervo`) com ações reais: aprovar, rejeitar, corrigir gabarito (propaga para cópias em conflito) e reabrir, cada uma gravando quem/quando/antes/depois em `library_reviews`.
 
-### Fase 3: Organização
-- [ ] Plano de estudos (motor de cronograma, lógica própria, sem lib pronta)
-- [ ] Calendário (react-big-calendar, unificando plano/plantões/palestras/provas)
-- [ ] Atividades / histórico
-- [ ] Dashboard de desempenho (Recharts ou Tremor)
+### Fase 3: Organização **(validada em runtime, 2026-09-16)**
+- [x] Plano de estudos (`/plano`): motor em `features/study-plan/engine.ts` coberto por 8 testes determinísticos (`node:test`) — rodízio, peso das disciplinas difíceis, revisão/simulado periódicos, dia da prova excluído. Testado também ao vivo: gera cronograma, concluir item persiste, refazer com novo ritmo preserva o item concluído e não repete a aula já dada.
+- [x] Calendário (`/calendario`, react-big-calendar em pt-BR): confirmado que reúne plano + plantões + palestras + data da prova no mesmo calendário (não isolado), testado desktop e mobile.
+- [x] Atividades / histórico (`/atividades`): confirmado que vem de `student_activities`/`practice_attempts` reais, não dados fictícios.
+- [x] Dashboard de desempenho (`/desempenho`): aproveitamento geral, por disciplina e por tema conferidos batendo com `count()`/`filter` direto em `practice_answers`.
 
-### Fase 4: Ao vivo
-- [ ] Plantões (agendamento, link Google Meet, materiais pós-sessão)
-- [ ] Palestras
-- [ ] Notificações (mail.avilaops.com + n8n)
+### Fase 4: Ao vivo **(validada em runtime, 2026-09-16)**
+- [x] Plantões (`/professor/plantoes` para agendar/editar/excluir, `/plantoes` para o aluno). Janela do Meet (`features/live/janela.ts`, testada) confirmada como decisão do **servidor**: o link só chega ao HTML dentro de [início−15min, fim], testado movendo o horário no banco e recarregando — fora da janela o Meet não está no HTML, não é só escondido por CSS.
+- [x] Palestras (mesmas telas), inclusive aparecendo no calendário do aluno quando têm `scheduledFor`.
+- [x] Notificações por e-mail — disparo **manual** pelo botão "Avisar alunos", confirmado que só conta assinantes vigentes (aluno sem assinatura excluído da contagem) e não dispara sozinho ao criar o plantão.
+
+**Bug real encontrado e não corrigido nesta rodada**: ver "`timestamp` sem timezone lido com deslocamento de fuso" na seção 3 (Bloqueios conhecidos).
 
 ### Fase 5: Inteligência educacional (pós-MVP)
 - [ ] Pipeline de vídeo completo (FFmpeg worker + BullMQ: transcodificação/HLS/thumbnail)
@@ -203,7 +223,9 @@ Estes são o diferencial competitivo do produto, não procurar biblioteca pronta
 
 ## 7. Ambiente local
 
-- Postgres: `localhost:5432`, banco `despolarizamed`, user/pass `postgres`/`postgres` (ver `.env.local`).
+- Postgres: `localhost:5432`, banco `despolarizamed`, user/pass `postgres`/`postgres` (ver `.env.local`). Padrão: container Docker `avilaops-postgres` (postgres:18-alpine, porta 5432) — precisa do Docker Desktop de pé; `docker start avilaops-postgres`. Em 2026-09-16, com o Docker Desktop instável na máquina de dev, a validação desta auditoria rodou contra um Postgres 18 via `embedded-postgres` num diretório temporário (mesma porta/credenciais) — não é infraestrutura permanente, só uma alternativa pontual quando o container não sobe.
+- Figuras do acervo: `DATA_DIR` (padrão `./data`) é a raiz de `figures/**`; `data/` está no `.gitignore`.
+- Migration pendente de aplicar em produção: `src/lib/db/migrations/0006_huge_quentin_quire.sql` (tabelas `practice_*`). Rodar `pnpm db:migrate` antes do próximo deploy.
 - Variáveis de ambiente: `.env.example` tem a lista completa sem valores. `.env.local`/`.env.production` têm os valores reais e **nunca devem ser commitados** (já no `.gitignore`).
 - Scripts (`package.json`):
   - `pnpm dev` / `pnpm build` / `pnpm start` - Next.js

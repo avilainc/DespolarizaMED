@@ -43,6 +43,27 @@
       "when": 1787199215230,
       "tag": "0005_sticky_butterfly",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789602307645,
+      "tag": "0006_huge_quentin_quire",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789605372288,
+      "tag": "0007_fat_norrin_radd",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789606246177,
+      "tag": "0008_problemas_jsonb_array",
+      "breakpoints": true
     }
   ]
 }

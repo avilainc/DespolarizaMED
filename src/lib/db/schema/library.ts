@@ -1,4 +1,5 @@
 import { sql, type SQL } from "drizzle-orm";
+import { users } from "./auth";
 import {
   bigint,
   boolean,
@@ -209,6 +210,15 @@ export const libraryQuestions = pgTable(
     problemas: jsonb("problemas").$type<string[]>().notNull().default([]),
     validada: boolean("validada").notNull().default(false),
 
+    /**
+     * Curadoria humana (/gestao/acervo). `rejeitada` tira a questão da fila e
+     * do aluno em definitivo; `revisadaPor`/`revisadaEm` são o último toque —
+     * o histórico completo fica em `library_reviews`.
+     */
+    rejeitada: boolean("rejeitada").notNull().default(false),
+    revisadaPor: text("revisada_por").references(() => users.id, { onDelete: "set null" }),
+    revisadaEm: timestamp("revisada_em"),
+
     search: tsvector("search").generatedAlwaysAs(
       (): SQL => sql`to_tsvector('portuguese', coalesce(enunciado, ''))`,
     ),
@@ -272,4 +282,31 @@ export const libraryQuestionOptions = pgTable(
     ordem: integer("ordem").notNull().default(0),
   },
   (t) => [uniqueIndex("library_question_options_uq").on(t.questionId, t.letra)],
+);
+
+/**
+ * Trilha de auditoria da curadoria: quem fez o quê, quando, em qual questão.
+ * `antes`/`depois` guardam só os campos que mudaram.
+ */
+export const libraryReviews = pgTable(
+  "library_reviews",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    questionId: uuid("question_id")
+      .notNull()
+      .references(() => libraryQuestions.id, { onDelete: "cascade" }),
+    reviewerId: text("reviewer_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    /** APROVOU | REJEITOU | CORRIGIU_GABARITO | REABRIU */
+    acao: text("acao").notNull(),
+    antes: jsonb("antes").$type<Record<string, unknown>>(),
+    depois: jsonb("depois").$type<Record<string, unknown>>(),
+    nota: text("nota"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("library_reviews_question_idx").on(t.questionId, t.createdAt),
+    index("library_reviews_reviewer_idx").on(t.reviewerId, t.createdAt),
+  ],
 );
