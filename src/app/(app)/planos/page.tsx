@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { requireSessionWithRole } from "@/lib/auth/require-session";
 import { listarPlanosAtivos, assinaturaVigente } from "@/features/billing/queries";
+import { brl, melhorPrecoMensal, periodoDe, porMes } from "@/features/billing/precos";
 import { assinar } from "@/features/billing/actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,30 +9,25 @@ import { Check } from "lucide-react";
 
 export const metadata: Metadata = { title: "Planos — DespolarizaMED" };
 
-const PERIODO: Record<string, { rotulo: string; meses: number }> = {
-  MENSAL: { rotulo: "por mês", meses: 1 },
-  TRIMESTRAL: { rotulo: "a cada 3 meses", meses: 3 },
-  SEMESTRAL: { rotulo: "a cada 6 meses", meses: 6 },
-};
-
-function brl(centavos: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-    centavos / 100,
-  );
-}
-
-export default async function PlanosPage() {
+/**
+ * `?plano=<slug>` chega de quem escolheu na landing e acabou de criar a conta.
+ * Serve só para destacar o card certo e dizer que a escolha foi preservada —
+ * quem assina continua sendo a action `assinar`, com o slug do próprio card.
+ */
+export default async function PlanosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ plano?: string }>;
+}) {
   const { session } = await requireSessionWithRole("STUDENT");
+  const { plano: vindoDaLanding } = await searchParams;
   const [planos, vigente] = await Promise.all([
     listarPlanosAtivos(),
     assinaturaVigente(session.user.id),
   ]);
 
-  // O preço por mês é o que deixa a comparação honesta: sem ele, "R$ 597" ao
-  // lado de "R$ 119" parece mais caro, quando é mais barato por mês.
-  const porMes = (p: (typeof planos)[number]) =>
-    Math.round(p.priceCents / PERIODO[p.billingPeriod].meses);
-  const maisBarato = planos.length > 0 ? Math.min(...planos.map(porMes)) : 0;
+  const maisBarato = melhorPrecoMensal(planos);
+  const escolhido = planos.find((p) => p.slug === vindoDaLanding);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
@@ -41,6 +37,12 @@ export default async function PlanosPage() {
           Aulas, banco de questões, provas antigas e plantões ao vivo.
         </p>
       </div>
+
+      {escolhido && !vigente && (
+        <div className="mx-auto mt-8 max-w-2xl rounded-lg border border-primary/40 bg-primary/5 p-4 text-center text-sm">
+          Você escolheu o plano <strong>{escolhido.name}</strong>. Confirme abaixo para concluir.
+        </div>
+      )}
 
       {vigente && (
         <div className="mx-auto mt-8 max-w-2xl rounded-lg border border-border bg-muted/40 p-4 text-center text-sm">
@@ -57,7 +59,11 @@ export default async function PlanosPage() {
 
       <div className="mt-10 grid gap-6 md:grid-cols-3">
         {planos.map((plano) => {
-          const destaque = planos.length > 1 && porMes(plano) === maisBarato;
+          // O plano que a pessoa escolheu na landing manda no destaque; sem
+          // ela, destaca-se o melhor preço por mês.
+          const destaque = escolhido
+            ? plano.slug === escolhido.slug
+            : planos.length > 1 && porMes(plano) === maisBarato;
           return (
             <Card
               key={plano.id}
@@ -72,8 +78,8 @@ export default async function PlanosPage() {
               <CardContent>
                 <div className="text-3xl font-bold text-foreground">{brl(plano.priceCents)}</div>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {PERIODO[plano.billingPeriod].rotulo}
-                  {PERIODO[plano.billingPeriod].meses > 1 && (
+                  {periodoDe(plano.billingPeriod).rotulo}
+                  {periodoDe(plano.billingPeriod).meses > 1 && (
                     <> · {brl(porMes(plano))} por mês</>
                   )}
                 </p>

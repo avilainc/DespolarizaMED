@@ -8,9 +8,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { authClient } from "@/lib/auth/client";
+import { mensagemDeErro } from "@/features/auth/mensagens";
 import { Loader2 } from "lucide-react";
 
-export function SignupForm() {
+/**
+ * `planoEscolhido` é o slug que veio de `/cadastro?plano=X`, já validado
+ * contra a tabela `plans` pela página.
+ *
+ * Antes ele era ignorado: a pessoa escolhia o plano na landing, pagava o custo
+ * de criar a conta e caía no `/dashboard` sem saber o que fazer em seguida —
+ * a perda mais cara possível, porque acontece depois da decisão de compra.
+ * Agora o cadastro leva direto para o checkout do plano escolhido.
+ */
+export function SignupForm({ planoEscolhido }: { planoEscolhido?: string }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -38,11 +48,11 @@ export function SignupForm() {
     setLoading(false);
 
     if (signUpError) {
-      setError(signUpError.message ?? "Não foi possível criar sua conta. Tente novamente.");
+      setError(mensagemDeErro(signUpError, "Não foi possível criar sua conta. Tente novamente."));
       return;
     }
 
-    router.push("/dashboard");
+    router.push(planoEscolhido ? `/planos?plano=${planoEscolhido}` : "/dashboard");
     router.refresh();
   }
 
@@ -50,7 +60,11 @@ export function SignupForm() {
     <Card>
       <CardHeader>
         <CardTitle className="text-2xl">Criar conta</CardTitle>
-        <CardDescription>Comece sua preparação para Medicina hoje mesmo.</CardDescription>
+        <CardDescription>
+          {planoEscolhido
+            ? "Crie sua conta para concluir a assinatura."
+            : "Comece sua preparação para Medicina hoje mesmo."}
+        </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
@@ -95,7 +109,7 @@ export function SignupForm() {
         <CardFooter className="flex flex-col gap-4">
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="me-2 size-4 animate-spin" />}
-            Criar conta
+            {planoEscolhido ? "Criar conta e continuar" : "Criar conta"}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             Já tem conta?{" "}

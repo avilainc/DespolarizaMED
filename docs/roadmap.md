@@ -244,6 +244,24 @@ Verificações novas no repositório:
 - `src/payload/collections/acesso.test.ts` — roda no CI, sem banco e sem build. Não procura o texto `() => true`: **chama** cada `access.read` com um request sem usuário e recusa quem devolver `true` literal, o que continua valendo se a regra virar uma função e não rejeita o padrão legítimo de devolver um filtro (`Lessons` devolve `{ published: { equals: true } }`). Conferido nos dois sentidos.
 - `scripts/testes/fronteiras-de-papel.mjs` — matriz em runtime (anônimo × aluno × dono do recurso): REST do Payload, escalação no cadastro, gabarito durante prova aberta, IDOR entre alunos. Cria e apaga os próprios dados, e recusa rodar se `DATABASE_URL` não for loopback. Exige build + Postgres, então não roda no CI. Conferido nos dois sentidos: acusa 9 falhas no código vulnerável, passa em tudo depois.
 
+### Vitrine: preço, funil e navegação do site público (2026-09-17)
+
+Uma auditoria de lançamento contra produção apontou que o produto por baixo estava mais maduro que a vitrine. Confirmei os achados no repositório e no site ao vivo antes de mexer; estes foram corrigidos:
+
+**Preço anunciado diferente do cobrado.** A landing lia valores fixos em `features/marketing/content.ts` (R$ 97/79/67) enquanto o checkout cobra a tabela `plans` (R$ 99/267/474) — no semestral, R$ 72 de diferença. Conferido no site ao vivo: a home servia R$ 97. Além de matar a conversão depois da decisão de compra, o art. 30 do CDC vincula o fornecedor à oferta anunciada. A landing passou a ler `listarPlanosAtivos()`, e a formatação de preço saiu para `features/billing/precos.ts`, compartilhada com `/planos` — que tinha a mesma lógica duplicada, que foi justamente como os dois números divergiram. Preço agora muda num lugar só (o banco, via `pnpm seed:planos`). A landing usa ISR de 5 min para não perder o cache de CDN, que é o que ela tinha por ser estática.
+
+**"Sem renovação automática" contradizia a integração.** O FAQ prometia cobrança única para trimestral e semestral; `scripts/seed-planos.mjs` cria `preapproval_plan` com `auto_recurring` de 3 e 6 meses — renova. Prometer o contrário do que o sistema faz gera chargeback e reclamação. O texto passou a descrever o comportamento real. **Se a intenção do produto for cobrança única, o que muda é a integração, não o texto** — e aí este parágrafo fica errado.
+
+**Funil perdia o plano escolhido.** Os CTAs mandavam `/cadastro?plano=X`, mas a página ignorava o parâmetro e o cadastro terminava no `/dashboard`. A pessoa decidia, pagava o custo de criar conta e caía num painel sem saber o que fazer. Agora o slug é validado contra `plans` (vem da URL, é entrada de usuário) e o cadastro leva a `/planos?plano=X`, que confirma a escolha e destaca o card certo.
+
+**Navegação morta.** O cabeçalho do site público era `hidden md:flex` sem alternativa: abaixo de 768px não havia menu nenhum — e o `MobileNav` que existe em `features/auth` é da área logada, nunca cobriu a landing. As âncoras eram relativas (`#planos`), então fora da home viravam `/blog#planos` e não faziam nada. Agora há menu mobile (`features/marketing/components/site-nav.tsx`) e as âncoras são absolutas, com os links em `features/marketing/nav.ts`, um lugar só para cabeçalho e rodapé.
+
+**Armadilha que isso revelou** (vale para o próximo): `navLinks` começou exportado do próprio `site-nav.tsx`, que é `"use client"`. Um server component importando um valor de um módulo client não recebe o valor — recebe a referência de cliente que o bundler põe no lugar. O build quebrou com `navLinks.map is not a function` ao pré-renderizar `/blog`, e **só no build**: em dev o módulo ainda é o original. Dado compartilhado entre servidor e cliente mora em módulo neutro.
+
+**404 e acabamento.** Não havia `not-found.tsx` na raiz, então o Next servia a tela padrão em inglês, sem marca e sem caminho de volta, num site todo em português. Criado com a marca e rotas de saída. Mensagens de erro do Better Auth (que responde "Invalid email or password") passam por `features/auth/mensagens.ts`, mapeadas por `code` e não por texto. A seção "Quem ensina" usava `name.slice(0, 2)`, que em "Prof. João Ávila" dava "Pr" — agora descarta títulos e dá "JÁ"; `/perfil.jpg` foi removido do dado porque nunca existiu em `public/` (404 no console), e a grade acompanha quantos professores existem em vez de deixar metade vazia com um só.
+
+**Pendente, porque depende de dado que só a empresa tem**: Termos de Uso, Política de Privacidade e de Cancelamento (exigem razão social, CNPJ e canal de atendimento) e, com elas, o aceite no cadastro exigido pela LGPD; foto e formação real do professor; depoimentos com nome e autorização — hoje são anônimos e ficam em `content.ts` marcados como placeholder.
+
 ### Fase 5: Inteligência educacional (pós-MVP)
 - [ ] Pipeline de vídeo completo (FFmpeg worker + BullMQ: transcodificação/HLS/thumbnail)
 - [ ] Transcrição automática (faster-whisper) + legendas `.vtt`

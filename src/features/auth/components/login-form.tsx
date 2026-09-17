@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { authClient } from "@/lib/auth/client";
+import { mensagemDeErro } from "@/features/auth/mensagens";
 import { Loader2 } from "lucide-react";
 
 export function LoginForm() {
@@ -30,7 +31,9 @@ export function LoginForm() {
     setLoading(false);
 
     if (signInError) {
-      setError(signInError.message ?? "Não foi possível entrar. Verifique seus dados.");
+      // O Better Auth responde em inglês ("Invalid email or password"); ver
+      // features/auth/mensagens.ts.
+      setError(mensagemDeErro(signInError, "Não foi possível entrar. Verifique seus dados."));
       return;
     }
 
