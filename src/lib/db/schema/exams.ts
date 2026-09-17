@@ -10,7 +10,7 @@ export const exams = pgTable("exams", {
   phase: text("phase"),
   originalFileUrl: text("original_file_url"),
   answerKeyUrl: text("answer_key_url"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const examQuestions = pgTable("exam_questions", {
@@ -32,8 +32,8 @@ export const examAttempts = pgTable("exam_attempts", {
   studentId: text("student_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  startedAt: timestamp("started_at").notNull().defaultNow(),
-  finishedAt: timestamp("finished_at"),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
   scorePercent: integer("score_percent"),
 });
 
@@ -47,5 +47,5 @@ export const examAnswers = pgTable("exam_answers", {
     .references(() => questions.id, { onDelete: "cascade" }),
   selectedOptionId: uuid("selected_option_id"),
   isCorrect: text("is_correct"),
-  answeredAt: timestamp("answered_at").notNull().defaultNow(),
+  answeredAt: timestamp("answered_at", { withTimezone: true }).notNull().defaultNow(),
 });

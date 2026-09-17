@@ -22,6 +22,23 @@ subjectId: integer("subject_id").notNull(),
 
 ---
 
+## 1.1 Datas: instante × dia de calendário
+
+Há dois tipos de "data" no projeto e confundi-los já custou um bug de fuso (roadmap, seção 3). Antes de criar uma coluna de data, decida qual dos dois é:
+
+| | Instante | Dia de calendário |
+|---|---|---|
+| Exemplo | início de um plantão, quando um pagamento foi processado | data da prova do aluno |
+| Postgres | `timestamptz` | `date` |
+| Drizzle | `timestamp("x", { withTimezone: true })` | `date("x", { mode: "string" })` |
+| TypeScript | `Date` | `"YYYY-MM-DD"` (string) |
+
+**Nunca use `timestamp("x")` puro.** Sem fuso, o driver `postgres.js` lê o valor como hora local do *processo Node* e o desloca em qualquer ambiente fora de UTC. O teste `src/lib/db/schema/fusos.test.ts` varre o schema e falha nomeando a coluna, mas a regra vale na hora de escrever, não só na hora do CI.
+
+Para converter entre os dois mundos, use `src/lib/datas.ts` (`chaveDia`, `diaParaData`, `diasAte`) — nunca `new Date("2026-12-01")`, que ancora em meia-noite **UTC** e volta um dia no Brasil.
+
+---
+
 ## 2. Mudando o schema do Payload (collections)
 
 **Nunca** dependa do push automático de dev, está desligado de propósito (`PAYLOAD_DISABLE_PUSH=true` em `.env.local`/`.env.example`) porque exige TTY interativo e quebra em shells não-interativos. Ver `docs/roadmap.md` seção 3 para o diagnóstico completo.

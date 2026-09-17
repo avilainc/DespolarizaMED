@@ -15,8 +15,8 @@ export const questions = pgTable("questions", {
   vestibular: text("vestibular"),
   year: integer("year"),
   explanation: text("explanation"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const questionOptions = pgTable("question_options", {
@@ -34,7 +34,7 @@ export const exerciseLists = pgTable("exercise_lists", {
   id: uuid("id").primaryKey().defaultRandom(),
   lessonId: uuid("lesson_id"),
   title: text("title").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const exerciseListQuestions = pgTable("exercise_list_questions", {

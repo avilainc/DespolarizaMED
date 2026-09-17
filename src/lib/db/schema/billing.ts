@@ -18,8 +18,8 @@ export const plans = pgTable("plans", {
   priceCents: integer("price_cents").notNull(),
   active: boolean("active").notNull().default(true),
   mercadoPagoPlanId: text("mercado_pago_plan_id"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const subscriptions = pgTable("subscriptions", {
@@ -32,9 +32,9 @@ export const subscriptions = pgTable("subscriptions", {
     .references(() => plans.id, { onDelete: "restrict" }),
   status: subscriptionStatusEnum("status").notNull().default("PENDING"),
   mercadoPagoSubscriptionId: text("mercado_pago_subscription_id"),
-  currentPeriodEnd: timestamp("current_period_end"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const payments = pgTable("payments", {
@@ -45,8 +45,8 @@ export const payments = pgTable("payments", {
   amountCents: integer("amount_cents").notNull(),
   status: text("status", { enum: ["PENDING", "APPROVED", "FAILED", "REFUNDED"] }).notNull(),
   mercadoPagoPaymentId: text("mercado_pago_payment_id"),
-  paidAt: timestamp("paid_at"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  paidAt: timestamp("paid_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const coupons = pgTable("coupons", {
@@ -54,17 +54,17 @@ export const coupons = pgTable("coupons", {
   code: text("code").notNull().unique(),
   discountPercent: integer("discount_percent"),
   discountCents: integer("discount_cents"),
-  expiresAt: timestamp("expires_at"),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
   maxUses: integer("max_uses"),
   usedCount: integer("used_count").notNull().default(0),
   active: boolean("active").notNull().default(true),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const paymentEvents = pgTable("payment_events", {
   id: uuid("id").primaryKey().defaultRandom(),
   type: text("type").notNull(),
   payload: text("payload").notNull(),
-  processedAt: timestamp("processed_at"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  processedAt: timestamp("processed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
