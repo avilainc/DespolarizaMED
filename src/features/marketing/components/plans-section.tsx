@@ -4,6 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { unstable_cache } from "next/cache";
 
 import { listarPlanosAtivos } from "@/features/billing/queries";
 import { brl, melhorPrecoMensal, periodoDe, porMes } from "@/features/billing/precos";
@@ -18,9 +19,19 @@ import { beneficiosPorSlug } from "@/features/marketing/content";
  *
  * O que continua vindo de `content.ts` é só texto de venda (a descrição e a
  * lista de benefícios), que é copy e não tem por que morar no banco.
+ *
+ * A consulta é cacheada: a home é a página de maior tráfego e preço muda
+ * raramente, então 5 minutos de defasagem valem mais que uma consulta ao
+ * Postgres por visita. Ver o comentário de `dynamic` em
+ * `app/(marketing)/page.tsx` para por que a página não pode ser estática.
  */
+const planosParaVitrine = unstable_cache(() => listarPlanosAtivos(), ["planos-ativos-vitrine"], {
+  revalidate: 300,
+  tags: ["planos"],
+});
+
 export async function PlansSection() {
-  const planos = await listarPlanosAtivos();
+  const planos = await planosParaVitrine();
   const maisBarato = melhorPrecoMensal(planos);
 
   return (
