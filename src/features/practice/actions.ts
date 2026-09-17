@@ -47,23 +47,69 @@ async function corrigir(questionId: string, letraDada: string) {
 }
 
 /**
+ * A questão está numa prova que este aluno tem em andamento?
+ *
+ * Assinatura sozinha não basta para entregar um gabarito: enquanto a prova
+ * está aberta, o gabarito das questões dela é justamente o que a prova mede.
+ * O aluno não deixa de ser assinante ao abrir a prova — muda o que ele pode
+ * pedir sobre aquelas questões, e é essa distinção que esta função carrega.
+ *
+ * Só olha as tentativas do próprio aluno: a prova de um não fecha a questão
+ * para os outros, e o banco livre continua respondendo normalmente para todo
+ * mundo que não está com aquela prova aberta.
+ */
+async function emProvaAberta(studentId: string, questionId: string): Promise<boolean> {
+  const [aberta] = await db
+    .select({ id: practiceAttempts.id })
+    .from(practiceAttempts)
+    .innerJoin(libraryQuestions, eq(libraryQuestions.documentId, practiceAttempts.documentId))
+    .where(
+      and(
+        eq(practiceAttempts.studentId, studentId),
+        isNull(practiceAttempts.finishedAt),
+        eq(libraryQuestions.id, questionId),
+      ),
+    )
+    .limit(1);
+  return Boolean(aberta);
+}
+
+/** Recusa padrão das duas portas, para não diferirem no texto. */
+const PROVA_ABERTA = "prova em andamento: finalize a prova para ver o gabarito" as const;
+
+/**
  * Revela o gabarito sem registrar resposta. Existe para que o gabarito nunca
  * viaje junto com a questão: a tela só o recebe depois de pedir, e pedir
  * exige sessão com assinatura.
+ *
+ * Exige também que a questão não esteja numa prova aberta deste aluno —
+ * senão o banco livre viraria o gabarito da prova que ele está fazendo.
  */
 export async function revelarGabarito(questionId: string): Promise<ActionResult<{ gabarito: string }>> {
-  await requireAssinatura();
+  const { session } = await requireAssinatura();
   if (!uuid.safeParse(questionId).success) return { ok: false, erro: "questão inválida" };
+  if (await emProvaAberta(session.user.id, questionId)) return { ok: false, erro: PROVA_ABERTA };
   const r = await corrigir(questionId, "");
   if (!r) return { ok: false, erro: "questão sem gabarito" };
   return { ok: true, dados: { gabarito: r.gabarito } };
 }
 
-/** Resposta avulsa no banco de questões. */
+/**
+ * Resposta avulsa no banco de questões.
+ *
+ * Devolve o gabarito junto com a correção, então é a segunda porta para o
+ * mesmo dado que `revelarGabarito` entrega — responder de propósito errado
+ * revela a letra certa igual. Por isso a mesma guarda de prova aberta vale
+ * aqui: fechar só uma das duas não fecharia nada.
+ */
 export async function responderQuestao(input: { questionId: string; letra: string }) {
   const { session } = await requireAssinatura();
   const parsed = z.object({ questionId: uuid, letra }).safeParse(input);
   if (!parsed.success) return { ok: false, erro: "dados inválidos" } as const;
+
+  if (await emProvaAberta(session.user.id, parsed.data.questionId)) {
+    return { ok: false, erro: PROVA_ABERTA } as const;
+  }
 
   const resultado = await corrigir(parsed.data.questionId, parsed.data.letra);
   if (!resultado) return { ok: false, erro: "questão sem gabarito" } as const;
