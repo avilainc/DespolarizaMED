@@ -1,19 +1,46 @@
 import { NextResponse } from "next/server";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { estadoDasMigracoes } from "@/lib/db/migracoes";
 
 // Alvo do healthcheck do compose e do health_uri do Caddy: responde se a app
 // pode RECEBER TRÁFEGO, que é diferente de estar viva (/v1/health).
 export const dynamic = "force-dynamic";
 
+function naoPronto(reason: string, extra: Record<string, unknown> = {}) {
+  return NextResponse.json(
+    { ready: false, reason, ...extra },
+    { status: 503, headers: { "Cache-Control": "no-store" } },
+  );
+}
+
 export async function GET() {
   try {
     await db.execute(sql`select 1`);
   } catch {
+    return naoPronto("db_unavailable");
+  }
+
+  // Schema atrás do código é motivo para NÃO receber tráfego. O container
+  // migra antes de subir (ver entrypoint), então drift aqui significa que a
+  // migration não rodou — e servir assim dá 500 nas telas afetadas enquanto o
+  // healthcheck jura que está tudo bem, que foi exatamente o buraco que esta
+  // rota tinha. Falhar fechado é a única resposta honesta.
+  let migracoes;
+  try {
+    migracoes = await estadoDasMigracoes(db);
+  } catch {
+    // A medição em si quebrou (permissão, catálogo indisponível). Não dá para
+    // afirmar drift, e derrubar a app por não conseguir medir seria pior que o
+    // problema: o `select 1` acima já provou que o banco responde.
     return NextResponse.json(
-      { ready: false, reason: "db_unavailable" },
-      { status: 503, headers: { "Cache-Control": "no-store" } },
+      { ready: true, migrations: "unknown" },
+      { headers: { "Cache-Control": "no-store" } },
     );
+  }
+
+  if (migracoes.pendentes.length > 0) {
+    return naoPronto("migrations_pending", { migrations_pending: migracoes.pendentes });
   }
 
   return NextResponse.json({ ready: true }, { headers: { "Cache-Control": "no-store" } });

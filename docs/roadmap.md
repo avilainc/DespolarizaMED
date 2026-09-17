@@ -246,11 +246,60 @@ o CX23 não tem folga de RAM para compilar Next sem derrubar os vizinhos.
   bridge Docker (`172.17.0.1`), já coberto pelo `pg_hba`.
 - Harness GAPP: `/v1/*`, com `/v1/stats` e `/v1/ops/*` respondendo 404 pela
   internet (só a rede interna lê). Ver `docs/padrao-gapp.md`.
-- **O domínio `despolarizamed.com.br` ainda não resolve**: é registrado em nome
-  de terceiro no Registro.br e os NS apontam para `a.auto.dns.br`. A zona já
-  existe no Cloudflare da Ávila Ops (`donald.ns.cloudflare.com`,
-  `dora.ns.cloudflare.com`) com os registros prontos, mas o certificado só sai
-  quando os nameservers forem trocados no Registro.br.
+- **O domínio resolve e a plataforma está pública** (conferido em 2026-09-17):
+  os NS foram trocados no Registro.br e hoje são `donald.ns.cloudflare.com` /
+  `dora.ns.cloudflare.com`, a zona da Ávila Ops. `despolarizamed.com.br`
+  aponta para `178.105.82.48` (registro A direto, sem proxy do Cloudflare),
+  responde 200 com TLS válido e `/v1/health` reporta `db: ok`. **Consequência
+  prática: não existe mais janela de "ninguém vê se quebrar".**
+
+### Migrations no deploy
+
+**O container aplica as próprias migrations antes de servir.** Isso não existia
+até 2026-09-17, e a ausência era perigosa: um `push` na `main` dispara deploy
+automático (`DEPLOY_ENABLED` está ligado), e nada no caminho rodava migration —
+nem o `scripts/deploy.sh`, nem o workflow de `avilaops/infra`, nem a imagem,
+cujo `CMD` ia direto para `node server.js`. Código novo subia contra o schema
+velho, e os dois sinais que deveriam acusar isso não acusavam: `/v1/ready` só
+fazia `select 1`, e `/v1/ops/status` trazia `migrations_pending: 0` como
+**literal**, conformidade declarada em vez de medida.
+
+Como funciona agora:
+
+- `docker-entrypoint.sh` roda `scripts/migrar.mjs` e só então `node server.js`.
+  O `set -e` é o ponto do arquivo: migration que falha derruba o container, e o
+  deploy falha de forma visível. Container que não sobe é um problema óbvio;
+  container que sobe com o schema errado responde 200 e engana o healthcheck.
+- `scripts/migrar.mjs` usa o migrator do `drizzle-orm` (dependência de runtime),
+  não o `drizzle-kit` (devDependency, que traria o pacote inteiro ao runtime).
+  É o mesmo código que `pnpm db:migrate` executa por baixo.
+- `MIGRAR=0` pula o passo, para subir a app sem tocar no banco durante um
+  incidente. Não vira contorno silencioso: `/v1/ready` continua reprovando
+  enquanto houver drift.
+- `/v1/ops/status` passou a **medir**: `migrations_pending` é contagem real,
+  `migrations_pending_tags` nomeia quais, e `null` significa "não sei" (banco
+  fora do ar), que é diferente de `0`.
+- `/v1/ready` responde **503 `migrations_pending`** quando o banco está atrás da
+  imagem, então um container nessas condições não recebe tráfego.
+
+**Armadilha que custou duas tentativas, para ninguém repetir:** o `migrar.mjs`
+roda fora do bundle do Next e precisa resolver `postgres` e `drizzle-orm` como
+pacotes de verdade. O `.next/standalone` não serve para isso — o Next **embute**
+o driver no chunk do servidor em vez de deixá-lo em `node_modules` (o topo do
+standalone só tem `graphql`, `next`, `react`, `typescript`). E
+`outputFileTracingIncludes` apontando para um arquivo só materializa o `.js`
+**sem o `package.json`**, que não carrega. Por isso o Dockerfile copia os dois
+pacotes inteiros do build stage: nenhum dos dois tem dependência de runtime,
+então é autocontido e travado na versão do lockfile.
+
+**Limite conhecido:** o `migrar.mjs` cuida só do Drizzle. O Payload tem cadeia
+própria (`src/migrations/`) e hoje não há migration de Payload pendente além da
+`init`, já aplicada. Quando houver, ela precisa entrar aqui também — e o
+`/v1/ready` não a enxerga.
+
+**Concorrência:** hoje o `runtime.services` do manifesto declara um único
+serviço `web`, então não há duas réplicas migrando ao mesmo tempo. Se algum dia
+houver, este passo precisa de lock antes de escalar.
 
 ### Mercado Pago
 
