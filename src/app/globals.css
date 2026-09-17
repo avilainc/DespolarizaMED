@@ -31,6 +31,7 @@
   --color-accent: var(--accent);
   /* Cores da marca disponíveis como utilitário: text-brand-orange, bg-brand-teal. */
   --color-brand-orange: var(--brand-orange);
+  --color-brand-orange-texto: var(--brand-orange-texto);
   --color-brand-teal: var(--brand-teal);
   --color-brand-blue: var(--brand-blue);
   --color-muted-foreground: var(--muted-foreground);
@@ -77,6 +78,13 @@
   --accent: oklch(0.94 0.03 195.5);
   --accent-foreground: oklch(0.35 0.06 195.5);
   --brand-orange: oklch(0.717 0.183 47.5);
+  /* O laranja da marca como TEXTO sobre fundo claro.
+     O `--brand-orange` cheio mede 2.20:1 sobre o fundo do selo do hero
+     (medido: rgb(252,120,37) sobre rgb(245,230,223)) — AA exige 4.5:1 para
+     14px, então o selo estava ilegível para quem enxerga pouco contraste.
+     Mesma matiz e mesma croma, só mais escuro: 5.28:1. A cor da marca em si
+     não muda; o que muda é a que se usa para escrever. */
+  --brand-orange-texto: oklch(0.5 0.183 47.5);
   --brand-teal: oklch(0.646 0.072 195.5);
   --brand-blue: oklch(0.600 0.111 250.2);
   --destructive: oklch(0.577 0.245 27.325);
@@ -123,6 +131,10 @@
   --input: oklch(1 0 0 / 16%);
   --ring: oklch(0.600 0.111 250.2);
   --brand-orange: oklch(0.717 0.183 47.5);
+  /* No tema escuro o problema se inverte: sobre fundo escuro o texto precisa
+     clarear, não escurecer. (Este bloco está inativo hoje — nada aplica a
+     classe `.dark` —, mas fica coerente para quando for ligado.) */
+  --brand-orange-texto: oklch(0.8 0.15 47.5);
   --brand-teal: oklch(0.646 0.072 195.5);
   --brand-blue: oklch(0.600 0.111 250.2);
   --chart-1: oklch(0.87 0 0);

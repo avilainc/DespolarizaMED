@@ -14,7 +14,9 @@ export function Hero() {
     <section className="relative overflow-hidden bg-gradient-to-b from-secondary/60 to-background">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 sm:px-6 md:grid-cols-2 md:items-center md:py-28">
         <div>
-          <span className="inline-flex items-center rounded-full bg-brand-orange/15 px-3 py-1 text-sm font-medium text-brand-orange">
+          {/* `text-brand-orange-texto`, não `text-brand-orange`: o laranja cheio
+              sobre este fundo mede 2.20:1, e AA exige 4.5:1 para 14px. */}
+          <span className="inline-flex items-center rounded-full bg-brand-orange/15 px-3 py-1 text-sm font-medium text-brand-orange-texto">
             Preparação para vestibulares de Medicina
           </span>
           <h1 className="mt-6 text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
@@ -39,7 +41,7 @@ export function Hero() {
               Começar agora
               <ArrowRight className="ms-2 size-4" />
             </Link>
-            <Link href="#planos" className={buttonVariants({ size: "lg", variant: "outline" })}>
+            <Link href="/#planos" className={buttonVariants({ size: "lg", variant: "outline" })}>
               Ver planos
             </Link>
           </div>

@@ -53,7 +53,7 @@ export function ResetPasswordForm() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Link inválido</CardTitle>
+          <CardTitle><h1>Link inválido</h1></CardTitle>
           <CardDescription>
             Este endereço não tem um token de redefinição. Peça um novo link.
           </CardDescription>
@@ -70,7 +70,7 @@ export function ResetPasswordForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Criar nova senha</CardTitle>
+        <CardTitle><h1>Criar nova senha</h1></CardTitle>
         <CardDescription>Escolha uma senha que você não use em outro site.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>

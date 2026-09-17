@@ -6,7 +6,11 @@ export const GlossaryTerms: CollectionConfig = {
     useAsTitle: "term",
   },
   access: {
-    read: () => true,
+    // `/glossario` exige assinatura (`requireAssinatura`), então a definição
+    // dos termos é conteúdo pago. Com `read: () => true`, `GET
+    // /api/glossary-terms` devolvia o glossário inteiro para anônimo pela REST
+    // do Payload — a tela cobrava, a API não. O app lê pela Local API.
+    read: ({ req }) => Boolean(req.user),
     create: ({ req }) => Boolean(req.user),
     update: ({ req }) => Boolean(req.user),
     delete: ({ req }) => req.user?.role === "ADMIN",

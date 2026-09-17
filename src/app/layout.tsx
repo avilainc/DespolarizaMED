@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,9 +13,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const DESCRICAO =
+  "Aulas, banco com mais de 26 mil questões de vestibular, provas antigas resolvidas e plantões ao vivo para quem vai prestar Medicina.";
+
 export const metadata: Metadata = {
-  title: "DespolarizaMED",
-  description: "Plataforma de preparação para vestibulares de Medicina",
+  // O título era só "DespolarizaMED", sem nenhuma palavra que alguém procure.
+  // Quem busca não digita o nome de uma plataforma que ainda não conhece.
+  title: "DespolarizaMED — preparação para vestibulares de Medicina",
+  description: DESCRICAO,
   // Ícones e manifesto declarados pelo metadata do Next em vez de <link> solto
   // no JSX: o Next injeta as tags no <head> de toda página, deduplica e mantém
   // a ordem. Os arquivos vêm do RealFaviconGenerator e ficam em public/.
@@ -31,20 +37,26 @@ export const metadata: Metadata = {
   // metadataBase resolve as URLs relativas de openGraph/twitter para absolutas.
   // Sem ele o Next avisa no build e o WhatsApp recebe um caminho relativo, que
   // não resolve para imagem nenhuma.
-  metadataBase: new URL("https://despolarizamed.com.br"),
+  metadataBase: new URL(SITE_URL),
+  // Canonical da raiz. Cada página pública que precisar de um próprio declara
+  // o seu; sem isto, variações de URL (utm, barra final) viram páginas
+  // distintas para o buscador.
+  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     locale: "pt_BR",
     siteName: "DespolarizaMED",
-    title: "DespolarizaMED",
-    description: "Plataforma de preparação para vestibulares de Medicina",
-    images: [{ url: "/og.png", width: 1200, height: 630, alt: "DespolarizaMED" }],
+    title: "DespolarizaMED — preparação para vestibulares de Medicina",
+    description: DESCRICAO,
+    // Sem `images` aqui de propósito: quem gera é `app/opengraph-image.tsx`.
+    // Declarar a imagem no metadata sobrepõe a convenção de arquivo, e era o
+    // que mantinha o og.png borrado no ar.
   },
   twitter: {
     card: "summary_large_image",
-    title: "DespolarizaMED",
-    description: "Plataforma de preparação para vestibulares de Medicina",
-    images: ["/og.png"],
+    title: "DespolarizaMED — preparação para vestibulares de Medicina",
+    description: DESCRICAO,
+    // Idem: `app/twitter-image.tsx`.
   },
 };
 

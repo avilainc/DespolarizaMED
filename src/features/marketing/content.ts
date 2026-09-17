@@ -1,52 +1,61 @@
-// Conteúdo placeholder da landing page. Substituir por dados reais
-// (nomes de professores, preços definitivos, depoimentos de alunos) assim
-// que disponíveis — ou migrar para o Payload CMS se precisar de edição
-// visual sem deploy.
+// Copy da landing page.
+//
+// PREÇO NÃO MORA AQUI. Ele vem da tabela `plans` (ver
+// `features/billing/precos.ts`): esta constante já teve valores fixos que
+// discordavam do que o checkout cobrava, e o visitante via um preço na home e
+// encontrava outro ao assinar. O que fica aqui é só texto de venda.
+//
+// Ainda placeholder e pendente de dado real: `teachers` (foto, formação) e
+// `testimonials` (nome e autorização de quem deu o depoimento).
 
-export const plans = [
-  {
-    slug: "mensal",
-    name: "Mensal",
-    priceLabel: "R$ 97",
-    period: "/mês",
-    description: "Ideal para experimentar a plataforma sem compromisso longo.",
-    features: [
+/**
+ * Texto de venda por plano, casado pelo `slug` da tabela `plans`.
+ *
+ * Sem preço e sem duração: esses dois vêm do banco e são formatados por
+ * `features/billing/precos.ts`. Um slug que o banco tenha e este mapa não
+ * conheça cai em `padrao`, então cadastrar um plano novo não quebra a landing.
+ */
+export const beneficiosPorSlug: Record<
+  string,
+  { descricao: string; itens: readonly string[] }
+> = {
+  mensal: {
+    descricao: "Ideal para experimentar a plataforma sem compromisso longo.",
+    itens: [
       "Acesso a todas as disciplinas",
       "Banco de questões completo",
       "Plantões semanais ao vivo",
       "Plano de estudos personalizado",
     ],
-    highlighted: false,
   },
-  {
-    slug: "trimestral",
-    name: "Trimestral",
-    priceLabel: "R$ 79",
-    period: "/mês",
-    description: "O mais escolhido por quem está a poucos meses da prova.",
-    features: [
+  trimestral: {
+    descricao: "O mais escolhido por quem está a poucos meses da prova.",
+    itens: [
       "Tudo do plano Mensal",
-      "3 meses de acesso (cobrança única)",
       "Provas antigas com resolução comentada",
       "Prioridade no plantão de dúvidas",
+      "Acompanhamento de progresso",
     ],
-    highlighted: true,
   },
-  {
-    slug: "semestral",
-    name: "Semestral",
-    priceLabel: "R$ 67",
-    period: "/mês",
-    description: "Melhor custo-benefício para uma preparação completa.",
-    features: [
+  semestral: {
+    descricao: "Melhor custo-benefício para uma preparação completa.",
+    itens: [
       "Tudo do plano Trimestral",
-      "6 meses de acesso (cobrança única)",
       "Acompanhamento de progresso avançado",
       "Acesso a todas as palestras exclusivas",
+      "Preparação do começo ao fim do ano",
     ],
-    highlighted: false,
   },
-] as const;
+  padrao: {
+    descricao: "Acesso completo à plataforma.",
+    itens: [
+      "Acesso a todas as disciplinas",
+      "Banco de questões completo",
+      "Provas antigas com resolução",
+      "Plantões ao vivo",
+    ],
+  },
+};
 
 export const subjects = [
   {
@@ -66,14 +75,27 @@ export const subjects = [
   },
 ] as const;
 
-export const teachers = [
+/**
+ * `photo` está ausente de propósito: apontava para `/perfil.jpg`, que nunca
+ * existiu em `public/` — dava 404 no console e o card caía no fallback de
+ * iniciais. Sem o campo, o fallback é a escolha, não o acidente.
+ *
+ * PENDENTE: foto real, formação e instituição. "Médico e educador" não diz
+ * onde se formou nem há quanto tempo ensina, que é o que o aluno procura ao
+ * decidir de quem vai assistir aula.
+ */
+export const teachers: readonly {
+  name: string;
+  role: string;
+  photo?: string;
+  bio: string;
+}[] = [
   {
     name: "Prof. João Ávila",
     role: "Biologia — Bioquímica e Genética",
-    photo: "/perfil.jpg",
     bio: "Médico e educador, dedicado a preparar a próxima geração de estudantes de Medicina.",
   },
-] as const;
+];
 
 export const testimonials = [
   {
@@ -98,8 +120,13 @@ export const faqs = [
   },
   {
     question: "Posso cancelar quando quiser?",
+    // Este texto já afirmou "cobrança única (sem renovação automática)" para
+    // trimestral e semestral. O `scripts/seed-planos.mjs` cria um
+    // `preapproval_plan` no Mercado Pago com `auto_recurring` de 3 e 6 meses —
+    // ou seja, renova. Prometer o contrário do que o sistema faz gera
+    // chargeback e reclamação; o texto passou a descrever o comportamento real.
     answer:
-      "Sim. Planos trimestral e semestral são cobrança única (sem renovação automática); o plano mensal pode ser cancelado a qualquer momento antes da próxima cobrança.",
+      "Sim. Todos os planos renovam automaticamente ao fim do período contratado, e você pode cancelar a qualquer momento antes da próxima cobrança — o acesso continua até o fim do período já pago.",
   },
   {
     question: "Os plantões ao vivo ficam gravados?",
