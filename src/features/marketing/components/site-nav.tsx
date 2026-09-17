@@ -50,6 +50,18 @@ export function MenuDoSite() {
                 </Link>
               </li>
             ))}
+            {/* "Entrar" sai do cabeçalho abaixo de `sm` (não cabe ao lado do
+                emblema, do CTA e deste botão) e reaparece aqui — some do
+                cabeçalho, não do site. */}
+            <li className="border-t border-border pt-1 sm:hidden">
+              <Link
+                href="/login"
+                onClick={() => setAberto(false)}
+                className="block rounded-md px-3 py-3 text-sm font-medium text-primary hover:bg-muted"
+              >
+                Entrar
+              </Link>
+            </li>
           </ul>
         </nav>
       )}

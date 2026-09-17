@@ -15,11 +15,20 @@ import Link from "next/link";
 export function Logo({
   tamanho = 36,
   comNome = true,
+  nomeSoDesdeSm = false,
   href = "/",
   prioridade = false,
 }: {
   tamanho?: number;
   comNome?: boolean;
+  /**
+   * Esconde o nome escrito abaixo de `sm`, mantendo só o emblema.
+   *
+   * O cabeçalho usa isto: emblema + "DespolarizaMED" ocupam ~184px, e com os
+   * botões de conta e o menu ao lado o conteúdo não cabia em 320px — o
+   * cabeçalho estourava a largura da tela. Some o nome, não o link.
+   */
+  nomeSoDesdeSm?: boolean;
   href?: string | null;
   prioridade?: boolean;
 }) {
@@ -34,7 +43,9 @@ export function Logo({
         className="shrink-0"
       />
       {comNome && (
-        <span className="text-lg font-bold tracking-tight text-foreground">
+        <span
+          className={`text-lg font-bold tracking-tight text-foreground${nomeSoDesdeSm ? " hidden sm:inline" : ""}`}
+        >
           Despolariza<span className="text-primary">MED</span>
         </span>
       )}

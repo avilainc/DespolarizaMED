@@ -22,7 +22,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4 sm:px-6">
-        <Logo prioridade />
+        <Logo prioridade nomeSoDesdeSm />
 
         <nav
           aria-label="Navegação principal"
@@ -36,15 +36,22 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {/* "Entrar" some abaixo de `sm` e reaparece dentro do menu: em 320px
+              não cabem emblema, dois botões e o menu na mesma linha. O CTA
+              principal ("Criar conta") é o que fica, porque é o que converte. */}
           <Link
             href="/login"
-            className={buttonVariants({ variant: "ghost", size: "sm", className: "h-10 px-3" })}
+            className={buttonVariants({
+              variant: "ghost",
+              size: "sm",
+              className: "hidden h-10 px-3 sm:inline-flex",
+            })}
           >
             Entrar
           </Link>
           <Link
             href="/cadastro"
-            className={buttonVariants({ size: "sm", className: "h-10 px-3" })}
+            className={buttonVariants({ size: "sm", className: "h-10 px-2.5 text-xs sm:px-3 sm:text-sm" })}
           >
             Criar conta
           </Link>
