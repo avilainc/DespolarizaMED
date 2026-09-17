@@ -268,6 +268,10 @@ O selo do hero media **2.20:1** (texto `oklch(0.717 0.183 47.5)` = rgb(252,120,3
 
 **Como reproduzir:** a medição usa Playwright apontando para o Chromium da máquina, e o script ficou fora do repositório porque Playwright não é dependência do projeto — adicioná-lo para virar job de CI é uma decisão de peso (baixa um navegador no pipeline) que vale tomar de propósito, não de passagem. O método: abrir cada página nas larguras alvo, comparar `documentElement.scrollWidth` com `clientWidth`, e para contraste ler o pixel do fundo composto em vez de confiar no valor declarado — `bg-cor/15` sobre gradiente não tem contraste calculável a partir do CSS.
 
+**Imagem de compartilhamento.** O `public/og.png` era o emblema de 512px esticado para 1200×630 — borrado, sem headline e sem endereço; colado num grupo de WhatsApp não dizia o que é o produto. Substituído por `app/opengraph-image.tsx`, gerado com o `ImageResponse` do Next: acompanha o texto do site, não depende de designer nem de binário no repositório, e mudar a headline é mudar uma string. `app/twitter-image.tsx` reexporta a mesma arte, porque o X usa convenção separada e duas artes em arquivos diferentes divergem na primeira mudança. As imagens explícitas saíram do `metadata` do layout: declaradas ali, elas sobrepõem a convenção de arquivo, e era o que mantinha o og.png antigo no ar.
+
+Dois defeitos só apareceram ao **olhar** a imagem renderizada: a faixa laranja do topo parava antes da borda direita (dentro de um pai com padding, `position: absolute` + `width: 100%` resolve contra a caixa de conteúdo — virou filho do flex), e o endereço do site em `#4884c0` media 2.97:1 sobre o fundo escuro, contra 6.46:1 do tom usado agora. Compilar não teria pego nenhum dos dois.
+
 **Pendente, porque depende de dado que só a empresa tem**: Termos de Uso, Política de Privacidade e de Cancelamento (exigem razão social, CNPJ e canal de atendimento) e, com elas, o aceite no cadastro exigido pela LGPD; foto e formação real do professor; depoimentos com nome e autorização — hoje são anônimos e ficam em `content.ts` marcados como placeholder.
 
 ### Fase 5: Inteligência educacional (pós-MVP)

@@ -48,13 +48,15 @@ export const metadata: Metadata = {
     siteName: "DespolarizaMED",
     title: "DespolarizaMED — preparação para vestibulares de Medicina",
     description: DESCRICAO,
-    images: [{ url: "/og.png", width: 1200, height: 630, alt: "DespolarizaMED" }],
+    // Sem `images` aqui de propósito: quem gera é `app/opengraph-image.tsx`.
+    // Declarar a imagem no metadata sobrepõe a convenção de arquivo, e era o
+    // que mantinha o og.png borrado no ar.
   },
   twitter: {
     card: "summary_large_image",
     title: "DespolarizaMED — preparação para vestibulares de Medicina",
     description: DESCRICAO,
-    images: ["/og.png"],
+    // Idem: `app/twitter-image.tsx`.
   },
 };
 
