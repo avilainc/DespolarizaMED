@@ -52,6 +52,11 @@ Esta é a decisão arquitetural mais importante do projeto e a mais fácil de vi
 - **Aprendizado**: `lesson_progress`, `student_progress`, `study_plans`, `study_plan_items`, `student_activities`, `student_notes`, `favorites` - `src/lib/db/schema/learning.ts`
 - **Eventos/calendário**: `live_sessions`, `lectures`, `events` - `src/lib/db/schema/events.ts`
 - **Billing**: `plans`, `subscriptions`, `payments`, `coupons`, `payment_events` - `src/lib/db/schema/billing.ts`
+- **Acervo de provas (extraído por pipeline)**: `source_documents`, `document_pages`, `library_questions`, `library_question_options`, `library_figures` - `src/lib/db/schema/library.ts`. Populado por `scripts/pdf-ingest/*` (ver `docs/acervo-provas.md`). Só sai para o aluno o que está `validada = true` e sem `duplicata_de`.
+- **Prática do aluno**: `practice_attempts` (uma prova resolvida), `practice_answers` (cada resposta, avulsa ou dentro de uma prova) - `src/lib/db/schema/practice.ts`. Apontam para `library_questions`, **não** para `questions`: o acervo é o que está no ar, e esperar a curadoria de 26 mil questões deixaria o aluno sem histórico.
+
+### `questions` (curada) × `library_questions` (extraída)
+São duas fontes de propósito. `library_questions` tem volume (26 mil, com figuras e gabarito conferido) mas disciplina/tema apenas *sugeridos* por classificador. `questions` é escrita pelo professor no editor (TipTap + KaTeX, `/professor/questoes`) com disciplina e tema curados. O aluno vê as duas: `/questoes` (acervo, com histórico de respostas) e `/questoes/autorais` (curadas, sem histórico por enquanto). Promover uma questão do acervo para `questions` é passo humano, ainda sem tela.
 
 ### Regra prática ao referenciar uma entidade do Payload a partir do Drizzle:
 Payload usa `integer` (serial) como tipo de ID. Ao referenciar (ex: `questions.subjectId` apontando pra `subjects` do Payload), use uma coluna `integer` **sem** foreign key do Drizzle (Drizzle não pode ter FK para uma tabela que ele não gerencia). Exemplo já aplicado em `src/lib/db/schema/questions.ts`:
@@ -123,10 +128,12 @@ src/
 ├── features/                  # Uma pasta por domínio de produto (UI + lógica client-side)
 │   ├── auth/
 │   ├── courses/                # consome dados do Payload (subjects/modules/lessons)
-│   ├── questions/               # banco de questões (Drizzle) + editor TipTap/KaTeX
-│   ├── exams/                   # provas/simulados (Drizzle)
-│   ├── study-plan/              # plano de estudos + calendário (Drizzle)
-│   ├── live/                    # plantões/palestras (Drizzle)
+│   ├── library/                 # acervo extraído: consultas, card de questão, fila de revisão
+│   ├── practice/                # respostas, favoritos, tentativas de prova, desempenho (Drizzle)
+│   ├── questions/               # questões autorais: editor TipTap/KaTeX + CRUD do professor
+│   ├── exams/                   # (vazio) o fluxo de prova roda em practice/ sobre o acervo
+│   ├── study-plan/              # motor de cronograma (engine.ts), plano, calendário (react-big-calendar)
+│   ├── live/                    # plantões/palestras: CRUD do professor, aviso por e-mail
 │   ├── billing/                 # assinaturas/Mercado Pago (Drizzle)
 │   ├── students/                # área do aluno
 │   └── admin/                   # dashboard admin do DespolarizaMED (métricas, não conteúdo)
@@ -164,24 +171,25 @@ Cada pasta de feature tem um `README.md` curto explicando seu escopo e de onde v
 - [x] Área do administrador (`/gestao` com métricas e `/gestao/usuarios` com gerenciamento de contas)
 - [x] Integração Mercado Pago (3 planos recorrentes criados via `pnpm seed:planos`, checkout, webhook com HMAC validado, portão de acesso em `/aulas/[slug]`)
 
-### Fase 2: Aprendizado
-- [ ] Banco de questões (filtros, CRUD via `features/questions`)
-- [ ] Editor de questões com LaTeX (TipTap + KaTeX)
-- [ ] Provas antigas + resolução/correção (`features/exams`)
-- [ ] Glossário (consumindo collection do Payload)
-- [ ] Favoritos
-- [ ] Busca (Postgres full-text search)
+### Fase 2: Aprendizado **(concluída em código, 2026-09-16; aguardando validação em runtime)**
+- [x] Banco de questões sobre o acervo (`/questoes`): busca full-text, filtros por banca/ano/disciplina/tema e por situação (não respondidas, respondidas, erradas, favoritas). Responder registra em `practice_answers` e revela o gabarito; `/questoes/[id]` mostra texto-base e figuras (servidas por `/api/figuras/**`, protegidas por assinatura).
+- [x] Editor de questões com LaTeX (`/professor/questoes`, TipTap + `@aarkue/tiptap-math-extension`); o aluno vê em `/questoes/autorais`, com KaTeX renderizado no servidor (`src/lib/math-html.ts`).
+- [x] Provas antigas + resolução/correção (`/provas`, `/provas/[documentId]`, folha de respostas, `/…/resultado` com pontos fortes e "revisar" por tema). Motor de correção em `practice/actions.ts` + página de resultado.
+- [x] Glossário (`/glossario`, collection do Payload, agrupado por inicial, com favoritos).
+- [x] Favoritos (`/favoritos`: questões, termos e aulas; estrela nos cards).
+- [x] Busca (`/busca`: aulas, questões, glossário e páginas das provas, Postgres FTS).
+- [x] Fila de revisão do acervo para o admin (`/gestao/acervo`) — só leitura; falta ação de aprovar/corrigir gabarito.
 
-### Fase 3: Organização
-- [ ] Plano de estudos (motor de cronograma, lógica própria, sem lib pronta)
-- [ ] Calendário (react-big-calendar, unificando plano/plantões/palestras/provas)
-- [ ] Atividades / histórico
-- [ ] Dashboard de desempenho (Recharts ou Tremor)
+### Fase 3: Organização **(concluída em código, 2026-09-16)**
+- [x] Plano de estudos (`/plano`): motor determinístico em `features/study-plan/engine.ts` (dias/semana × horas/dia × data da prova → aulas em rodízio por disciplina, exercícios, revisão a cada 7º dia, simulado a cada 14º; disciplinas difíceis com peso 2). Refazer preserva itens concluídos.
+- [x] Calendário (`/calendario`, react-big-calendar em pt-BR): plano, plantões, palestras e data da prova.
+- [x] Atividades / histórico (`/atividades`).
+- [x] Dashboard de desempenho (`/desempenho`): aproveitamento geral, por disciplina, por tema, últimos 30 dias. Barras em CSS, sem lib de gráfico.
 
-### Fase 4: Ao vivo
-- [ ] Plantões (agendamento, link Google Meet, materiais pós-sessão)
-- [ ] Palestras
-- [ ] Notificações (mail.avilaops.com + n8n)
+### Fase 4: Ao vivo **(concluída em código, 2026-09-16)**
+- [x] Plantões (`/professor/plantoes` para agendar, `/plantoes` para o aluno; botão do Meet aparece 15 min antes; gravação depois).
+- [x] Palestras (mesmas telas).
+- [x] Notificações por e-mail (`mail.avilaops.com`) — disparo **manual** pelo botão "Avisar alunos" para todos os assinantes vigentes. n8n não está ligado a isso ainda.
 
 ### Fase 5: Inteligência educacional (pós-MVP)
 - [ ] Pipeline de vídeo completo (FFmpeg worker + BullMQ: transcodificação/HLS/thumbnail)
@@ -203,7 +211,9 @@ Estes são o diferencial competitivo do produto, não procurar biblioteca pronta
 
 ## 7. Ambiente local
 
-- Postgres: `localhost:5432`, banco `despolarizamed`, user/pass `postgres`/`postgres` (ver `.env.local`).
+- Postgres: `localhost:5432`, banco `despolarizamed`, user/pass `postgres`/`postgres` (ver `.env.local`). Roda no container Docker `avilaops-postgres` (postgres:18-alpine, porta 5432) — precisa do Docker Desktop de pé; `docker start avilaops-postgres`.
+- Figuras do acervo: `DATA_DIR` (padrão `./data`) é a raiz de `figures/**`; `data/` está no `.gitignore`.
+- Migration pendente de aplicar em produção: `src/lib/db/migrations/0006_huge_quentin_quire.sql` (tabelas `practice_*`). Rodar `pnpm db:migrate` antes do próximo deploy.
 - Variáveis de ambiente: `.env.example` tem a lista completa sem valores. `.env.local`/`.env.production` têm os valores reais e **nunca devem ser commitados** (já no `.gitignore`).
 - Scripts (`package.json`):
   - `pnpm dev` / `pnpm build` / `pnpm start` - Next.js

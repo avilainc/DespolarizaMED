@@ -34,6 +34,21 @@ export default async function ProfessorPage() {
         .
       </p>
 
+      <nav className="mt-6 flex flex-wrap gap-2">
+        <Link
+          href="/professor/questoes"
+          className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-muted"
+        >
+          Questões autorais
+        </Link>
+        <Link
+          href="/professor/plantoes"
+          className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-muted"
+        >
+          Plantões e palestras
+        </Link>
+      </nav>
+
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <Card>
           <CardHeader>

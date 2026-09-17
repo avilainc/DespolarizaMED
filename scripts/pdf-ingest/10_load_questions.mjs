@@ -138,7 +138,9 @@ async function main() {
         copias: q.copias ?? 1,
         confirmada_por_duplicata: Boolean(q.confirmada_por_duplicata),
         conflito_duplicata: Boolean(q.conflito_duplicata),
-        problemas: JSON.stringify(q.problemas ?? []),
+        // sql.json, e nao JSON.stringify: a string viraria um escalar jsonb
+        // ('"[]"') e jsonb_array_length() quebra na fila de revisao.
+        problemas: sql.json(q.problemas ?? []),
         // Conflito entre cópias derruba a validação: se duas extrações
         // independentes da mesma questão apontam respostas diferentes, uma
         // delas está errada e não dá para saber qual sem olhar. Antes essas

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, inArray, isNull, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, notInArray, or, sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
@@ -8,7 +8,9 @@ import {
   libraryFigures,
   libraryQuestionOptions,
   libraryQuestions,
+  libraryReviews,
   sourceDocuments,
+  users,
 } from "@/lib/db/schema";
 
 /**
@@ -26,6 +28,11 @@ export type FiltroQuestoes = {
   instituicaoSlug?: string;
   ano?: number;
   disciplina?: string;
+  tema?: string;
+  /** Restringe a estes ids (ex.: favoritas do aluno). Lista vazia = nada. */
+  idsIn?: string[];
+  /** Exclui estes ids (ex.: já respondidas). */
+  idsNotIn?: string[];
   /** Padrão: "objetiva" (múltipla escolha). Passe null para não filtrar. */
   tipo?: "objetiva" | "discursiva" | null;
   /** Padrão: true. Passe false só em telas de revisão. */
@@ -44,6 +51,12 @@ function condicoes(f: FiltroQuestoes): SQL[] {
   if (f.instituicaoSlug) cond.push(eq(libraryQuestions.instituicaoSlug, f.instituicaoSlug));
   if (f.ano) cond.push(eq(libraryQuestions.ano, f.ano));
   if (f.disciplina) cond.push(eq(libraryQuestions.disciplinaSugerida, f.disciplina));
+  if (f.tema) cond.push(eq(libraryQuestions.temaSugerido, f.tema));
+  if (f.idsIn) {
+    // inArray com lista vazia gera SQL inválido; "nenhum id" tem que devolver nada.
+    cond.push(f.idsIn.length ? inArray(libraryQuestions.id, f.idsIn) : sql`false`);
+  }
+  if (f.idsNotIn?.length) cond.push(notInArray(libraryQuestions.id, f.idsNotIn));
   if (f.busca?.trim()) {
     cond.push(
       sql`${libraryQuestions.search} @@ websearch_to_tsquery('portuguese', ${f.busca})`,
@@ -195,7 +208,12 @@ export async function resumoDoAcervo() {
       comFigura: sql<number>`(select count(distinct questao_numero)::int
         from ${libraryFigures} where questao_numero is not null)`,
       conflitos: sql<number>`(select count(*)::int from ${libraryQuestions}
-        where conflito_duplicata)`,
+        where conflito_duplicata and not rejeitada)`,
+      pendentes: sql<number>`(select count(*)::int from ${libraryQuestions}
+        where not rejeitada and (conflito_duplicata
+          or (jsonb_typeof(problemas) = 'array' and jsonb_array_length(problemas) > 0)))`,
+      rejeitadas: sql<number>`(select count(*)::int from ${libraryQuestions} where rejeitada)`,
+      revisadas: sql<number>`(select count(*)::int from ${libraryQuestions} where revisada_em is not null)`,
     })
     .from(sql`(select 1) as t`);
   return linha;
@@ -219,13 +237,20 @@ export async function filaDeRevisao(limite = 50) {
       ano: libraryQuestions.ano,
       relPath: sourceDocuments.relPath,
       pagina: libraryQuestions.pagina,
+      validada: libraryQuestions.validada,
+      duplicataDe: libraryQuestions.duplicataDe,
+      copias: libraryQuestions.copias,
     })
     .from(libraryQuestions)
     .innerJoin(sourceDocuments, eq(sourceDocuments.id, libraryQuestions.documentId))
     .where(
-      or(
-        eq(libraryQuestions.conflitoDuplicata, true),
-        sql`jsonb_array_length(${libraryQuestions.problemas}) > 0`,
+      and(
+        eq(libraryQuestions.rejeitada, false),
+        or(
+          eq(libraryQuestions.conflitoDuplicata, true),
+          // jsonb_typeof guarda contra linha antiga com escalar (ver migration 0008).
+          sql`(jsonb_typeof(${libraryQuestions.problemas}) = 'array' and jsonb_array_length(${libraryQuestions.problemas}) > 0)`,
+        ),
       ),
     )
     .orderBy(desc(libraryQuestions.conflitoDuplicata), desc(libraryQuestions.ano))
@@ -246,7 +271,7 @@ export async function facetasDoAcervo() {
     eq(libraryQuestions.tipo, "objetiva"),
   );
 
-  const [instituicoes, anos, disciplinas] = await Promise.all([
+  const [instituicoes, anos, disciplinas, temas] = await Promise.all([
     db
       .select({
         // `library_questions` guarda só o slug; o nome por extenso vive em
@@ -276,6 +301,17 @@ export async function facetasDoAcervo() {
       .where(base)
       .groupBy(libraryQuestions.disciplinaSugerida)
       .orderBy(desc(sql`count(*)`)),
+    db
+      .select({
+        disciplina: libraryQuestions.disciplinaSugerida,
+        tema: libraryQuestions.temaSugerido,
+        total: sql<number>`count(*)::int`,
+      })
+      .from(libraryQuestions)
+      .where(base)
+      .groupBy(libraryQuestions.disciplinaSugerida, libraryQuestions.temaSugerido)
+      .orderBy(desc(sql`count(*)`))
+      .limit(200),
   ]);
 
   return {
@@ -284,6 +320,111 @@ export async function facetasDoAcervo() {
     // A disciplina é *sugerida* por classificador com 75,5% de acerto medido,
     // não rótulo curado: por isso o filtro existe, mas a tela avisa.
     disciplinas: disciplinas.filter((d) => d.disciplina),
+    temas: temas.filter((t) => t.tema && t.disciplina),
+  };
+}
+
+/**
+ * Catálogo de provas: um caderno por linha, só os que têm questão validada.
+ * É o que o aluno vê em /provas, agrupado por instituição e ano.
+ */
+export async function listarProvas() {
+  return db
+    .select({
+      documentId: sourceDocuments.id,
+      instituicao: sourceDocuments.instituicao,
+      instituicaoSlug: sourceDocuments.instituicaoSlug,
+      ano: sourceDocuments.ano,
+      fase: sourceDocuments.fase,
+      curso: sourceDocuments.curso,
+      banca: sourceDocuments.banca,
+      questoes: sql<number>`count(*)::int`,
+    })
+    .from(libraryQuestions)
+    .innerJoin(sourceDocuments, eq(sourceDocuments.id, libraryQuestions.documentId))
+    .where(
+      and(
+        eq(libraryQuestions.validada, true),
+        isNull(libraryQuestions.duplicataDe),
+        eq(libraryQuestions.tipo, "objetiva"),
+      ),
+    )
+    .groupBy(
+      sourceDocuments.id,
+      sourceDocuments.instituicao,
+      sourceDocuments.instituicaoSlug,
+      sourceDocuments.ano,
+      sourceDocuments.fase,
+      sourceDocuments.curso,
+      sourceDocuments.banca,
+    )
+    // Só vale a pena resolver como "prova" um caderno com volume de questões;
+    // 5 questões validadas de um caderno de 90 é amostra, não prova.
+    .having(sql`count(*) >= 10`)
+    .orderBy(asc(sourceDocuments.instituicao), desc(sourceDocuments.ano));
+}
+
+/** Uma prova com suas questões válidas em ordem, alternativas incluídas. */
+export async function obterProva(documentId: string) {
+  const [doc] = await db
+    .select({
+      id: sourceDocuments.id,
+      instituicao: sourceDocuments.instituicao,
+      instituicaoSlug: sourceDocuments.instituicaoSlug,
+      ano: sourceDocuments.ano,
+      fase: sourceDocuments.fase,
+      curso: sourceDocuments.curso,
+      banca: sourceDocuments.banca,
+    })
+    .from(sourceDocuments)
+    .where(eq(sourceDocuments.id, documentId))
+    .limit(1);
+  if (!doc) return null;
+
+  const questoes = await db
+    .select({
+      id: libraryQuestions.id,
+      numero: libraryQuestions.numero,
+      enunciado: libraryQuestions.enunciado,
+      gabaritoLetra: libraryQuestions.gabaritoLetra,
+      disciplinaSugerida: libraryQuestions.disciplinaSugerida,
+      temaSugerido: libraryQuestions.temaSugerido,
+      contextoNumero: libraryQuestions.contextoNumero,
+    })
+    .from(libraryQuestions)
+    .where(
+      and(
+        eq(libraryQuestions.documentId, documentId),
+        eq(libraryQuestions.validada, true),
+        isNull(libraryQuestions.duplicataDe),
+        eq(libraryQuestions.tipo, "objetiva"),
+      ),
+    )
+    .orderBy(asc(libraryQuestions.numero));
+
+  if (!questoes.length) return { ...doc, questoes: [] };
+
+  const opcoes = await db
+    .select()
+    .from(libraryQuestionOptions)
+    .where(
+      inArray(
+        libraryQuestionOptions.questionId,
+        questoes.map((q) => q.id),
+      ),
+    )
+    .orderBy(asc(libraryQuestionOptions.ordem));
+
+  const porQuestao = new Map<string, typeof opcoes>();
+  for (const o of opcoes) {
+    const lista = porQuestao.get(o.questionId) ?? [];
+    lista.push(o);
+    porQuestao.set(o.questionId, lista);
+  }
+
+  return {
+    ...doc,
+    questoes: questoes.map((q) => ({ ...q, alternativas: porQuestao.get(q.id) ?? [] })),
   };
 }
 
@@ -295,4 +436,74 @@ export async function contarQuestoes(filtro: FiltroQuestoes = {}) {
     .from(libraryQuestions)
     .where(cond.length ? and(...cond) : undefined);
   return linha?.total ?? 0;
+}
+
+/** Alternativas de um lote de questões (para a fila de revisão escolher o gabarito). */
+export async function alternativasDe(ids: string[]) {
+  const mapa = new Map<string, { letra: string; texto: string; correta: boolean | null }[]>();
+  if (!ids.length) return mapa;
+  const linhas = await db
+    .select({
+      questionId: libraryQuestionOptions.questionId,
+      letra: libraryQuestionOptions.letra,
+      texto: libraryQuestionOptions.texto,
+      correta: libraryQuestionOptions.correta,
+    })
+    .from(libraryQuestionOptions)
+    .where(inArray(libraryQuestionOptions.questionId, ids))
+    .orderBy(asc(libraryQuestionOptions.ordem));
+  for (const l of linhas) {
+    const lista = mapa.get(l.questionId) ?? [];
+    lista.push({ letra: l.letra, texto: l.texto, correta: l.correta });
+    mapa.set(l.questionId, lista);
+  }
+  return mapa;
+}
+
+/** Gabaritos que as cópias de uma questão apontam — é isso que "conflito" significa. */
+export async function gabaritosDasCopias(ids: string[]) {
+  const mapa = new Map<string, { id: string; gabarito: string | null; instituicao: string | null; ano: number | null }[]>();
+  if (!ids.length) return mapa;
+  const linhas = await db
+    .select({
+      id: libraryQuestions.id,
+      duplicataDe: libraryQuestions.duplicataDe,
+      gabarito: libraryQuestions.gabaritoLetra,
+      instituicao: sourceDocuments.instituicao,
+      ano: libraryQuestions.ano,
+    })
+    .from(libraryQuestions)
+    .innerJoin(sourceDocuments, eq(sourceDocuments.id, libraryQuestions.documentId))
+    .where(inArray(libraryQuestions.duplicataDe, ids));
+  for (const l of linhas) {
+    const lista = mapa.get(l.duplicataDe!) ?? [];
+    lista.push({ id: l.id, gabarito: l.gabarito, instituicao: l.instituicao, ano: l.ano });
+    mapa.set(l.duplicataDe!, lista);
+  }
+  return mapa;
+}
+
+/** Trilha de auditoria: as últimas revisões, com o nome de quem fez. */
+export async function historicoDeRevisoes(limite = 50) {
+  return db
+    .select({
+      id: libraryReviews.id,
+      questionId: libraryReviews.questionId,
+      acao: libraryReviews.acao,
+      antes: libraryReviews.antes,
+      depois: libraryReviews.depois,
+      nota: libraryReviews.nota,
+      createdAt: libraryReviews.createdAt,
+      revisor: users.name,
+      revisorEmail: users.email,
+      instituicao: sourceDocuments.instituicao,
+      ano: libraryQuestions.ano,
+      numero: libraryQuestions.numero,
+    })
+    .from(libraryReviews)
+    .innerJoin(users, eq(users.id, libraryReviews.reviewerId))
+    .innerJoin(libraryQuestions, eq(libraryQuestions.id, libraryReviews.questionId))
+    .innerJoin(sourceDocuments, eq(sourceDocuments.id, libraryQuestions.documentId))
+    .orderBy(desc(libraryReviews.createdAt))
+    .limit(Math.min(limite, 200));
 }

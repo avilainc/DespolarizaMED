@@ -42,6 +42,12 @@ export default async function AdminPage() {
         >
           Usuários
         </Link>
+        <Link
+          href="/gestao/acervo"
+          className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-muted"
+        >
+          Acervo
+        </Link>
       </nav>
 
       <div className="mt-8 space-y-10">

@@ -7,6 +7,8 @@ import { db } from "@/lib/db";
 import { lessonProgress } from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
 import { LessonPlayer } from "@/features/courses/components/lesson-player";
+import { FavoriteButton } from "@/features/practice/components/favorite-button";
+import { idsFavoritas } from "@/features/practice/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 
@@ -41,7 +43,11 @@ export default async function AulaPage({ params }: Props) {
     notFound();
   }
 
-  const materials = await getLessonMaterials(lesson.id);
+  const [materials, favoritas] = await Promise.all([
+    getLessonMaterials(lesson.id),
+    idsFavoritas(session.user.id, "LESSON"),
+  ]);
+  const favorita = favoritas.includes(String(lesson.id));
 
   let initialPositionSeconds = 0;
   {
@@ -72,7 +78,10 @@ export default async function AulaPage({ params }: Props) {
         </Link>
       )}
 
-      <h1 className="mt-2 text-2xl font-bold text-foreground">{lesson.title}</h1>
+      <div className="mt-2 flex items-start justify-between gap-3">
+        <h1 className="text-2xl font-bold text-foreground">{lesson.title}</h1>
+        <FavoriteButton tipo="LESSON" id={String(lesson.id)} inicial={favorita} rotulo="Favoritar" />
+      </div>
       {lesson.description && <p className="mt-1 text-muted-foreground">{lesson.description}</p>}
 
       <div className="mt-6">
