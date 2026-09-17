@@ -22,8 +22,8 @@ type Snapshot = {
   problemas: string[];
 };
 
-async function snapshot(id: string): Promise<Snapshot | null> {
-  const [q] = await db
+async function snapshot(id: string, executor: Pick<typeof db, "select"> = db): Promise<Snapshot | null> {
+  const [q] = await executor
     .select({
       validada: libraryQuestions.validada,
       rejeitada: libraryQuestions.rejeitada,
@@ -96,7 +96,11 @@ async function aplicar(
         .where(eq(libraryQuestions.duplicataDe, id));
     }
 
-    const novo = (await snapshot(id))!;
+    // snapshot(id, tx): a releitura precisa passar pela MESMA transação. Lida
+    // via `db` (outra conexão), o UPDATE acima ainda não é visível — READ
+    // COMMITTED não vê escrita não commitada de outra sessão — e o diff
+    // antes/depois em library_reviews saía sempre vazio.
+    const novo = (await snapshot(id, tx))!;
     const d = diff(antes, novo);
     await tx.insert(libraryReviews).values({
       questionId: id,
