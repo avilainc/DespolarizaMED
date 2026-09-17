@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { estadoDasMigracoes } from "@/lib/db/migracoes";
 import { loadManifest, buildInfo } from "@/lib/gapp/manifest";
 import { harnessTokenOk, unauthorized } from "@/lib/gapp/auth";
 
@@ -12,10 +12,9 @@ export async function GET(request: Request) {
   const { manifest } = await loadManifest();
   const { version, commit } = buildInfo();
 
-  const migrationVersion = await db
-    .execute(sql`select hash from drizzle.__drizzle_migrations order by created_at desc limit 1`)
-    .then((rows) => (rows as unknown as { hash?: string }[])[0]?.hash ?? null)
-    .catch(() => null);
+  // null em `migrations_pending` é "não sei" (banco fora do ar), que o motor de
+  // normas trata como não verificável — diferente de 0, que afirma estar em dia.
+  const migracoes = await estadoDasMigracoes(db).catch(() => null);
 
   return NextResponse.json({
     deploy: {
@@ -32,8 +31,9 @@ export async function GET(request: Request) {
       engine: manifest.db.engine,
       mode: "native",
       role: manifest.db.role,
-      migration_version: migrationVersion,
-      migrations_pending: 0,
+      migration_version: migracoes?.versao ?? null,
+      migrations_pending: migracoes ? migracoes.pendentes.length : null,
+      migrations_pending_tags: migracoes?.pendentes ?? null,
       // Sem rotina de backup ainda: null é "não sei", que o motor de normas
       // trata como não verificável. Preencher com uma data inventada aqui
       // seria transformar uma pendência real em conformidade falsa.

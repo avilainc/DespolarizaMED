@@ -28,11 +28,28 @@ COPY --from=build --chown=node:node /app/public ./public
 # bater com o do repositorio: copiado cru, sem reserializar.
 COPY --from=build --chown=node:node /app/gapp.yaml ./gapp.yaml
 
+# O container aplica as proprias migrations antes de servir (ver
+# docker-entrypoint.sh). Os .sql nao fazem parte do bundle do Next, entao sao
+# copiados a parte; MIGRATIONS_DIR aponta para eles.
+COPY --from=build --chown=node:node /app/src/lib/db/migrations ./migrations
+COPY --from=build --chown=node:node /app/scripts/migrar.mjs ./scripts/migrar.mjs
+# O migrar.mjs roda FORA do bundle do Next, entao precisa resolver estes dois
+# como pacotes de verdade. O standalone nao serve: o Next embute o driver no
+# chunk do servidor em vez de deixa-lo em node_modules, e o tracing por arquivo
+# materializa o .js sem o package.json, que nao carrega. Os dois nao tem
+# dependencia de runtime, entao copia-los e autocontido; vem do build stage,
+# travados na mesma versao que o lockfile resolveu.
+COPY --from=build --chown=node:node /app/node_modules/postgres ./node_modules/postgres
+COPY --from=build --chown=node:node /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
+COPY --chown=node:node docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
+
 USER node
 
 ENV NODE_ENV=production
 ENV PORT=3100
 ENV HOSTNAME=0.0.0.0
+ENV MIGRATIONS_DIR=/app/migrations
 
 EXPOSE 3100
 
@@ -41,4 +58,4 @@ EXPOSE 3100
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=30s \
   CMD node -e "fetch('http://127.0.0.1:3100/v1/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-CMD ["node", "server.js"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
