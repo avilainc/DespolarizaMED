@@ -38,11 +38,47 @@ jobs:
     uses: avilaops/infra/.github/workflows/container.yml@5fc768f4ebf631bdcd614b3e87a148dc08dd278f
     with:
       publish: ${{ github.event_name != 'pull_request' }}
+  # Abre o Deployment no GitHub (aba Environments/Deployments do repo) como a
+  # identidade do App "Avila Ops - Deploy DespolarizaMED", não como
+  # github-actions[bot]. O App só assina o token aqui, na Actions — nunca no
+  # servidor; quem toca o servidor continua sendo só o SSH (secrets DEPLOY_*).
+  deployment-open:
+    needs: [quality, image]
+    if: github.event_name != 'pull_request' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      deployments: write
+    outputs:
+      deployment_id: ${{ steps.criar.outputs.deployment_id }}
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        id: app-token
+        with:
+          app-id: 4993452
+          private-key: ${{ secrets.DESPOLARIZAMED_APP_PRIVATE_KEY }}
+      - name: Criar deployment
+        id: criar
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          # required_contexts:[] via --input, não -F: gh api não tem uma forma
+          # limpa de mandar array vazio por -f/-F, e sem isto a API assume
+          # "todo status configurado no repo" como pré-requisito e o POST
+          # falha (não há branch protection com status checks aqui).
+          id=$(jq -n --arg ref "${{ github.sha }}" '{ref: $ref, environment: "production", auto_merge: false, required_contexts: [], description: "Deploy despolarizamed.com.br"}' \
+            | gh api repos/${{ github.repository }}/deployments --input - --jq .id)
+          echo "deployment_id=$id" >> "$GITHUB_OUTPUT"
+          gh api repos/${{ github.repository }}/deployments/$id/statuses \
+            -f state=in_progress -f description="Build da imagem ok, enviando ao servidor"
+
   deploy:
     permissions:
       contents: read
       packages: read
-    needs: [quality, image]
+    needs: [quality, image, deployment-open]
     if: github.event_name != 'pull_request' && vars.DEPLOY_ENABLED == 'true'
     uses: avilaops/infra/.github/workflows/deploy-ssh.yml@5fc768f4ebf631bdcd614b3e87a148dc08dd278f
     with:
@@ -53,3 +89,34 @@ jobs:
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
       DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
       DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+
+  # Sempre roda depois do deploy (sucesso OU falha) para fechar o status que
+  # deployment-open abriu; sem isto o Deployment fica "in_progress" para
+  # sempre quando o SSH falha.
+  deployment-close:
+    needs: [deployment-open, deploy]
+    if: always() && needs.deployment-open.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        id: app-token
+        with:
+          app-id: 4993452
+          private-key: ${{ secrets.DESPOLARIZAMED_APP_PRIVATE_KEY }}
+      - name: Fechar deployment
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          if [[ "${{ needs.deploy.result }}" == "success" ]]; then
+            state=success; desc="Healthcheck ok, versão ${{ github.sha }} no ar"
+          else
+            state=failure; desc="Deploy falhou — ver o job 'deploy'"
+          fi
+          gh api "repos/${{ github.repository }}/deployments/${{ needs.deployment-open.outputs.deployment_id }}/statuses" \
+            -f state="$state" -f description="$desc" \
+            -f environment_url="https://despolarizamed.com.br"
