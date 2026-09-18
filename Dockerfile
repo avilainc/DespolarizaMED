@@ -46,6 +46,17 @@ RUN chmod +x ./docker-entrypoint.sh
 
 USER node
 
+# GIT_SHA chega como --build-arg (o job `image` do workflow já manda), mas um
+# ARG sem ENV correspondente é descartado no fim do build — o binário nunca
+# vê. version/commit continuam lidos em runtime (ver src/lib/gapp/manifest.ts,
+# buildInfo()) porque não são NEXT_PUBLIC_ e o build não os inlina; isto só
+# garante que a IMAGEM já carrega o valor certo como padrão, em vez de
+# depender de alguém setar APP_VERSION/GIT_COMMIT à mão no compose do
+# servidor a cada deploy — e esquecer, como aconteceu.
+ARG GIT_SHA=unknown
+ENV GIT_COMMIT=$GIT_SHA
+ENV APP_VERSION=sha-$GIT_SHA
+
 ENV NODE_ENV=production
 ENV PORT=3100
 ENV HOSTNAME=0.0.0.0
