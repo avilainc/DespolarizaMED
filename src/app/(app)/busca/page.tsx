@@ -1,13 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BookMarked, FileText, ListChecks, PlayCircle, Search } from "lucide-react";
+
 import { requireAssinatura } from "@/lib/auth/require-subscription";
-import { buscarNoAcervo, buscarQuestoes, contarQuestoes } from "@/features/library/queries";
+import { buscarNoAcervo, buscarQuestoes, contarQuestoes, facetasDoAcervo } from "@/features/library/queries";
 import { getGlossaryTerms } from "@/lib/payload/glossary";
 import { getPayloadClient } from "@/lib/payload";
 import type { Lesson } from "@/payload/payload-types";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, FileText, HelpCircle, PlayCircle, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { SubjectIcon } from "@/components/subject-icon";
+import { PageHeader, PageShell, SectionHeading } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
+import { IllustrationSearch } from "@/components/illustrations";
 
 export const metadata: Metadata = { title: "Busca — DespolarizaMED" };
 
@@ -46,52 +52,97 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
       ])
     : [[], [], 0, [], []];
 
-  const nada = termo && !aulas.length && !questoes.length && !termos.length && !paginas.length;
+  // Sugestões só quando ainda não há busca. São os temas que mais aparecem no
+  // acervo de verdade, lidos de `facetasDoAcervo`, e não uma lista escrita à
+  // mão: uma sugestão que não devolve resultado é pior que nenhuma.
+  const sugestoes = termo
+    ? []
+    : (await facetasDoAcervo()).temas
+        .filter((t) => t.tema && t.tema.length > 3)
+        .slice(0, 10)
+        .map((t) => ({ tema: t.tema as string, disciplina: t.disciplina }));
+
+  const nada = Boolean(termo) && !aulas.length && !questoes.length && !termos.length && !paginas.length;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold text-foreground">Busca</h1>
-      <p className="mt-1 text-muted-foreground">
-        Aulas, questões, glossário e o texto das provas, num lugar só.
-      </p>
+    <PageShell>
+      <PageHeader
+        titulo="Busca"
+        migalhas={[{ rotulo: "Início", href: "/dashboard" }, { rotulo: "Busca" }]}
+        descricao="Aulas, questões, glossário e o texto das provas, num lugar só."
+      />
 
-      <form className="mt-6 flex gap-3" role="search">
-        <Input
-          name="q"
-          defaultValue={termo}
-          placeholder="Ex.: fotossíntese, ligação peptídica, Segunda Lei de Newton…"
-          aria-label="Buscar"
-          autoFocus
-        />
-        <button
-          type="submit"
-          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
-        >
-          <Search className="size-4" /> Buscar
-        </button>
+      <form className="flex gap-2" role="search">
+        <div className="relative min-w-0 flex-1">
+          <Search
+            className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <Input
+            name="q"
+            defaultValue={termo}
+            placeholder="Busque por assunto, aula, questão ou termo…"
+            aria-label="Buscar"
+            autoFocus
+            className="h-14 pl-12 text-base md:text-base"
+          />
+        </div>
+        <Button type="submit" size="lg" className="h-14 shrink-0 px-6">
+          Buscar
+        </Button>
       </form>
 
+      {sugestoes.length > 0 && (
+        <section className="mt-8">
+          <SectionHeading titulo="Assuntos com mais questões no acervo" />
+          <div className="flex flex-wrap gap-2">
+            {sugestoes.map((s) => (
+              <Link
+                key={`${s.disciplina}-${s.tema}`}
+                href={`/busca?q=${encodeURIComponent(s.tema)}`}
+                className="flex items-center gap-2 rounded-full border border-border bg-card py-1.5 pr-3.5 pl-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+              >
+                <SubjectIcon disciplina={s.disciplina} size="sm" className="size-7 [&>svg]:size-3.5" />
+                {s.tema}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {nada && (
-        <p className="py-12 text-center text-muted-foreground">Nada encontrado para “{termo}”.</p>
+        <div className="mt-8">
+          <EmptyState
+            ilustracao={<IllustrationSearch />}
+            titulo={`Nada encontrado para “${termo}”`}
+            descricao="Tente um termo mais curto, o nome do assunto em vez da frase inteira, ou procure direto no banco de questões."
+            acao={
+              <Button variant="outline" render={<Link href="/questoes" />}>
+                Ir para o banco de questões
+              </Button>
+            }
+          />
+        </div>
       )}
 
       {aulas.length > 0 && (
-        <section className="mt-8">
-          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-            <PlayCircle className="size-4" /> Aulas
-          </h2>
-          <ul className="space-y-2">
-            {aulas.map((a) => (
-              <li key={a.id} className="rounded-lg border border-border bg-card p-4">
-                <Link href={`/aulas/${a.slug}`} className="font-medium text-foreground hover:underline">
-                  {a.title}
+        <section className="mt-10">
+          <SectionHeading titulo={`Aulas (${aulas.length})`} icone={PlayCircle} />
+          <ul className="overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-foreground/8">
+            {aulas.map((a, i) => (
+              <li key={a.id} className={i > 0 ? "border-t border-border" : ""}>
+                <Link href={`/aulas/${a.slug}`} className="flex items-start gap-3 px-4 py-3.5 hover:bg-muted/60">
+                  <PlayCircle className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-medium text-foreground">{a.title}</span>
+                    {typeof a.module === "object" && a.module && (
+                      <span className="block text-xs text-muted-foreground">{a.module.name}</span>
+                    )}
+                    {a.description && (
+                      <span className="mt-1 block line-clamp-2 text-sm text-muted-foreground">{a.description}</span>
+                    )}
+                  </span>
                 </Link>
-                {typeof a.module === "object" && (
-                  <span className="ml-2 text-xs text-muted-foreground">{a.module.name}</span>
-                )}
-                {a.description && (
-                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{a.description}</p>
-                )}
               </li>
             ))}
           </ul>
@@ -99,71 +150,89 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
       )}
 
       {questoes.length > 0 && (
-        <section className="mt-8">
-          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-            <HelpCircle className="size-4" /> Questões ({totalQuestoes.toLocaleString("pt-BR")})
-          </h2>
-          <ul className="space-y-2">
+        <section className="mt-10">
+          <SectionHeading
+            titulo={`Questões (${totalQuestoes.toLocaleString("pt-BR")})`}
+            icone={ListChecks}
+            acao={
+              totalQuestoes > questoes.length ? (
+                <Link
+                  href={`/questoes?q=${encodeURIComponent(termo)}`}
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  Ver todas
+                </Link>
+              ) : undefined
+            }
+          />
+          <ul className="space-y-3">
             {questoes.map((q) => (
-              <li key={q.id} className="rounded-lg border border-border bg-card p-4">
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  {q.instituicaoSlug && <Badge variant="secondary">{q.instituicaoSlug.toUpperCase()}</Badge>}
-                  {q.ano && <Badge variant="outline">{q.ano}</Badge>}
-                  {q.disciplinaSugerida && <span className="text-muted-foreground">{q.disciplinaSugerida}</span>}
+              <li key={q.id} className="rounded-xl bg-card p-4 shadow-xs ring-1 ring-foreground/8">
+                <div className="flex items-start gap-3">
+                  <SubjectIcon disciplina={q.disciplinaSugerida} size="sm" />
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+                    {q.instituicaoSlug && <Badge variant="secondary">{q.instituicaoSlug.toUpperCase()}</Badge>}
+                    {q.ano && <Badge variant="outline">{q.ano}</Badge>}
+                    {q.disciplinaSugerida && (
+                      <span className="text-xs text-muted-foreground">{q.disciplinaSugerida}</span>
+                    )}
+                  </div>
                 </div>
-                <Link href={`/questoes/${q.id}`} className="mt-2 block line-clamp-3 text-sm text-foreground [overflow-wrap:anywhere] hover:underline">
+                <Link
+                  href={`/questoes/${q.id}`}
+                  className="mt-3 block line-clamp-3 text-sm leading-relaxed text-foreground [overflow-wrap:anywhere] hover:underline"
+                >
                   {q.enunciado}
                 </Link>
               </li>
             ))}
           </ul>
-          {totalQuestoes > questoes.length && (
-            <Link href={`/questoes?q=${encodeURIComponent(termo)}`} className="mt-3 inline-block text-sm text-primary hover:underline">
-              Ver todas as {totalQuestoes.toLocaleString("pt-BR")} questões →
-            </Link>
-          )}
         </section>
       )}
 
       {termos.length > 0 && (
-        <section className="mt-8">
-          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-            <BookOpen className="size-4" /> Glossário
-          </h2>
-          <dl className="space-y-2">
+        <section className="mt-10">
+          <SectionHeading
+            titulo={`Glossário (${termos.length})`}
+            icone={BookMarked}
+            acao={
+              termos.length > 8 ? (
+                <Link
+                  href={`/glossario?q=${encodeURIComponent(termo)}`}
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  Ver todos
+                </Link>
+              ) : undefined
+            }
+          />
+          <dl className="grid gap-3 sm:grid-cols-2">
             {termos.slice(0, 8).map((t) => (
-              <div key={t.id} className="rounded-lg border border-border bg-card p-4">
-                <dt className="font-semibold text-foreground">{t.term}</dt>
-                <dd className="mt-1 line-clamp-2 text-sm text-muted-foreground">{t.definition}</dd>
+              <div key={t.id} className="rounded-xl bg-card p-4 shadow-xs ring-1 ring-foreground/8">
+                <dt className="font-heading font-semibold text-foreground">{t.term}</dt>
+                <dd className="mt-1 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{t.definition}</dd>
               </div>
             ))}
           </dl>
-          {termos.length > 8 && (
-            <Link href={`/glossario?q=${encodeURIComponent(termo)}`} className="mt-3 inline-block text-sm text-primary hover:underline">
-              Ver todos os {termos.length} termos →
-            </Link>
-          )}
         </section>
       )}
 
       {paginas.length > 0 && (
-        <section className="mt-8">
-          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-            <FileText className="size-4" /> Nas provas
-          </h2>
-          <ul className="space-y-2">
+        <section className="mt-10">
+          <SectionHeading titulo="Nas provas" icone={FileText} />
+          <ul className="space-y-3">
             {paginas.map((p) => (
-              <li key={`${p.documentId}-${p.pagina}`} className="rounded-lg border border-border bg-card p-4">
-                <div className="flex flex-wrap items-center gap-2 text-xs">
+              <li key={`${p.documentId}-${p.pagina}`} className="rounded-xl bg-card p-4 shadow-xs ring-1 ring-foreground/8">
+                <div className="flex flex-wrap items-center gap-1.5">
                   {p.instituicao && <Badge variant="secondary">{p.instituicao}</Badge>}
                   {p.ano && <Badge variant="outline">{p.ano}</Badge>}
-                  <span className="text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     {p.tipo.replace(/_/g, " ")} · p. {p.pagina}
                   </span>
                 </div>
                 {/* ts_headline devolve <b>…</b> em volta do termo; é o único HTML que entra aqui. */}
                 <p
-                  className="mt-2 text-sm text-muted-foreground [overflow-wrap:anywhere] [&_b]:font-semibold [&_b]:text-foreground"
+                  className="mt-2 text-sm leading-relaxed text-muted-foreground [overflow-wrap:anywhere] [&_b]:font-semibold [&_b]:text-foreground"
                   dangerouslySetInnerHTML={{ __html: escaparExcetoNegrito(p.trecho) }}
                 />
               </li>
@@ -171,7 +240,7 @@ export default async function BuscaPage({ searchParams }: { searchParams: Promis
           </ul>
         </section>
       )}
-    </div>
+    </PageShell>
   );
 }
 
