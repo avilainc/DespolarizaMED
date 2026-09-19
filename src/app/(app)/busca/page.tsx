@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, BookOpen, FileText, CircleHelp, PlayCircle, Search } from "lucide-react";
 import { requireAssinatura } from "@/lib/auth/require-subscription";
@@ -7,6 +8,7 @@ import {
   buscarQuestoes,
   contarQuestoes,
   facetasDoAcervo,
+  listarProvas,
 } from "@/features/library/queries";
 import { getGlossaryTerms } from "@/lib/payload/glossary";
 import { getPayloadClient } from "@/lib/payload";
@@ -32,6 +34,73 @@ async function buscarAulas(termo: string): Promise<Lesson[]> {
     depth: 1,
   });
   return r.docs;
+}
+
+type Cobertura = {
+  chave: string;
+  rotulo: string;
+  icone: typeof PlayCircle;
+  total: number;
+  descricao: string;
+  href: string;
+  cor: string;
+};
+
+/**
+ * O tamanho de cada acervo que a busca cobre.
+ *
+ * Os quatro números vêm de contagem de verdade — `totalDocs` do Payload e
+ * `count` do Postgres —, nunca de constante. Uma plataforma que anuncia
+ * "26 mil questões" numa tela e mostra outra coisa na seguinte perde a
+ * confiança do aluno no número inteiro.
+ */
+async function coberturaDaBusca(): Promise<Cobertura[]> {
+  const payload = await getPayloadClient();
+  const [aulas, glossario, questoes, provas] = await Promise.all([
+    payload.count({ collection: "lessons", where: { published: { equals: true } } }),
+    payload.count({ collection: "glossary-terms" }),
+    contarQuestoes({}),
+    listarProvas(),
+  ]);
+
+  return [
+    {
+      chave: "aulas",
+      rotulo: "Aulas",
+      icone: PlayCircle,
+      total: aulas.totalDocs,
+      descricao: "Título e descrição das aulas publicadas.",
+      href: "/disciplinas",
+      cor: "var(--materia-bio)",
+    },
+    {
+      chave: "questoes",
+      rotulo: "Questões",
+      icone: CircleHelp,
+      total: questoes,
+      descricao: "Enunciado das questões com gabarito conferido.",
+      href: "/questoes",
+      cor: "var(--brand-600)",
+    },
+    {
+      chave: "glossario",
+      rotulo: "Glossário",
+      icone: BookOpen,
+      total: glossario.totalDocs,
+      descricao: "Termos e definições escritos pelos professores.",
+      href: "/glossario",
+      cor: "var(--materia-quim)",
+    },
+    {
+      chave: "provas",
+      rotulo: "Provas",
+      icone: FileText,
+      total: provas.length,
+      descricao: "O texto original dos cadernos, página por página.",
+      href: "/provas",
+      cor: "var(--materia-fis)",
+    },
+  ];
 }
 
 /**
@@ -70,6 +139,12 @@ export default async function BuscaPage({
     .filter((t) => t.tema)
     .slice(0, 10)
     .map((t) => ({ tema: t.tema!, disciplina: t.disciplina }));
+
+  // O que a busca cobre, com o tamanho REAL de cada acervo. Sem isto a página
+  // sem termo ficava com o campo no topo e meia tela em branco embaixo — era
+  // a "busca que é quase uma página vazia". O número não é enfeite: ele diz
+  // se vale a pena procurar ali.
+  const coberturas = termo ? [] : await coberturaDaBusca();
 
   return (
     <>
@@ -127,6 +202,53 @@ export default async function BuscaPage({
               );
             })}
           </ul>
+        </section>
+      )}
+
+      {!termo && (
+        <section className="mt-10">
+          <SectionHeading icone={Search}>Onde a busca procura</SectionHeading>
+
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+            <ul className="grid gap-4 sm:grid-cols-2">
+              {coberturas.map((c) => (
+                <li key={c.chave}>
+                  <Link
+                    href={c.href}
+                    className="flex h-full items-start gap-3 rounded-xl border border-border bg-surface p-5 shadow-xs cartao-interativo"
+                  >
+                    <IconTile icone={c.icone} cor={c.cor} />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-wrap items-baseline gap-x-2">
+                        <span className="t-card-title text-text-primary">{c.rotulo}</span>
+                        <span
+                          className="tabular text-[0.875rem] font-semibold"
+                          style={{ color: c.cor }}
+                        >
+                          {c.total.toLocaleString("pt-BR")}
+                        </span>
+                      </span>
+                      <span className="t-meta mt-1 block">{c.descricao}</span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            <Image
+              src="/illustrations/vazio-busca.svg"
+              alt=""
+              aria-hidden
+              width={208}
+              height={156}
+              className="hidden h-auto w-52 justify-self-end lg:block"
+            />
+          </div>
+
+          <p className="t-meta mt-4">
+            A busca nas provas usa o texto original dos cadernos, como saiu do OCR — então vale
+            procurar pelo enunciado exato quando você lembra de uma frase da prova.
+          </p>
         </section>
       )}
 
