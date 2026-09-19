@@ -108,7 +108,7 @@ export default async function GlossarioPage({
           }
           acao={
             sp.q || sp.disciplina ? (
-              <Link href="/glossario" className={buttonVariants({ variant: "brand" })}>
+              <Link href="/glossario" className={buttonVariants()}>
                 Ver todos os termos
               </Link>
             ) : undefined
@@ -150,7 +150,7 @@ export default async function GlossarioPage({
                     return (
                       <div
                         key={t.id}
-                        className="rounded-xl border border-border bg-surface p-5 shadow-xs"
+                        className="cartao cartao-p-md"
                       >
                         <dt className="flex flex-wrap items-center gap-2">
                           <span className="t-card-title text-text-primary">{t.term}</span>

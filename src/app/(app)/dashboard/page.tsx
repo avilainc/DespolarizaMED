@@ -74,7 +74,7 @@ export default async function DashboardPage() {
           className="trama-axonio pointer-events-none absolute inset-0 opacity-40 [mask-image:linear-gradient(to_bottom_right,black,transparent_65%)]"
         />
 
-        <div className="relative grid gap-6 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-10">
+        <div className="relative grid gap-6 cartao-p-lg lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-8">
           <div className="min-w-0">
             <h1 className="t-display text-text-primary">
               {saudacao(new Date())}, {primeiroNome}.
@@ -88,7 +88,7 @@ export default async function DashboardPage() {
             </p>
 
             {continuacao ? (
-              <div className="mt-6 rounded-xl border border-border bg-surface p-4 shadow-sm sm:p-5">
+              <div className="mt-6 cartao cartao-p-md">
                 {/* Coluna no celular, linha a partir de `sm`. Com `flex-wrap` e
                     três filhos na mesma linha, em 390px o bloco de texto ficava
                     com ~150px e o título da aula quebrava em quatro linhas por
@@ -143,9 +143,7 @@ export default async function DashboardPage() {
 
                   <Link
                     href={`/aulas/${continuacao.aula.slug}`}
-                    className={buttonVariants({
-                      variant: "brand",
-                      size: "lg",
+                    className={buttonVariants({ size: "lg",
                       className: "w-full shrink-0 sm:w-auto",
                     })}
                   >
@@ -156,7 +154,7 @@ export default async function DashboardPage() {
               </div>
             ) : (
               <div className="mt-6">
-                <Link href="/questoes" className={buttonVariants({ variant: "brand", size: "lg" })}>
+                <Link href="/questoes" className={buttonVariants({ size: "lg" })}>
                   <CircleHelp data-icon="inline-start" aria-hidden />
                   Ir para o banco de questões
                 </Link>
@@ -182,7 +180,7 @@ export default async function DashboardPage() {
       {/* ------------------------------------------------------------------
           Progresso da semana
           ------------------------------------------------------------------ */}
-      <section className="mt-10">
+      <section className="secao">
         <SectionHeading
           icone={TrendingUp}
           acao={
@@ -248,7 +246,7 @@ export default async function DashboardPage() {
       {/* ------------------------------------------------------------------
           Continue estudando — disciplinas com progresso real
           ------------------------------------------------------------------ */}
-      <section className="mt-10">
+      <section className="secao">
         <SectionHeading
           icone={Library}
           acao={
@@ -279,7 +277,7 @@ export default async function DashboardPage() {
                 <li key={disciplina.id}>
                   <Link
                     href={`/disciplinas/${disciplina.slug}`}
-                    className="flex h-full flex-col rounded-xl border border-border bg-surface p-5 shadow-xs cartao-interativo"
+                    className="flex h-full flex-col cartao cartao-p-md cartao-interativo"
                   >
                     <div className="flex items-start gap-3">
                       <IconTile icone={visual.icone} cor={visual.cor} />
@@ -331,7 +329,7 @@ export default async function DashboardPage() {
           Acessos rápidos — cartões menores, peso menor. É a última seção de
           propósito: são atalhos, não a tarefa do dia.
           ------------------------------------------------------------------ */}
-      <section className="mt-10">
+      <section className="secao">
         <SectionHeading>Acessos rápidos</SectionHeading>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <ActionCard href="/questoes" icone={CircleHelp} titulo="Banco de questões">

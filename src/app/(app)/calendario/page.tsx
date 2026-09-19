@@ -111,7 +111,7 @@ export default async function CalendarioPage() {
         descricao="Seu cronograma, plantões, palestras e provas em um só lugar."
         acoes={
           !plano ? (
-            <Link href="/plano" className={buttonVariants({ variant: "brand" })}>
+            <Link href="/plano" className={buttonVariants()}>
               <CalendarCheck data-icon="inline-start" aria-hidden />
               Montar plano de estudos
             </Link>
@@ -160,7 +160,7 @@ export default async function CalendarioPage() {
           titulo="Nada marcado ainda"
           descricao="Monte seu plano de estudos e o cronograma aparece aqui, junto dos plantões, das palestras e da data da sua prova."
           acao={
-            <Link href="/plano" className={buttonVariants({ variant: "brand" })}>
+            <Link href="/plano" className={buttonVariants()}>
               <CalendarCheck data-icon="inline-start" aria-hidden />
               Montar plano de estudos
             </Link>

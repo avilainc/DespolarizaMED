@@ -24,7 +24,7 @@ export function MobileNav({ links }: { links: { href: string; rotulo: string }[]
       {aberto && (
         <nav
           id="menu-mobile"
-          className="absolute inset-x-0 top-16 z-40 border-b border-border bg-background px-4 py-3 shadow-md"
+          className="absolute inset-x-0 top-16 z-40 border-b border-border bg-surface px-4 py-3 shadow-lg"
         >
           <ul className="grid grid-cols-2 gap-1">
             {links.map((l) => {

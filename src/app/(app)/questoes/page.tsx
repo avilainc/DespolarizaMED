@@ -194,7 +194,7 @@ export default async function QuestoesPage({ searchParams }: { searchParams: Pro
           }
           acao={
             temFiltro ? (
-              <Link href="/questoes" className={buttonVariants({ variant: "brand" })}>
+              <Link href="/questoes" className={buttonVariants()}>
                 Limpar filtros
               </Link>
             ) : undefined

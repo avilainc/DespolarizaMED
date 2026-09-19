@@ -111,7 +111,7 @@ export default async function ProvasPage({
               <li key={t.id}>
                 <Link
                   href={`/provas/${t.documentId}/${t.id}`}
-                  className="flex h-full items-center gap-4 rounded-xl border border-brand-200 bg-brand-50/60 p-4 cartao-interativo"
+                  className="flex h-full items-center gap-4 rounded-xl border border-brand-200 bg-brand-50/60 cartao-p-sm cartao-interativo"
                 >
                   <Monograma nome={t.instituicao ?? "Prova"} />
                   <span className="min-w-0 flex-1">
@@ -140,11 +140,11 @@ export default async function ProvasPage({
           }
           acao={
             banca ? (
-              <Link href="/provas" className={buttonVariants({ variant: "brand" })}>
+              <Link href="/provas" className={buttonVariants()}>
                 Ver todas as provas
               </Link>
             ) : (
-              <Link href="/questoes" className={buttonVariants({ variant: "brand" })}>
+              <Link href="/questoes" className={buttonVariants()}>
                 Ir para o banco de questões
               </Link>
             )
@@ -170,7 +170,7 @@ export default async function ProvasPage({
                     <li key={p.documentId}>
                       <Link
                         href={`/provas/${p.documentId}`}
-                        className="flex h-full flex-col rounded-xl border border-border bg-surface p-5 shadow-xs cartao-interativo"
+                        className="flex h-full flex-col cartao cartao-p-md cartao-interativo"
                       >
                         <div className="flex items-start gap-3">
                           <Monograma nome={p.instituicao ?? "Prova"} />

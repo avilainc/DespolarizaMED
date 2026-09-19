@@ -78,7 +78,7 @@ export default async function ProfessorQuestoesPage({
           acao={
             <Link
               href="/professor/questoes/nova"
-              className={buttonVariants({ variant: "brand", size: "lg" })}
+              className={buttonVariants({ size: "lg" })}
             >
               <PenLine data-icon="inline-start" aria-hidden />
               Escrever a primeira
@@ -90,7 +90,7 @@ export default async function ProfessorQuestoesPage({
           {questoes.map((q) => {
             const visual = visualDaMateria(q.disciplina);
             return (
-              <li key={q.id} className="rounded-xl border border-border bg-surface p-4 shadow-xs">
+              <li key={q.id} className="cartao cartao-p-sm">
                 <div className="flex flex-wrap items-center gap-2">
                   <Tag tom="materia" cor={visual.cor} icone={visual.icone}>
                     {q.disciplina ?? "sem disciplina"}

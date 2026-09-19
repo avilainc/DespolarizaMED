@@ -104,7 +104,7 @@ export default async function AulaPage({ params }: Props) {
         }
       />
 
-      <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
+      <div className="overflow-hidden rounded-xl cartao">
         {lesson.videoUrl ? (
           <LessonPlayer
             lessonId={lesson.id}
@@ -128,7 +128,7 @@ export default async function AulaPage({ params }: Props) {
       </div>
 
       {materials.length > 0 && (
-        <section className="mt-8">
+        <section className="secao">
           <SectionHeading icone={FileText}>Materiais da aula</SectionHeading>
           <ul className="grid gap-3 md:grid-cols-2">
             {materials.map((material) => (
@@ -137,7 +137,7 @@ export default async function AulaPage({ params }: Props) {
                   href={typeof material.file === "object" ? (material.file.url ?? "#") : "#"}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex h-full items-center gap-3 rounded-xl border border-border bg-surface p-4 shadow-xs cartao-interativo"
+                  className="flex h-full items-center gap-3 cartao cartao-p-sm cartao-interativo"
                 >
                   <IconTile icone={FileText} cor={visual.cor} />
                   <span className="min-w-0 flex-1">

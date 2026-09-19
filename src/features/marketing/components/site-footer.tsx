@@ -41,36 +41,37 @@ const colunas = [
 
 export function SiteFooter() {
   return (
-    <footer className="border-t bg-secondary/20">
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
-          <div>
-            <Logo tamanho={32} href={null} />
-            <p className="mt-2 text-sm text-muted-foreground">
-              Plataforma completa de preparação para vestibulares de Medicina.
+    <footer className="border-t border-border bg-surface-subtle">
+      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+        <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-4">
+          <div className="max-w-xs">
+            <Logo tamanho={36} href={null} />
+            <p className="mt-3 text-[0.875rem] leading-relaxed text-text-secondary">
+              Plataforma de preparação para vestibulares de Medicina: aulas, banco de questões,
+              provas antigas e plantões ao vivo.
             </p>
           </div>
 
           {colunas.map((coluna) => (
-            <div key={coluna.title}>
-              <p className="text-sm font-semibold text-foreground">{coluna.title}</p>
-              <ul className="mt-3 space-y-1">
+            <nav key={coluna.title} aria-label={coluna.title}>
+              <p className="t-eyebrow">{coluna.title}</p>
+              <ul className="mt-3.5 space-y-0.5">
                 {coluna.links.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="-mx-2 block rounded px-2 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      className="-mx-2 block rounded-md px-2 py-2 text-[0.875rem] text-text-secondary transition-colors hover:text-brand-700"
                     >
                       {link.label}
                     </Link>
                   </li>
                 ))}
               </ul>
-            </div>
+            </nav>
           ))}
         </div>
 
-        <p className="mt-10 border-t pt-6 text-xs text-muted-foreground">
+        <p className="t-meta mt-12 border-t border-border pt-6">
           © {new Date().getFullYear()} DespolarizaMED. Todos os direitos reservados.
         </p>
       </div>

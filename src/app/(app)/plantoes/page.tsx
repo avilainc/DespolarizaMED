@@ -82,7 +82,7 @@ export default async function PlantoesPage() {
                     aoVivo ? "border-danger/40" : "border-border"
                   }`}
                 >
-                  <div className="flex flex-wrap items-start gap-4 p-5">
+                  <div className="flex flex-wrap items-start gap-4 cartao-p-md">
                     <IconTile icone={Video} cor={visual.cor} tamanho="lg" />
 
                     <div className="min-w-0 flex-1">
@@ -124,7 +124,7 @@ export default async function PlantoesPage() {
                     <div className="shrink-0">
                       {aoVivo && p.meetUrl ? (
                         <Button
-                          variant="brand"
+                         
                           size="lg"
                           render={
                             <a href={p.meetUrl} target="_blank" rel="noopener noreferrer" />
@@ -152,7 +152,7 @@ export default async function PlantoesPage() {
         )}
       </section>
 
-      <section className="mt-10">
+      <section className="secao">
         <SectionHeading icone={Mic2}>Palestras</SectionHeading>
 
         {palestras.length === 0 ? (
@@ -169,7 +169,7 @@ export default async function PlantoesPage() {
               return (
                 <li
                   key={p.id}
-                  className="flex flex-col rounded-xl border border-border bg-surface p-5 shadow-xs"
+                  className="flex flex-col cartao cartao-p-md"
                 >
                   <div className="flex items-start gap-3">
                     <IconTile icone={Mic2} cor="var(--materia-quim)" />
@@ -221,7 +221,7 @@ export default async function PlantoesPage() {
       </section>
 
       {passados.length > 0 && (
-        <section className="mt-10">
+        <section className="secao">
           <SectionHeading icone={PlayCircle}>Plantões anteriores</SectionHeading>
           <ul className="space-y-2">
             {passados.map((p) => {
@@ -230,7 +230,7 @@ export default async function PlantoesPage() {
               return (
                 <li
                   key={p.id}
-                  className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 shadow-xs"
+                  className="flex flex-wrap items-center gap-3 rounded-xl cartao px-4 py-3"
                 >
                   <IconTile icone={visual.icone} cor={visual.cor} tamanho="sm" />
                   <div className="min-w-0 flex-1">

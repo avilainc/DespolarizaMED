@@ -36,7 +36,7 @@ export default async function NovaQuestaoPage() {
       />
 
       {disciplinas.length === 0 ? (
-        <p className="rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
+        <p className="rounded-lg border border-border bg-card cartao-p-lg text-sm text-muted-foreground">
           Cadastre ao menos uma disciplina no painel de conteúdo antes de criar questões.
         </p>
       ) : (

@@ -76,7 +76,7 @@ export default async function ResultadoPage({
 
       {/* A nota em destaque, e não mais um card do mesmo tamanho dos outros
           três: é o número que a pessoa veio ver. */}
-      <section className="mb-4 overflow-hidden rounded-xl border border-border bg-surface p-6 shadow-sm">
+      <section className="mb-4 overflow-hidden rounded-xl cartao cartao-p-lg">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0">
             <p className="t-eyebrow">Seu desempenho nesta prova</p>
@@ -169,7 +169,7 @@ export default async function ResultadoPage({
         Temas classificados automaticamente a partir do enunciado; podem ter erros.
       </p>
 
-      <section className="mt-10">
+      <section className="secao">
         <SectionHeading icone={CircleHelp}>Gabarito comentado</SectionHeading>
         <ol className="space-y-4">
           {prova.questoes.map((q, i) => {

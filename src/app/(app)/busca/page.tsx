@@ -171,14 +171,14 @@ export default async function BuscaPage({
             className="campo h-12 rounded-xl pl-12 text-base shadow-xs"
           />
         </div>
-        <Button type="submit" size="lg" variant="brand" className="shrink-0">
+        <Button type="submit" size="lg" className="shrink-0">
           <Search data-icon="inline-start" aria-hidden />
           Buscar
         </Button>
       </form>
 
       {!termo && sugestoes.length > 0 && (
-        <section className="mt-8">
+        <section className="secao">
           <SectionHeading descricao="Temas com mais questões no acervo, prontos para pesquisar.">
             Comece por aqui
           </SectionHeading>
@@ -206,7 +206,7 @@ export default async function BuscaPage({
       )}
 
       {!termo && (
-        <section className="mt-10">
+        <section className="secao">
           <SectionHeading icone={Search}>Onde a busca procura</SectionHeading>
 
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
@@ -215,7 +215,7 @@ export default async function BuscaPage({
                 <li key={c.chave}>
                   <Link
                     href={c.href}
-                    className="flex h-full items-start gap-3 rounded-xl border border-border bg-surface p-5 shadow-xs cartao-interativo"
+                    className="flex h-full items-start gap-3 cartao cartao-p-md cartao-interativo"
                   >
                     <IconTile icone={c.icone} cor={c.cor} />
                     <span className="min-w-0 flex-1">
@@ -271,7 +271,7 @@ export default async function BuscaPage({
       )}
 
       {aulas.length > 0 && (
-        <section className="mt-8">
+        <section className="secao">
           <SectionHeading icone={PlayCircle}>Aulas ({aulas.length})</SectionHeading>
           <ul className="grid gap-3 md:grid-cols-2">
             {aulas.map((a) => {
@@ -284,7 +284,7 @@ export default async function BuscaPage({
                 <li key={a.id}>
                   <Link
                     href={`/aulas/${a.slug}`}
-                    className="flex h-full items-start gap-3 rounded-xl border border-border bg-surface p-4 shadow-xs cartao-interativo"
+                    className="flex h-full items-start gap-3 cartao cartao-p-sm cartao-interativo"
                   >
                     <IconTile icone={visual.icone} cor={visual.cor} />
                     <span className="min-w-0 flex-1">
@@ -309,7 +309,7 @@ export default async function BuscaPage({
       )}
 
       {questoes.length > 0 && (
-        <section className="mt-8">
+        <section className="secao">
           <SectionHeading
             icone={CircleHelp}
             acao={
@@ -334,7 +334,7 @@ export default async function BuscaPage({
                 <li key={q.id}>
                   <Link
                     href={`/questoes/${q.id}`}
-                    className="block rounded-xl border border-border bg-surface p-4 shadow-xs cartao-interativo"
+                    className="block cartao cartao-p-sm cartao-interativo"
                   >
                     <span className="flex flex-wrap items-center gap-2">
                       {q.instituicaoSlug && (
@@ -359,7 +359,7 @@ export default async function BuscaPage({
       )}
 
       {termos.length > 0 && (
-        <section className="mt-8">
+        <section className="secao">
           <SectionHeading
             icone={BookOpen}
             acao={
@@ -377,7 +377,7 @@ export default async function BuscaPage({
           </SectionHeading>
           <dl className="grid gap-3 md:grid-cols-2">
             {termos.slice(0, 8).map((t) => (
-              <div key={t.id} className="rounded-xl border border-border bg-surface p-4 shadow-xs">
+              <div key={t.id} className="cartao cartao-p-sm">
                 <dt className="t-card-title text-text-primary">{t.term}</dt>
                 <dd className="mt-1 line-clamp-2 text-[0.875rem] leading-relaxed text-text-secondary">
                   {t.definition}
@@ -389,7 +389,7 @@ export default async function BuscaPage({
       )}
 
       {paginas.length > 0 && (
-        <section className="mt-8">
+        <section className="secao">
           <SectionHeading
             icone={FileText}
             descricao="Trechos do texto original das provas, como saíram do caderno."
@@ -400,7 +400,7 @@ export default async function BuscaPage({
             {paginas.map((p) => (
               <li
                 key={`${p.documentId}-${p.pagina}`}
-                className="rounded-xl border border-border bg-surface p-4 shadow-xs"
+                className="cartao cartao-p-sm"
               >
                 <div className="flex flex-wrap items-center gap-2">
                   {p.instituicao && <Tag tom="marca">{p.instituicao}</Tag>}

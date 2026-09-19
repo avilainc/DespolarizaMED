@@ -77,7 +77,7 @@ export default async function DisciplinaPage({ params }: Props) {
           aulas, não o cabeçalho. */}
       {totalAulas > 0 && (
         <section
-          className="mb-8 overflow-hidden rounded-xl border border-border bg-surface p-5 shadow-xs sm:p-6"
+          className="mb-8 overflow-hidden cartao cartao-p-md"
           style={{ borderTopColor: visual.cor, borderTopWidth: 3 }}
         >
           <div className="flex flex-wrap items-center gap-6">
@@ -109,9 +109,9 @@ export default async function DisciplinaPage({ params }: Props) {
                 src={visual.ilustracao}
                 alt=""
                 aria-hidden
-                width={132}
-                height={99}
-                className="hidden h-auto w-28 shrink-0 sm:block"
+                width={176}
+                height={132}
+                className="hidden h-auto w-40 shrink-0 sm:block"
               />
             )}
           </div>
@@ -132,7 +132,7 @@ export default async function DisciplinaPage({ params }: Props) {
             return (
               <section
                 key={mod.id}
-                className="overflow-hidden rounded-xl border border-border bg-surface shadow-xs"
+                className="overflow-hidden cartao"
               >
                 <header className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border bg-surface-subtle/60 px-5 py-4">
                   <h2 className="t-section min-w-0 flex-1 text-text-primary">{mod.name}</h2>

@@ -46,7 +46,7 @@ export default async function AcervoPage({ searchParams }: { searchParams: Promi
         descricao="Provas ingeridas do pipeline de extração e fila de revisão do que ficou duvidoso. Toda decisão aqui fica registrada com autor e hora."
       />
 
-      <section className="mt-8">
+      <section className="secao">
         <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
           <FileStack className="size-4" /> Números do acervo
         </h2>
@@ -64,7 +64,7 @@ export default async function AcervoPage({ searchParams }: { searchParams: Promi
         </div>
       </section>
 
-      <section className="mt-10">
+      <section className="secao">
         <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
           <AlertTriangle className="size-4" /> Fila de revisão
           <span className="font-normal text-muted-foreground">
@@ -83,7 +83,7 @@ export default async function AcervoPage({ searchParams }: { searchParams: Promi
               const alts = alternativas.get(item.id) ?? [];
               const outrasVersoes = versoes.get(item.id) ?? [];
               return (
-                <article key={item.id} className="rounded-lg border border-border bg-card p-4" data-testid="fila-item" data-question-id={item.id}>
+                <article key={item.id} className="rounded-lg border border-border bg-card cartao-p-sm" data-testid="fila-item" data-question-id={item.id}>
                   <header className="flex flex-wrap items-center gap-2 text-xs">
                     {item.conflitoDuplicata && <Badge variant="destructive">conflito de duplicata</Badge>}
                     {item.duplicataDe && <Badge variant="outline">cópia</Badge>}
@@ -156,7 +156,7 @@ export default async function AcervoPage({ searchParams }: { searchParams: Promi
         )}
       </section>
 
-      <section className="mt-10">
+      <section className="secao">
         <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
           <History className="size-4" /> Histórico de revisões
         </h2>

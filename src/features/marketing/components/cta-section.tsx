@@ -1,22 +1,34 @@
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 
+/**
+ * Último bloco da landing: o azul-marinho institucional em bloco cheio, que
+ * é o único lugar da página pública onde ele aparece assim. Serve de ponto
+ * final — depois dele só vem o rodapé.
+ */
 export function CtaSection() {
   return (
-    <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
-      <div className="flex flex-col items-center gap-6 rounded-3xl bg-primary px-6 py-16 text-center text-primary-foreground sm:px-12">
-        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-          Pronto para transformar sua preparação?
-        </h2>
-        <p className="max-w-xl text-primary-foreground/90">
-          Junte-se ao DespolarizaMED e tenha aulas, exercícios, provas e acompanhamento em um
-          único lugar.
-        </p>
-        <Link href="/cadastro" className={buttonVariants({ size: "lg", variant: "secondary" })}>
-          Criar minha conta
-          <ArrowRight className="ms-2 size-4" />
-        </Link>
+    <section className="mx-auto max-w-6xl px-4 pb-[var(--espaco-vitrine)] sm:px-6">
+      <div className="relative overflow-hidden rounded-3xl bg-brand-900 px-6 py-16 text-center sm:px-12">
+        <div
+          aria-hidden
+          className="trama-axonio-clara pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_top,black,transparent_75%)]"
+        />
+        <div className="relative mx-auto flex max-w-2xl flex-col items-center gap-5">
+          <h2 className="t-display text-white">Pronto para começar a estudar?</h2>
+          <p className="text-[1.0625rem] leading-relaxed text-brand-100">
+            Aulas, banco de questões, provas antigas, plano de estudos e plantões ao vivo — em uma
+            assinatura só.
+          </p>
+          <Link
+            href="/cadastro"
+            className={buttonVariants({ size: "lg", variant: "secondary", className: "mt-2" })}
+          >
+            Criar minha conta
+            <ArrowRight data-icon="inline-end" aria-hidden />
+          </Link>
+        </div>
       </div>
     </section>
   );

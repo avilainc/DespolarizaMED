@@ -57,7 +57,7 @@ export default async function ProfessorPlantoesPage({
                   const passado = p.endsAt < agora;
                   const meu = p.teacherId === session.user.id || role === "ADMIN";
                   return (
-                    <li key={p.id} className={`rounded-lg border border-border bg-card p-4 ${passado ? "opacity-70" : ""}`}>
+                    <li key={p.id} className={`rounded-lg border border-border bg-card cartao-p-sm ${passado ? "opacity-70" : ""}`}>
                       <div className="flex flex-wrap items-center gap-2 text-xs">
                         <Badge variant={passado ? "outline" : "default"}>{passado ? "realizado" : "agendado"}</Badge>
                         {p.subjectId && nomeDisciplina.has(p.subjectId) && (
@@ -97,7 +97,7 @@ export default async function ProfessorPlantoesPage({
             ) : (
               <ul className="space-y-2">
                 {palestras.map((p) => (
-                  <li key={p.id} className="rounded-lg border border-border bg-card p-4">
+                  <li key={p.id} className="rounded-lg border border-border bg-card cartao-p-sm">
                     <div className="flex flex-wrap items-center gap-2 text-xs">
                       {p.scheduledFor && <span className="text-muted-foreground">{quando(p.scheduledFor)}</span>}
                       {p.speaker && <span className="text-muted-foreground">· {p.speaker}</span>}

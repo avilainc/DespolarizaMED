@@ -1,14 +1,13 @@
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Check } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { unstable_cache } from "next/cache";
+import { Check, ShieldCheck } from "lucide-react";
 
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { listarPlanosAtivos } from "@/features/billing/queries";
 import { brl, melhorPrecoMensal, periodoDe, porMes } from "@/features/billing/precos";
 import { beneficiosPorSlug } from "@/features/marketing/content";
+import { CabecalhoDeSecao } from "./secao";
 
 /**
  * Preço vem do banco, não de constante na landing.
@@ -35,96 +34,113 @@ export async function PlansSection() {
   const maisBarato = melhorPrecoMensal(planos);
 
   return (
-    <section id="planos" className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-      <div className="mx-auto max-w-2xl text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          Planos e assinatura
-        </h2>
-        <p className="mt-3 text-muted-foreground">
-          Escolha o plano ideal para a sua reta final. Pagamento processado com segurança via
-          Mercado Pago.
-        </p>
-      </div>
+    <section id="planos" className="secao-vitrine mx-auto max-w-6xl px-4 sm:px-6">
+      <CabecalhoDeSecao
+        sobretitulo="Assinatura"
+        titulo="Planos"
+        descricao="Escolha o plano ideal para a sua reta final. Pagamento processado com segurança via Mercado Pago."
+      />
 
       {planos.length === 0 ? (
         // Sem planos cadastrados não há o que anunciar — e inventar um preço
         // aqui seria recriar exatamente a divergência que esta seção corrigiu.
-        <p className="mt-12 text-center text-muted-foreground">
+        <p className="mt-12 text-center text-text-secondary">
           Os planos estão sendo atualizados. Volte em instantes.
         </p>
       ) : (
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
+        <div className="mt-12 grid gap-5 md:grid-cols-3">
           {planos.map((plano) => {
             const periodo = periodoDe(plano.billingPeriod);
             const destaque = planos.length > 1 && porMes(plano) === maisBarato;
             const beneficios = beneficiosPorSlug[plano.slug] ?? beneficiosPorSlug.padrao;
 
             return (
-              <Card
+              <article
                 key={plano.id}
                 className={cn(
-                  "flex flex-col",
-                  destaque && "border-primary shadow-lg ring-1 ring-primary",
+                  "cartao relative flex flex-col overflow-hidden",
+                  // O plano em destaque é o único cartão da página com sombra.
+                  // É ela, e não uma segunda cor, que diz "olhe para este".
+                  destaque && "border-brand-500 shadow-[var(--shadow-nivel-2)]",
                 )}
               >
-                <CardHeader>
-                  {/* Altura reservada mesmo sem badge: sem isto os três cards
-                      desalinham o preço, e o destacado parece de outro tamanho. */}
-                  <div className="mb-2 flex h-6 items-center">
-                    {destaque && <Badge variant="default">Melhor preço por mês</Badge>}
-                  </div>
-                  <CardTitle className="text-xl">{plano.name}</CardTitle>
-                  <p className="min-h-10 text-sm text-muted-foreground">{beneficios.descricao}</p>
-                  <div className="mt-4 flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-foreground">
-                      {brl(plano.priceCents)}
-                    </span>
-                    <span className="text-sm text-muted-foreground">{periodo.curto}</span>
-                  </div>
+                {/* A tarja existe nos TRÊS cartões; nos outros dois ela é
+                    invisível. Renderizá-la só no destaque empurrava o título, o
+                    preço e o botão daquele cartão 35px para baixo, e as três
+                    colunas ficavam desencontradas — exatamente o defeito que as
+                    alturas reservadas abaixo já tentavam evitar.
+                    Abaixo de `md` a grade vira uma coluna: não há nada para
+                    alinhar, e a tarja invisível seria só uma faixa vazia no
+                    topo de dois cartões. Aí ela sai do fluxo. */}
+                <p
+                  aria-hidden={!destaque}
+                  className={cn(
+                    "px-5 py-2 text-center text-[0.75rem] font-semibold tracking-wide",
+                    destaque ? "bg-brand-600 text-white" : "hidden md:invisible md:block",
+                  )}
+                >
+                  {destaque ? "Melhor preço por mês" : "\u00a0"}
+                </p>
+
+                <div className="cartao-p-lg flex flex-1 flex-col">
+                  <h3 className="t-section text-text-primary">{plano.name}</h3>
+                  {/* Altura reservada mesmo com uma linha só: sem isto os três
+                      cartões desalinham o preço e o destacado parece de outro
+                      tamanho. */}
+                  <p className="mt-1.5 min-h-11 text-[0.875rem] leading-relaxed text-text-secondary">
+                    {beneficios.descricao}
+                  </p>
+
+                  <p className="mt-5 flex items-baseline gap-1.5">
+                    <span className="t-metric text-text-primary">{brl(plano.priceCents)}</span>
+                    <span className="text-[0.875rem] text-text-muted">{periodo.curto}</span>
+                  </p>
                   {/* O equivalente mensal fica sempre presente (invisível quando
-                      não se aplica) para os três cards manterem a mesma altura. */}
+                      não se aplica) para os três cartões manterem a mesma altura. */}
                   <p
                     className={cn(
-                      "mt-1 text-sm text-muted-foreground",
+                      "t-meta tabular mt-1.5",
                       periodo.meses === 1 && "invisible",
                     )}
                     aria-hidden={periodo.meses === 1}
                   >
                     equivale a {brl(porMes(plano))} por mês
                   </p>
-                </CardHeader>
 
-                <CardContent className="flex-1">
-                  <ul className="space-y-2">
+                  <ul className="mt-6 flex-1 space-y-2.5 border-t border-border pt-6">
                     {beneficios.itens.map((item) => (
-                      <li key={item} className="flex items-start gap-2 text-sm">
-                        <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
-                        <span className="text-foreground">{item}</span>
+                      <li key={item} className="flex items-start gap-2.5 text-[0.9375rem]">
+                        <Check
+                          aria-hidden
+                          strokeWidth={2.5}
+                          className="mt-0.5 size-4 shrink-0 text-success"
+                        />
+                        <span className="text-text-secondary">{item}</span>
                       </li>
                     ))}
                   </ul>
-                </CardContent>
 
-                <CardFooter>
                   <Link
                     href={`/cadastro?plano=${plano.slug}`}
                     className={buttonVariants({
-                      className: "w-full",
+                      size: "lg",
                       variant: destaque ? "default" : "outline",
+                      className: "mt-7 w-full",
                     })}
                   >
                     Assinar {plano.name}
                   </Link>
-                </CardFooter>
-              </Card>
+                </div>
+              </article>
             );
           })}
         </div>
       )}
 
-      <p className="mt-8 text-center text-xs text-muted-foreground">
-        Renovação automática no fim de cada período. Cancele quando quiser, pelo Mercado Pago ou
-        em Minha conta.
+      <p className="mt-8 flex items-center justify-center gap-2 text-center text-[0.8125rem] text-text-muted">
+        <ShieldCheck aria-hidden className="size-4 shrink-0" />
+        Renovação automática no fim de cada período. Cancele quando quiser, pelo Mercado Pago ou em
+        Minha conta.
       </p>
     </section>
   );

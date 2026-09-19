@@ -69,7 +69,7 @@ export default async function ProfessorPage() {
         />
       </div>
 
-      <section className="mt-9">
+      <section className="secao">
         <SectionHeading icone={GraduationCap}>Ferramentas</SectionHeading>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <ActionCard href="/professor/questoes" icone={PenLine} titulo="Questões autorais">
@@ -86,7 +86,7 @@ export default async function ProfessorPage() {
         </div>
       </section>
 
-      <section className="mt-9">
+      <section className="secao">
         <SectionHeading
           icone={Users}
           descricao="Aulas concluídas sobre aulas iniciadas, por aluno."
