@@ -7,9 +7,14 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  /* --font-sans apontava para si mesmo (`var(--font-sans)` sem nada definir
+     essa custom property) — nunca resolvia, então a propriedade virava
+     inválida e o navegador caía no serifado padrão (Times) no site inteiro,
+     silenciosamente. `--font-geist-sans` é a variável real, criada pelo
+     next/font em layout.tsx. */
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-fraunces);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -97,14 +102,37 @@
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  /* Sidebar clara com acento navy, não painel escuro: um sidebar dark é
+     exatamente a assinatura visual de admin/SaaS genérico que o produto
+     precisa deixar de parecer. */
+  --sidebar: oklch(0.99 0.004 250);
+  --sidebar-foreground: oklch(0.255 0.028 249);
+  --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-accent: oklch(0.955 0.015 250);
+  --sidebar-accent-foreground: var(--primary);
+  --sidebar-border: oklch(0.92 0.012 250);
+  --sidebar-ring: var(--ring);
+
+  /* Fundo principal por trás dos cards: levemente azulado, nunca branco puro
+     colado em branco puro — é a maior queixa visual da auditoria ("cards
+     quase sem profundidade sobre fundo quase branco"). */
+  --app-bg: oklch(0.975 0.006 250);
+
+  /* Uma cor por matéria, para o card de disciplina/questão carregar
+     identidade sem virar carnaval — usadas só em ícone/acento, nunca em
+     grandes áreas de fundo. Chave = disciplina_sugerida do classificador
+     (ver src/lib/subjects-visual.ts), maiúscula porque é como o acervo grava. */
+  --subject-biologia: oklch(0.6 0.13 155);
+  --subject-quimica: var(--brand-orange-texto);
+  --subject-fisica: oklch(0.55 0.16 290);
+  --subject-matematica: oklch(0.55 0.14 25);
+  --subject-portugues: oklch(0.5 0.14 350);
+  --subject-ingles: oklch(0.52 0.11 230);
+  --subject-historia: oklch(0.5 0.1 70);
+  --subject-geografia: oklch(0.55 0.12 165);
+  --subject-filosofia: oklch(0.5 0.08 300);
+  --subject-default: var(--brand-blue);
 }
 
 /* O tema escuro estava em cinza puro (croma 0), o padrão do scaffold. Agora
@@ -161,5 +189,14 @@
   }
   html {
     @apply font-sans;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-heading;
+  }
+  ::selection {
+    background-color: color-mix(in oklch, var(--primary), transparent 75%);
   }
 }
