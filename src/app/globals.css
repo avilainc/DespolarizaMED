@@ -166,16 +166,30 @@
 
   --text-primary: oklch(0.255 0.028 249);
   --text-secondary: oklch(0.432 0.029 250);
-  --text-muted: oklch(0.554 0.024 250);
+  /* 0.538 e não 0.554: no valor anterior o texto de apoio media 4,32:1 sobre
+     `--surface-subtle` (fundo de cabeçalho de tabela e de card) e 4,47:1 sobre
+     o fundo da página — os dois abaixo dos 4,5:1 da AA. Medido por
+     `node scripts/testes/contraste.mjs`. */
+  --text-muted: oklch(0.538 0.024 250);
 
+  /* Dois pesos de borda com papéis diferentes:
+     `--border` desenha divisórias e contornos de card, que são decorativos e
+     por isso podem ser discretos;
+     `--border-strong` desenha a FRONTEIRA de controle (input, select,
+     textarea). Essa a WCAG 1.4.11 exige em 3:1, porque o preenchimento branco
+     do campo sobre o fundo quase branco da página mede 1,05:1 e não
+     identifica o controle sozinho. 0.668 é o valor mais CLARO que ainda passa
+     — o mínimo de peso visual para o máximo de conformidade. */
   --border: oklch(0.912 0.009 250);
-  --border-strong: oklch(0.858 0.014 250);
+  --border-strong: oklch(0.668 0.014 250);
   --focus: var(--brand-500);
 
   /* Semânticas. Só entram quando SIGNIFICAM alguma coisa (acertou, atrasou,
      errou) — nunca como decoração. `-soft` é o fundo, `-text` é a cor que
      escreve por cima dele com contraste AA. */
-  --success: oklch(0.58 0.125 158);
+  /* 0.549 e não 0.58: com o valor anterior, texto branco sobre o verde cheio
+     (a letra da alternativa certa, no banco de questões) media 4,03:1. */
+  --success: oklch(0.549 0.125 158);
   --success-soft: oklch(0.955 0.035 158);
   --success-text: oklch(0.44 0.105 158);
   --warning: oklch(0.73 0.15 68);

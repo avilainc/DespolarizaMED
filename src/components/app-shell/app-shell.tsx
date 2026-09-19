@@ -38,6 +38,16 @@ export function AppShell({
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[var(--shell-sidebar)_minmax(0,1fr)]">
+      {/* Pular para o conteúdo. Com a barra lateral no começo do documento, quem
+          navega por teclado atravessava dezesseis links antes de chegar na
+          página — em toda navegação. O link fica invisível até receber foco. */}
+      <a
+        href="#conteudo"
+        className="sr-only z-50 focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:inline-flex focus:h-11 focus:items-center focus:rounded-lg focus:bg-brand-800 focus:px-4 focus:text-[0.875rem] focus:font-medium focus:text-white focus:shadow-lg"
+      >
+        Pular para o conteúdo
+      </a>
+
       {/* --- barra lateral (desktop) --- */}
       <aside className="sticky top-0 hidden h-screen flex-col border-r border-border bg-surface lg:flex">
         <div className="flex h-[var(--shell-header)] shrink-0 items-center border-b border-border px-4">
@@ -107,7 +117,7 @@ export function AppShell({
           </div>
         </header>
 
-        <main className="min-w-0 flex-1">
+        <main id="conteudo" tabIndex={-1} className="min-w-0 flex-1">
           <div className="mx-auto w-full max-w-(--content-max) px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
             {children}
           </div>
