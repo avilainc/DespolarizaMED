@@ -267,3 +267,126 @@
     padding-block: 0.625rem;
   }
 }
+
+/* Tema do react-big-calendar.
+   A biblioteca traz o próprio CSS, pensado para um cinza neutro de 2015:
+   bordas duras, cabeçalho de dia em caixa alta miúda, evento azul padrão.
+   Sobrescrever com utilitários arbitrários dentro do componente gerava uma
+   linha de trinta `[&_.rbc-…]`, ilegível e incompleta. Aqui fica num lugar
+   só, usando os tokens do produto. */
+.calendario {
+  --rbc-borda: var(--border);
+}
+.calendario .rbc-calendar {
+  font-family: inherit;
+}
+.calendario .rbc-month-view,
+.calendario .rbc-time-view,
+.calendario .rbc-agenda-view table.rbc-agenda-table {
+  border-color: var(--rbc-borda);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.calendario .rbc-header {
+  padding: 0.625rem 0.5rem;
+  border-color: var(--rbc-borda);
+  border-bottom-width: 1px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+.calendario .rbc-header + .rbc-header,
+.calendario .rbc-day-bg + .rbc-day-bg,
+.calendario .rbc-month-row + .rbc-month-row,
+.calendario .rbc-time-content > * + * > *,
+.calendario .rbc-timeslot-group {
+  border-color: var(--rbc-borda);
+}
+.calendario .rbc-off-range-bg {
+  background: color-mix(in oklch, var(--muted), transparent 40%);
+}
+.calendario .rbc-today {
+  background: color-mix(in oklch, var(--primary), transparent 92%);
+}
+/* O número do dia de hoje ganha o disco da cor institucional: era a única
+   marca de "você está aqui" que o calendário não tinha. */
+.calendario .rbc-date-cell {
+  padding: 0.375rem 0.5rem 0;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+.calendario .rbc-date-cell.rbc-now > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 600;
+}
+.calendario .rbc-event {
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.125rem 0.375rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+.calendario .rbc-event:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.calendario .rbc-show-more {
+  color: var(--primary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  background: transparent;
+}
+.calendario .rbc-toolbar {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.calendario .rbc-toolbar .rbc-toolbar-label {
+  font-family: var(--font-heading);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--foreground);
+  text-transform: capitalize;
+}
+.calendario .rbc-toolbar button {
+  min-height: 2.25rem;
+  padding-inline: 0.875rem;
+  border-color: var(--border);
+  border-radius: var(--radius-md);
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.calendario .rbc-toolbar button:hover,
+.calendario .rbc-toolbar button:focus-visible {
+  background: var(--muted);
+  border-color: var(--border);
+  color: var(--foreground);
+}
+.calendario .rbc-toolbar button.rbc-active,
+.calendario .rbc-toolbar button.rbc-active:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+.calendario .rbc-agenda-view table.rbc-agenda-table tbody > tr > td {
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  border-color: var(--rbc-borda);
+}
+.calendario .rbc-agenda-view table.rbc-agenda-table thead > tr > th {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  border-color: var(--rbc-borda);
+}

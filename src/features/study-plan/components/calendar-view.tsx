@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, dateFnsLocalizer, type View } from "react-big-calendar";
 import { format, getDay, parse, startOfWeek } from "date-fns";
@@ -40,11 +40,24 @@ const MENSAGENS = {
   showMore: (n: number) => `+${n} mais`,
 };
 
+/**
+ * Cor por tipo de evento, como variável do tema em vez de hex solto.
+ * Reaproveita as cores que já existem: o azul institucional para o plano, e
+ * as de matéria para plantão e palestra, para o calendário não introduzir uma
+ * paleta própria que não aparece em nenhum outro lugar do produto.
+ */
 const COR: Record<EventoCalendario["tipo"], string> = {
   PLANO: "var(--primary)",
-  PLANTAO: "#0ea5e9",
-  PALESTRA: "#8b5cf6",
-  PROVA: "#ef4444",
+  PLANTAO: "var(--brand-blue)",
+  PALESTRA: "var(--subject-fisica)",
+  PROVA: "var(--destructive)",
+};
+
+const ROTULO: Record<EventoCalendario["tipo"], string> = {
+  PLANO: "Plano de estudos",
+  PLANTAO: "Plantão",
+  PALESTRA: "Palestra",
+  PROVA: "Prova",
 };
 
 export function CalendarView({ eventos }: { eventos: EventoCalendario[] }) {
@@ -52,21 +65,35 @@ export function CalendarView({ eventos }: { eventos: EventoCalendario[] }) {
   const [view, setView] = useState<View>("month");
   const [data, setData] = useState(new Date());
 
+  /**
+   * No celular a visão de mês vira uma grade de 7 colunas com 2mm cada, onde
+   * nenhum evento cabe. A tela pequena abre em agenda, que é lista, e o aluno
+   * troca para mês se quiser.
+   *
+   * A decisão roda depois da montagem (e não em `useState`) porque `window`
+   * não existe na renderização do servidor, e um valor inicial diferente
+   * entre servidor e cliente quebraria a hidratação.
+   */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(max-width: 767px)").matches) setView("agenda");
+  }, []);
+
   const lista = useMemo(
     () => eventos.map((e) => ({ ...e, start: new Date(e.start), end: new Date(e.end) })),
     [eventos],
   );
 
   return (
-    <div className="rounded-lg border border-border bg-card p-3 text-sm [&_.rbc-toolbar_button]:rounded-md [&_.rbc-toolbar_button]:border-border [&_.rbc-toolbar_button]:text-foreground [&_.rbc-toolbar_button.rbc-active]:bg-primary [&_.rbc-toolbar_button.rbc-active]:text-primary-foreground [&_.rbc-off-range-bg]:bg-muted/40 [&_.rbc-today]:bg-primary/10 [&_.rbc-header]:border-border [&_.rbc-month-view]:border-border [&_.rbc-day-bg]:border-border [&_.rbc-time-view]:border-border">
-      <div className="mb-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
+    <div className="calendario rounded-xl bg-card p-4 shadow-xs ring-1 ring-foreground/8">
+      <ul className="mb-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
         {(Object.keys(COR) as EventoCalendario["tipo"][]).map((t) => (
-          <span key={t} className="inline-flex items-center gap-1.5">
-            <span className="inline-block size-2.5 rounded-sm" style={{ background: COR[t] }} />
-            {{ PLANO: "Plano de estudos", PLANTAO: "Plantão", PALESTRA: "Palestra", PROVA: "Prova" }[t]}
-          </span>
+          <li key={t} className="inline-flex items-center gap-1.5">
+            <span className="inline-block size-2.5 rounded-full" style={{ background: COR[t] }} aria-hidden />
+            {ROTULO[t]}
+          </li>
         ))}
-      </div>
+      </ul>
       <Calendar
         localizer={localizer}
         culture="pt-BR"
@@ -83,9 +110,10 @@ export function CalendarView({ eventos }: { eventos: EventoCalendario[] }) {
           style: {
             backgroundColor: COR[e.tipo],
             borderColor: COR[e.tipo],
-            opacity: e.concluido ? 0.5 : 1,
+            // Item do plano já concluído continua visível, mas apagado e
+            // riscado: some da atenção sem sumir do histórico da semana.
+            opacity: e.concluido ? 0.45 : 1,
             textDecoration: e.concluido ? "line-through" : undefined,
-            fontSize: "0.75rem",
           },
         })}
         onSelectEvent={(e) => {

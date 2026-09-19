@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CalendarClock, CalendarDays, Target } from "lucide-react";
+
 import { requireAssinatura } from "@/lib/auth/require-subscription";
-import { diaParaData } from "@/lib/datas";
+import { diaParaData, diasAte } from "@/lib/datas";
 import { itensDoPeriodo, planoDoAluno } from "@/features/study-plan/queries";
 import { palestrasNoPeriodo, plantoesNoPeriodo } from "@/features/live/queries";
 import { CalendarView, type EventoCalendario } from "@/features/study-plan/components/calendar-view";
+import { MetricCard } from "@/components/metric-card";
+import { PageHeader, PageShell } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "Calendário — DespolarizaMED" };
 
@@ -81,24 +86,59 @@ export default async function CalendarioPage() {
     });
   }
 
+  // Cartões do topo: só entram quando existe o dado. Um cartão "Próxima
+  // atividade: sem dados" ocuparia espaço para dizer nada.
+  const agora = new Date();
+  const proxima = eventos
+    .filter((e) => e.tipo !== "PROVA" && new Date(e.start).getTime() >= agora.getTime())
+    .sort((a, b) => a.start.localeCompare(b.start))[0];
+  const diasAteProva = plano?.examDate ? diasAte(plano.examDate) : null;
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Calendário</h1>
-          <p className="mt-1 text-muted-foreground">
-            Plano de estudos, plantões, palestras e a data da sua prova, tudo junto.
-          </p>
+    <PageShell largura="larga">
+      <PageHeader
+        titulo="Calendário"
+        migalhas={[{ rotulo: "Início", href: "/dashboard" }, { rotulo: "Calendário" }]}
+        descricao="Seu cronograma, plantões, palestras e provas em um só lugar."
+        acoes={
+          !plano ? (
+            <Button render={<Link href="/plano" />}>Montar plano de estudos</Button>
+          ) : (
+            <Button variant="outline" render={<Link href="/plano" />}>
+              Ver o plano da semana
+            </Button>
+          )
+        }
+      />
+
+      {(proxima || diasAteProva !== null) && (
+        <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <MetricCard
+            rotulo="Hoje"
+            valor={agora.toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })}
+            apoio={agora.toLocaleDateString("pt-BR", { weekday: "long" })}
+            icone={CalendarDays}
+          />
+          {proxima && (
+            <MetricCard
+              rotulo="Próxima atividade"
+              valor={new Date(proxima.start).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+              apoio={proxima.title}
+              icone={CalendarClock}
+            />
+          )}
+          {diasAteProva !== null && (
+            <MetricCard
+              rotulo="Próxima prova"
+              valor={`${diasAteProva} ${diasAteProva === 1 ? "dia" : "dias"}`}
+              apoio={plano?.targetVestibular ?? undefined}
+              icone={Target}
+            />
+          )}
         </div>
-        {!plano && (
-          <Link href="/plano" className="text-sm text-primary hover:underline">
-            Montar plano de estudos →
-          </Link>
-        )}
-      </div>
-      <div className="mt-6">
-        <CalendarView eventos={eventos} />
-      </div>
-    </div>
+      )}
+
+      <CalendarView eventos={eventos} />
+    </PageShell>
   );
 }

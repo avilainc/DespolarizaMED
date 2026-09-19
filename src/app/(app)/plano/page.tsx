@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArrowLeft, ArrowRight, CalendarDays, Clock, Gauge, Target } from "lucide-react";
+
 import { requireAssinatura } from "@/lib/auth/require-subscription";
 import { chaveDia, diasAte } from "@/lib/datas";
 import { getSubjects } from "@/lib/payload/queries";
@@ -7,8 +9,10 @@ import { getPayloadClient } from "@/lib/payload";
 import { itensDoPeriodo, planoDoAluno } from "@/features/study-plan/queries";
 import { PlanForm } from "@/features/study-plan/components/plan-form";
 import { PlanItem } from "@/features/study-plan/components/plan-item";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays } from "lucide-react";
+import { MetricCard, ProgressBar } from "@/components/metric-card";
+import { PageHeader, PageShell } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Plano de estudos — DespolarizaMED" };
 
@@ -18,7 +22,11 @@ const DIAS = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sáb
  * Link de cada item: aula → /aulas/slug; exercícios → banco filtrado pela
  * disciplina; revisão → questões erradas; simulado → /provas.
  */
-function destino(item: { lessonId: number | null; title: string }, slugs: Map<number, string>, disciplina: string | null) {
+function destino(
+  item: { lessonId: number | null; title: string },
+  slugs: Map<number, string>,
+  disciplina: string | null,
+) {
   if (item.lessonId && slugs.has(item.lessonId)) return `/aulas/${slugs.get(item.lessonId)}`;
   if (item.title.startsWith("Simulado")) return "/provas";
   if (item.title.startsWith("Revisão: refazer")) return "/questoes?situacao=erradas";
@@ -48,7 +56,12 @@ export default async function PlanoPage({ searchParams }: { searchParams: Promis
   const slugs = new Map<number, string>();
   if (lessonIds.length) {
     const payload = await getPayloadClient();
-    const r = await payload.find({ collection: "lessons", where: { id: { in: lessonIds } }, limit: lessonIds.length, depth: 0 });
+    const r = await payload.find({
+      collection: "lessons",
+      where: { id: { in: lessonIds } },
+      limit: lessonIds.length,
+      depth: 0,
+    });
     for (const l of r.docs) slugs.set(l.id, l.slug);
   }
   const nomeDisciplina = new Map(disciplinas.map((d) => [d.id, d.name]));
@@ -69,131 +82,162 @@ export default async function PlanoPage({ searchParams }: { searchParams: Promis
 
   const diasAteProva = plano?.examDate ? diasAte(plano.examDate) : null;
 
+  // Sem plano: a página é o assistente, e nada mais. Um cabeçalho com quatro
+  // cartões de métrica vazios em volta só atrapalharia a única coisa que há
+  // para fazer aqui.
+  if (!plano) {
+    return (
+      <PageShell>
+        <PageHeader
+          titulo="Monte seu plano de estudos"
+          migalhas={[{ rotulo: "Início", href: "/dashboard" }, { rotulo: "Plano de estudos" }]}
+          descricao="Conte quando é sua prova e quanto tempo você tem. Nós organizamos o cronograma, com as aulas publicadas, exercícios e revisões."
+        />
+        <div className="rounded-2xl bg-card p-6 shadow-xs ring-1 ring-foreground/8 sm:p-8">
+          <PlanForm disciplinas={disciplinas.map((d) => ({ id: d.id, name: d.name }))} />
+        </div>
+      </PageShell>
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold text-foreground">Plano de estudos</h1>
-      <p className="mt-1 text-muted-foreground">
-        Cronograma montado a partir das aulas publicadas, dos seus dias e horas disponíveis e da data da prova.
-      </p>
+    <PageShell largura="larga">
+      <PageHeader
+        titulo="Plano de estudos"
+        migalhas={[{ rotulo: "Início", href: "/dashboard" }, { rotulo: "Plano de estudos" }]}
+        descricao="Cronograma montado a partir das aulas publicadas, dos seus dias e horas disponíveis e da data da prova."
+        acoes={
+          <Button variant="outline" render={<Link href="/calendario" />}>
+            <CalendarDays />
+            Ver no calendário
+          </Button>
+        }
+      />
 
-      {!plano ? (
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle className="text-base">Vamos montar o seu cronograma</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PlanForm disciplinas={disciplinas.map((d) => ({ id: d.id, name: d.name }))} />
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          <div className="mt-6 grid gap-4 sm:grid-cols-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium text-muted-foreground">Vestibular</CardTitle>
-              </CardHeader>
-              <CardContent className="text-2xl font-bold text-foreground">{plano.targetVestibular}</CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium text-muted-foreground">Faltam</CardTitle>
-              </CardHeader>
-              <CardContent className="text-2xl font-bold text-foreground">
-                {diasAteProva} {diasAteProva === 1 ? "dia" : "dias"}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium text-muted-foreground">Ritmo</CardTitle>
-              </CardHeader>
-              <CardContent className="text-2xl font-bold text-foreground">
-                {plano.daysPerWeek}d × {plano.hoursPerDay}h
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium text-muted-foreground">Progresso</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">
-                  {plano.total ? Math.round((plano.concluidos / plano.total) * 100) : 0}%
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {plano.concluidos} de {plano.total} itens
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard rotulo="Vestibular" valor={plano.targetVestibular ?? "não informado"} icone={Target} />
+        <MetricCard
+          rotulo="Faltam"
+          valor={diasAteProva !== null ? `${diasAteProva} ${diasAteProva === 1 ? "dia" : "dias"}` : "sem data"}
+          apoio={plano.examDate ? `prova em ${plano.examDate.split("-").reverse().join("/")}` : undefined}
+          icone={CalendarDays}
+        />
+        <MetricCard
+          rotulo="Ritmo"
+          valor={`${plano.daysPerWeek}d × ${plano.hoursPerDay}h`}
+          apoio="por semana"
+          icone={Clock}
+        />
+        <MetricCard
+          rotulo="Progresso"
+          valor={`${plano.total ? Math.round((plano.concluidos / plano.total) * 100) : 0}%`}
+          apoio={`${plano.concluidos} de ${plano.total} itens`}
+          icone={Gauge}
+        />
+      </div>
 
-          <section className="mt-8">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                <CalendarDays className="size-4" />
-                Semana de {inicioSemana.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })} a{" "}
-                {fimSemana.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
-              </h2>
-              <nav className="flex gap-2 text-sm">
-                <Link href={`/plano?semana=${deslocamento - 1}`} className="text-primary hover:underline">← anterior</Link>
-                {deslocamento !== 0 && (
-                  <Link href="/plano" className="text-primary hover:underline">hoje</Link>
-                )}
-                <Link href={`/plano?semana=${deslocamento + 1}`} className="text-primary hover:underline">próxima →</Link>
-                <Link href="/calendario" className="ml-2 text-muted-foreground hover:text-foreground">calendário</Link>
-              </nav>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {diasDaSemana.map((d) => {
-                const k = chaveDia(d);
-                const lista = porDia.get(k) ?? [];
-                const ehHoje = k === hojeChave;
-                return (
-                  <div key={k} className={`rounded-lg border p-3 ${ehHoje ? "border-primary bg-primary/5" : "border-border"}`}>
-                    <h3 className="mb-2 text-sm font-semibold capitalize text-foreground">
-                      {DIAS[d.getDay()]}{" "}
-                      <span className="font-normal text-muted-foreground">{d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</span>
-                      {ehHoje && <span className="ml-2 text-xs text-primary">hoje</span>}
-                    </h3>
-                    {lista.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">Descanso</p>
-                    ) : (
-                      <ul className="space-y-1.5">
-                        {lista.map((i) => (
-                          <PlanItem
-                            key={i.id}
-                            item={{
-                              id: i.id,
-                              title: i.title,
-                              hora: i.scheduledFor.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-                              completed: i.completed,
-                              href: destino(i, slugs, i.subjectId ? (nomeDisciplina.get(i.subjectId) ?? null) : null),
-                            }}
-                          />
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          <details className="mt-10 rounded-lg border border-border bg-card p-5">
-            <summary className="cursor-pointer text-sm font-semibold text-foreground">Ajustar plano</summary>
-            <div className="mt-4">
-              <PlanForm
-                disciplinas={disciplinas.map((d) => ({ id: d.id, name: d.name }))}
-                inicial={{
-                  targetVestibular: plano.targetVestibular,
-                  examDate: plano.examDate,
-                  daysPerWeek: plano.daysPerWeek,
-                  hoursPerDay: plano.hoursPerDay,
-                }}
-              />
-            </div>
-          </details>
-        </>
+      {plano.total > 0 && (
+        <ProgressBar
+          className="mt-4"
+          valor={plano.concluidos}
+          total={plano.total}
+          rotuloAcessivel={`${plano.concluidos} de ${plano.total} itens do plano concluídos`}
+        />
       )}
-    </div>
+
+      {/* O cronograma é o protagonista da página depois de gerado, por isso
+          vem antes do "ajustar plano" e ocupa a largura toda. */}
+      <section className="mt-10">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 font-heading text-lg font-semibold text-foreground">
+            <CalendarDays className="size-[1.125rem] text-muted-foreground" aria-hidden />
+            Semana de {inicioSemana.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })} a{" "}
+            {fimSemana.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+          </h2>
+          <nav className="flex items-center gap-2" aria-label="Navegar entre semanas">
+            <Button variant="outline" size="sm" render={<Link href={`/plano?semana=${deslocamento - 1}`} />}>
+              <ArrowLeft />
+              <span className="max-sm:sr-only">Anterior</span>
+            </Button>
+            {deslocamento !== 0 && (
+              <Button variant="ghost" size="sm" render={<Link href="/plano" />}>
+                Hoje
+              </Button>
+            )}
+            <Button variant="outline" size="sm" render={<Link href={`/plano?semana=${deslocamento + 1}`} />}>
+              <span className="max-sm:sr-only">Próxima</span>
+              <ArrowRight />
+            </Button>
+          </nav>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {diasDaSemana.map((d) => {
+            const k = chaveDia(d);
+            const lista = porDia.get(k) ?? [];
+            const ehHoje = k === hojeChave;
+            return (
+              <div
+                key={k}
+                className={cn(
+                  "rounded-xl bg-card p-4 shadow-xs ring-1",
+                  ehHoje ? "ring-2 ring-primary" : "ring-foreground/8",
+                )}
+              >
+                <h3 className="mb-3 flex items-baseline gap-2">
+                  <span className="font-heading text-sm font-semibold capitalize text-foreground">{DIAS[d.getDay()]}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                  </span>
+                  {ehHoje && (
+                    <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-[0.6875rem] font-semibold text-primary-foreground">
+                      hoje
+                    </span>
+                  )}
+                </h3>
+                {lista.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Dia de descanso</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {lista.map((i) => (
+                      <PlanItem
+                        key={i.id}
+                        item={{
+                          id: i.id,
+                          title: i.title,
+                          hora: i.scheduledFor.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+                          completed: i.completed,
+                          href: destino(i, slugs, i.subjectId ? (nomeDisciplina.get(i.subjectId) ?? null) : null),
+                        }}
+                      />
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <details className="group mt-10 rounded-xl bg-card shadow-xs ring-1 ring-foreground/8">
+        <summary className="cursor-pointer list-none px-5 py-4 font-heading font-semibold text-foreground marker:content-none">
+          Ajustar plano
+          <span className="ml-2 text-sm font-normal text-muted-foreground group-open:hidden">
+            (trocar vestibular, data ou ritmo)
+          </span>
+        </summary>
+        <div className="border-t border-border px-5 py-6">
+          <PlanForm
+            disciplinas={disciplinas.map((d) => ({ id: d.id, name: d.name }))}
+            inicial={{
+              targetVestibular: plano.targetVestibular,
+              examDate: plano.examDate,
+              daysPerWeek: plano.daysPerWeek,
+              hoursPerDay: plano.hoursPerDay,
+            }}
+          />
+        </div>
+      </details>
+    </PageShell>
   );
 }
