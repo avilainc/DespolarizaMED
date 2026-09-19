@@ -68,12 +68,15 @@ export async function PlansSection() {
                     invisível. Renderizá-la só no destaque empurrava o título, o
                     preço e o botão daquele cartão 35px para baixo, e as três
                     colunas ficavam desencontradas — exatamente o defeito que as
-                    alturas reservadas abaixo já tentavam evitar. */}
+                    alturas reservadas abaixo já tentavam evitar.
+                    Abaixo de `md` a grade vira uma coluna: não há nada para
+                    alinhar, e a tarja invisível seria só uma faixa vazia no
+                    topo de dois cartões. Aí ela sai do fluxo. */}
                 <p
                   aria-hidden={!destaque}
                   className={cn(
                     "px-5 py-2 text-center text-[0.75rem] font-semibold tracking-wide",
-                    destaque ? "bg-brand-600 text-white" : "invisible",
+                    destaque ? "bg-brand-600 text-white" : "hidden md:invisible md:block",
                   )}
                 >
                   {destaque ? "Melhor preço por mês" : "\u00a0"}
