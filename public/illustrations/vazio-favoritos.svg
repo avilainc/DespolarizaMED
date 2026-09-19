@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 210" role="img" aria-label="Nada favoritado" fill="none">
+  <title>Nada favoritado</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <rect x="62" y="26" width="120" height="152" rx="12" fill="#eef4fb" stroke="#c3d7ec" stroke-width="4" stroke-dasharray="10 9"/>
+    <path d="M86 56h72M86 78h56M86 100h64M86 122h44" stroke="#c3d7ec" stroke-width="6"/>
+    <path d="M178 54h46v104l-23-18-23 18z" fill="#ffffff" stroke="#184878" stroke-width="5"/>
+    <path d="m201 84 6.6 13.4 14.8 2.2-10.7 10.4 2.5 14.7-13.2-7-13.2 7 2.5-14.7-10.7-10.4 14.8-2.2z" fill="#fc7824"/>
+    <circle cx="44" cy="150" r="7" fill="#d7e5f3"/><circle cx="248" cy="182" r="9" fill="#d7e5f3"/>
+    <path d="M36 62h-14M46 40l-10-10" stroke="#c3d7ec" stroke-width="4"/>
+  </g>
+</svg>

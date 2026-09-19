@@ -1,15 +1,83 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+/* O CSS do react-big-calendar entra AQUI, na camada `base`, e não por um
+   `import` solto dentro do componente.
+   Motivo: CSS fora de camada vence CSS em camada, qualquer que seja a
+   especificidade. Importado pelo componente, o tema de 2016 da biblioteca
+   (`.rbc-button-link { background: none }` e afins) ficava fora de camada e
+   anulava em silêncio as regras de `.calendario-marca` lá embaixo — o dia de
+   hoje, por exemplo, nunca ganhava o disco azul. Em `layer(base)` ele passa a
+   ser a base que a camada `components` sobrescreve, que é o que se esperava
+   desde o começo. */
+@import "react-big-calendar/lib/css/react-big-calendar.css" layer(base);
 
 @custom-variant dark (&:is(.dark *));
 
+/* ==========================================================================
+   Ponte com o Tailwind
+   --------------------------------------------------------------------------
+   Tudo que o `@theme inline` faz é expor os tokens de `:root` como utilitários
+   (`bg-surface`, `text-brand-600`, `shadow-card`). Os VALORES ficam todos no
+   `:root` abaixo — é lá que se muda a cor, nunca aqui e nunca solto no
+   componente.
+   ========================================================================== */
 @theme inline {
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --color-foreground: var(--text-primary);
+
+  /* Superfícies. O fundo da página é levemente azulado e as superfícies são
+     brancas: é essa diferença que faz o card existir sem precisar de sombra
+     pesada. Antes as duas eram branco puro e o card sumia. */
+  --color-surface: var(--surface);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-strong: var(--surface-strong);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-text: var(--success-text);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-text: var(--warning-text);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-text: var(--danger-text);
+
+  /* Cores de matéria. Uma por disciplina, e só. O componente pede
+     `--materia-*` (ver src/lib/materias.ts); nenhum card escolhe hex. */
+  --color-materia-bio: var(--materia-bio);
+  --color-materia-quim: var(--materia-quim);
+  --color-materia-fis: var(--materia-fis);
+  --color-materia-mat: var(--materia-mat);
+  --color-materia-hum: var(--materia-hum);
+  --color-materia-ling: var(--materia-ling);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-focus: var(--focus);
+
+  --font-sans: var(--font-interface);
+  --font-heading: var(--font-display);
+  --font-display: var(--font-display);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+
+  /* Compatibilidade com os componentes shadcn já instalados. */
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -25,17 +93,15 @@
   --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
-  --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
-  /* Cores da marca disponíveis como utilitário: text-brand-orange, bg-brand-teal. */
   --color-brand-orange: var(--brand-orange);
   --color-brand-orange-texto: var(--brand-orange-texto);
   --color-brand-teal: var(--brand-teal);
   --color-brand-blue: var(--brand-blue);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
+  --color-muted-foreground: var(--text-muted);
+  --color-muted: var(--surface-subtle);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
@@ -44,122 +110,732 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+  --radius-3xl: var(--radius-3xl);
+  --radius-4xl: calc(var(--radius-lg) * 2.6);
+
+  --shadow-xs: var(--shadow-nivel-0);
+  --shadow-sm: var(--shadow-nivel-1);
+  --shadow-md: var(--shadow-nivel-2);
+  --shadow-lg: var(--shadow-nivel-3);
+  --shadow-card: var(--shadow-nivel-1);
 }
 
-/* Paleta medida no emblema da marca, não escolhida a olho:
-     #184878 azul-marinho  -> primary    (o contorno do emblema)
-     #4884c0 azul do disco -> ring/chart
-     #fc7824 laranja "MED" -> destaque   (a única cor quente da marca)
-     #549c9c teal do fundo -> accent
-     #182430 azul-escuro   -> foreground e fundo do tema escuro
-   Convertidas para oklch por scripts/testes/oklch.mjs. O primary usa o
-   azul-marinho e não o azul do disco porque texto branco sobre #4884c0 não
-   alcança contraste 4.5:1. */
+/* ==========================================================================
+   Tokens
+   --------------------------------------------------------------------------
+   A paleta continua sendo a medida no emblema da marca (o neurônio e o axônio
+   despolarizando), e não uma escolhida a olho:
+
+     #184878 azul-marinho  -> brand-800, a cor institucional
+     #4884c0 azul do disco -> brand-500, a cor das ações
+     #fc7824 laranja "MED" -> acento quente, usado com parcimônia
+     #549c9c teal do fundo -> acento frio
+     #182430 azul-escuro   -> brand-950, texto e fundo escuro
+
+   O que mudou nesta refatoração foi a ESCALA: antes existiam três valores
+   soltos (primary, secondary, accent) e todo tom intermediário era inventado
+   no componente com `/10`, `/40`, `/5`. Agora a escala é declarada uma vez.
+   Convertidas para oklch por scripts/testes/oklch.mjs.
+   ========================================================================== */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.255 0.028 249);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.255 0.028 249);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.255 0.028 249);
-  --primary: oklch(0.396 0.096 251.6);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.96 0.02 250);
-  --secondary-foreground: oklch(0.396 0.096 251.6);
-  --muted: oklch(0.965 0.008 250);
-  --muted-foreground: oklch(0.5 0.02 250);
-  --accent: oklch(0.94 0.03 195.5);
+  --brand-50: oklch(0.974 0.011 250);
+  --brand-100: oklch(0.942 0.024 250);
+  --brand-200: oklch(0.888 0.044 250);
+  --brand-300: oklch(0.808 0.068 250.5);
+  --brand-400: oklch(0.706 0.094 250.5);
+  --brand-500: oklch(0.6 0.111 250.2);
+  --brand-600: oklch(0.508 0.108 251);
+  --brand-700: oklch(0.44 0.101 251.4);
+  --brand-800: oklch(0.396 0.096 251.6);
+  --brand-900: oklch(0.328 0.075 251);
+  --brand-950: oklch(0.255 0.028 249);
+
+  /* Fundo levemente azulado, superfície branca. Dois passos de luminosidade
+     entre eles: o suficiente para o card se destacar sem sombra pesada, e
+     pouco o bastante para não virar um fundo cinza de ERP. */
+  --background: oklch(0.978 0.005 250);
+  --surface: oklch(1 0 0);
+  --surface-subtle: oklch(0.966 0.008 250);
+  --surface-strong: var(--brand-50);
+
+  --text-primary: oklch(0.255 0.028 249);
+  --text-secondary: oklch(0.432 0.029 250);
+  --text-muted: oklch(0.554 0.024 250);
+
+  --border: oklch(0.912 0.009 250);
+  --border-strong: oklch(0.858 0.014 250);
+  --focus: var(--brand-500);
+
+  /* Semânticas. Só entram quando SIGNIFICAM alguma coisa (acertou, atrasou,
+     errou) — nunca como decoração. `-soft` é o fundo, `-text` é a cor que
+     escreve por cima dele com contraste AA. */
+  --success: oklch(0.58 0.125 158);
+  --success-soft: oklch(0.955 0.035 158);
+  --success-text: oklch(0.44 0.105 158);
+  --warning: oklch(0.73 0.15 68);
+  --warning-soft: oklch(0.962 0.045 78);
+  --warning-text: oklch(0.49 0.12 62);
+  --danger: oklch(0.577 0.245 27.325);
+  --danger-soft: oklch(0.962 0.03 25);
+  --danger-text: oklch(0.505 0.2 27);
+
+  /* Uma cor por matéria. Cinco matizes bem separados, todos na mesma faixa de
+     luminosidade para que nenhum "grite" mais que o outro. */
+  --materia-bio: oklch(0.56 0.115 158);
+  --materia-quim: oklch(0.53 0.145 300);
+  --materia-fis: oklch(0.56 0.105 225);
+  --materia-mat: oklch(0.6 0.145 55);
+  --materia-hum: oklch(0.55 0.13 20);
+  --materia-ling: oklch(0.55 0.1 195);
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.125rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+  --radius: var(--radius-lg);
+
+  /* Sombras extremamente suaves e tintas de azul, não de preto: sombra cinza
+     sobre fundo azulado deixa a superfície "suja". */
+  --shadow-nivel-0: 0 1px 1px 0 oklch(0.255 0.028 249 / 0.03);
+  --shadow-nivel-1:
+    0 1px 2px 0 oklch(0.255 0.028 249 / 0.04), 0 1px 3px 0 oklch(0.255 0.028 249 / 0.04);
+  --shadow-nivel-2:
+    0 2px 4px -2px oklch(0.255 0.028 249 / 0.05), 0 6px 14px -4px oklch(0.255 0.028 249 / 0.07);
+  --shadow-nivel-3:
+    0 4px 8px -4px oklch(0.255 0.028 249 / 0.06), 0 16px 32px -12px oklch(0.255 0.028 249 / 0.12);
+
+  /* Medidas do layout. Ficam aqui para que sidebar, cabeçalho fixo e o
+     `scroll-margin` das âncoras não se desencontrem quando uma delas mudar. */
+  --shell-sidebar: 16.5rem;
+  --shell-header: 3.75rem;
+  --shell-gutter: 1rem;
+  --content-max: 82rem;
+  --controle-altura: 2.75rem;
+  --transicao: 170ms cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* --- compatibilidade shadcn --- */
+  --foreground: var(--text-primary);
+  --card: var(--surface);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--brand-800);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: var(--brand-50);
+  --secondary-foreground: var(--brand-800);
+  --muted: var(--surface-subtle);
+  --muted-foreground: var(--text-muted);
+  --accent: oklch(0.945 0.028 195.5);
   --accent-foreground: oklch(0.35 0.06 195.5);
+  --destructive: var(--danger);
+  --input: var(--border-strong);
+  --ring: var(--focus);
   --brand-orange: oklch(0.717 0.183 47.5);
-  /* O laranja da marca como TEXTO sobre fundo claro.
-     O `--brand-orange` cheio mede 2.20:1 sobre o fundo do selo do hero
-     (medido: rgb(252,120,37) sobre rgb(245,230,223)) — AA exige 4.5:1 para
-     14px, então o selo estava ilegível para quem enxerga pouco contraste.
-     Mesma matiz e mesma croma, só mais escuro: 5.28:1. A cor da marca em si
-     não muda; o que muda é a que se usa para escrever. */
+  /* O laranja da marca como TEXTO sobre fundo claro: o `--brand-orange` cheio
+     mede 2.20:1 e AA exige 4.5:1 para 14px. Mesma matiz, mesma croma, só mais
+     escuro — 5.28:1. A cor da marca não muda; muda a que se usa para
+     escrever. */
   --brand-orange-texto: oklch(0.5 0.183 47.5);
   --brand-teal: oklch(0.646 0.072 195.5);
-  --brand-blue: oklch(0.600 0.111 250.2);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.9 0.01 250);
-  --input: oklch(0.9 0.01 250);
-  --ring: oklch(0.600 0.111 250.2);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --brand-blue: var(--brand-500);
+  --chart-1: var(--brand-500);
+  --chart-2: var(--materia-bio);
+  --chart-3: var(--materia-quim);
+  --chart-4: var(--materia-fis);
+  --chart-5: var(--materia-mat);
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--brand-800);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: var(--brand-50);
+  --sidebar-accent-foreground: var(--brand-800);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--focus);
 }
 
-/* O tema escuro estava em cinza puro (croma 0), o padrão do scaffold. Agora
-   usa o azul-escuro do fundo do emblema (#182430), e o primary passa a ser o
-   azul do disco: sobre fundo escuro ele tem contraste de sobra, e é a cor que
-   o aluno reconhece da marca. */
+/* O tema escuro usa o azul-escuro do emblema (#182430) e promove o azul do
+   disco a cor de ação — sobre fundo escuro ele tem contraste de sobra e é a
+   cor que o aluno reconhece. Nada aplica `.dark` hoje; o bloco fica coerente
+   para quando for ligado. */
 .dark {
-  --background: oklch(0.255 0.028 249);
-  --foreground: oklch(0.97 0.005 250);
-  --card: oklch(0.295 0.028 249);
-  --card-foreground: oklch(0.97 0.005 250);
-  --popover: oklch(0.295 0.028 249);
-  --popover-foreground: oklch(0.97 0.005 250);
-  --primary: oklch(0.600 0.111 250.2);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.34 0.03 249);
-  --secondary-foreground: oklch(0.97 0.005 250);
-  --muted: oklch(0.34 0.03 249);
-  --muted-foreground: oklch(0.72 0.02 250);
-  --accent: oklch(0.38 0.05 195.5);
-  --accent-foreground: oklch(0.97 0.005 250);
-  --destructive: oklch(0.704 0.191 22.216);
+  --background: oklch(0.225 0.026 249);
+  --surface: oklch(0.278 0.028 249);
+  --surface-subtle: oklch(0.322 0.03 249);
+  --surface-strong: oklch(0.34 0.045 250);
+
+  --text-primary: oklch(0.972 0.005 250);
+  --text-secondary: oklch(0.8 0.018 250);
+  --text-muted: oklch(0.71 0.02 250);
+
   --border: oklch(1 0 0 / 12%);
+  --border-strong: oklch(1 0 0 / 20%);
+  --focus: var(--brand-400);
+
+  --success-soft: oklch(0.38 0.07 158);
+  --success-text: oklch(0.85 0.11 158);
+  --warning-soft: oklch(0.4 0.08 68);
+  --warning-text: oklch(0.87 0.12 78);
+  --danger: oklch(0.704 0.191 22.216);
+  --danger-soft: oklch(0.38 0.1 25);
+  --danger-text: oklch(0.85 0.13 25);
+
+  --shadow-nivel-0: 0 1px 1px 0 oklch(0 0 0 / 0.2);
+  --shadow-nivel-1: 0 1px 2px 0 oklch(0 0 0 / 0.3), 0 1px 3px 0 oklch(0 0 0 / 0.25);
+  --shadow-nivel-2: 0 2px 4px -2px oklch(0 0 0 / 0.3), 0 6px 14px -4px oklch(0 0 0 / 0.35);
+  --shadow-nivel-3: 0 4px 8px -4px oklch(0 0 0 / 0.35), 0 16px 32px -12px oklch(0 0 0 / 0.45);
+
+  --primary: var(--brand-500);
+  --secondary: oklch(0.34 0.03 249);
+  --secondary-foreground: var(--text-primary);
+  --accent: oklch(0.38 0.05 195.5);
+  --accent-foreground: var(--text-primary);
   --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.600 0.111 250.2);
-  --brand-orange: oklch(0.717 0.183 47.5);
-  /* No tema escuro o problema se inverte: sobre fundo escuro o texto precisa
-     clarear, não escurecer. (Este bloco está inativo hoje — nada aplica a
-     classe `.dark` —, mas fica coerente para quando for ligado.) */
   --brand-orange-texto: oklch(0.8 0.15 47.5);
-  --brand-teal: oklch(0.646 0.072 195.5);
-  --brand-blue: oklch(0.600 0.111 250.2);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar: var(--surface);
+  --sidebar-accent: oklch(0.34 0.045 250);
+  --sidebar-accent-foreground: var(--text-primary);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
+
   html {
-    @apply font-sans;
+    font-family: var(--font-interface), ui-sans-serif, system-ui, sans-serif;
+    /* `overflow-x: clip` e não `hidden`: `hidden` em <html> cria um contexto de
+       rolagem que quebra `position: sticky` nos filhos — e a barra de filtros
+       do banco de questões é sticky. `clip` corta o estouro sem criar o
+       contexto. É a rede de segurança, não a solução: cada tela continua
+       obrigada a não estourar sozinha (ver scripts de captura). */
+    overflow-x: clip;
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-text-primary;
+    /* 15px no desktop, como pedido: 14px era pequeno demais para uma tela em
+       que o aluno lê enunciado de prova por uma hora seguida. */
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    overflow-x: clip;
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  @media (min-width: 1280px) {
+    body {
+      font-size: 1rem;
+    }
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display), var(--font-interface), sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.018em;
+    text-wrap: balance;
+  }
+
+  /* Números de métrica alinhados em coluna: sem isto, "1.204" e "998" dançam
+     um em relação ao outro dentro da mesma fileira de cards. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Foco visível em tudo que recebe foco, com a cor do token e não a do
+     navegador. `:focus-visible` e não `:focus`: o anel não aparece no clique
+     do mouse, só na navegação por teclado. */
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Âncoras (#letra-A do glossário) precisam parar ABAIXO do cabeçalho fixo. */
+  [id] {
+    scroll-margin-top: calc(var(--shell-header) + 1.5rem);
+  }
+
+  ::selection {
+    background: var(--brand-200);
+    color: var(--brand-900);
+  }
+
+  /* Barra de rolagem discreta e na cor do tema. O `overflow-x: clip` acima
+     garante que a horizontal nunca apareça no layout normal. */
+  @supports (scrollbar-width: thin) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-strong) transparent;
+    }
+  }
+}
+
+/* ==========================================================================
+   Escala tipográfica
+   --------------------------------------------------------------------------
+   Classes em vez de `text-2xl font-bold` repetido em 30 arquivos: quando o
+   tamanho do título de página mudar, muda aqui e vale em todas as telas.
+   ========================================================================== */
+@layer components {
+  .t-display {
+    font-family: var(--font-display), sans-serif;
+    font-size: clamp(1.875rem, 1.35rem + 2.2vw, 2.625rem);
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+  }
+
+  .t-page-title {
+    font-family: var(--font-display), sans-serif;
+    font-size: clamp(1.625rem, 1.3rem + 1.2vw, 2.125rem);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+  }
+
+  .t-section {
+    font-family: var(--font-display), sans-serif;
+    font-size: 1.1875rem;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+  }
+
+  .t-card-title {
+    font-family: var(--font-display), sans-serif;
+    font-size: 1.0625rem;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.012em;
+  }
+
+  .t-metric {
+    font-family: var(--font-display), sans-serif;
+    font-size: 1.875rem;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Rótulo de formulário e de métrica: maiúsculas pequenas só aqui, nunca em
+     texto corrido. */
+  .t-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--text-secondary);
+  }
+
+  .t-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .t-meta {
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--text-muted);
+  }
+
+  /* Enunciado de questão e definição de glossário: medida de leitura e
+     entrelinha maiores que o resto da interface, porque aqui se LÊ. */
+  .t-leitura {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+  }
+
+  @media (min-width: 1024px) {
+    .t-leitura {
+      font-size: 1rem;
+    }
+  }
+}
+
+/* ==========================================================================
+   Controles de formulário
+   --------------------------------------------------------------------------
+   Um único lugar define altura, borda e foco de input/select/textarea. Antes
+   cada tela escrevia `h-9 rounded-md border border-input` à mão e os campos
+   tinham três alturas diferentes na mesma página.
+   ========================================================================== */
+@layer components {
+  .campo {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    height: var(--controle-altura);
+    padding-inline: 0.875rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    transition:
+      border-color var(--transicao),
+      box-shadow var(--transicao);
+  }
+
+  .campo::placeholder {
+    color: var(--text-muted);
+  }
+
+  .campo:hover:not(:disabled):not(:focus) {
+    border-color: var(--brand-300);
+  }
+
+  .campo:focus,
+  .campo:focus-visible {
+    outline: none;
+    border-color: var(--focus);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--focus) 22%, transparent);
+  }
+
+  .campo:disabled {
+    background: var(--surface-subtle);
+    color: var(--text-muted);
+    cursor: not-allowed;
+  }
+
+  .campo[aria-invalid="true"] {
+    border-color: var(--danger);
+  }
+
+  .campo[aria-invalid="true"]:focus {
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--danger) 20%, transparent);
+  }
+
+  textarea.campo {
+    height: auto;
+    min-height: 7rem;
+    padding-block: 0.625rem;
+    line-height: 1.6;
+    resize: vertical;
+  }
+
+  /* Seta própria no <select>: a nativa muda de desenho em cada navegador e
+     deixava o campo com aparência de formulário de sistema antigo. */
+  select.campo {
+    appearance: none;
+    padding-inline-end: 2.25rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23617087' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    cursor: pointer;
+  }
+
+  /* iOS dá zoom no campo quando a fonte é menor que 16px. */
+  @media (max-width: 767px) {
+    .campo {
+      font-size: 1rem;
+    }
+  }
+}
+
+/* ==========================================================================
+   Microinterações
+   --------------------------------------------------------------------------
+   150–200ms, nada além disso, e tudo desligado sob `prefers-reduced-motion`.
+   ========================================================================== */
+@layer components {
+  .cartao-interativo {
+    transition:
+      border-color var(--transicao),
+      box-shadow var(--transicao),
+      transform var(--transicao);
+  }
+
+  .cartao-interativo:hover {
+    border-color: var(--brand-300);
+    box-shadow: var(--shadow-nivel-2);
+    transform: translateY(-2px);
+  }
+
+  .cartao-interativo:active {
+    transform: translateY(0);
+  }
+
+  .esqueleto {
+    background: linear-gradient(
+      90deg,
+      var(--surface-subtle) 25%,
+      color-mix(in oklch, var(--surface-subtle), var(--surface) 60%) 50%,
+      var(--surface-subtle) 75%
+    );
+    background-size: 200% 100%;
+    animation: esqueleto-brilho 1.4s ease-in-out infinite;
+    border-radius: var(--radius-sm);
+  }
+
+  @keyframes esqueleto-brilho {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  /* Fundo com a trama do axônio do emblema: pontos da bainha de mielina em
+     opacidade baixíssima. É o motivo gráfico da marca virando textura, em vez
+     de gradiente genérico. */
+  .trama-axonio {
+    background-image: radial-gradient(
+      circle at center,
+      color-mix(in oklch, var(--brand-500) 16%, transparent) 1.5px,
+      transparent 1.6px
+    );
+    background-size: 18px 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .cartao-interativo:hover {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   react-big-calendar
+   --------------------------------------------------------------------------
+   A biblioteca traz um CSS próprio de 2016 (Helvetica, bordas #ddd, botões
+   cinza). Aqui ele é reescrito com os tokens — é a única forma de o
+   calendário parar de parecer um componente cru colado na página.
+   ========================================================================== */
+@layer components {
+  .calendario-marca {
+    /* `brand-50` direto, e não um `color-mix` com o branco: misturar em oklch
+       com uma cor de matiz indefinida (branco) interpola a matiz para um lugar
+       qualquer, e a coluna do dia de hoje saía rosada. */
+    --rbc-hoje: var(--brand-50);
+  }
+
+  .calendario-marca .rbc-calendar {
+    font-family: inherit;
+    font-size: 0.8125rem;
+  }
+
+  /* `flex-direction: row` explícito: abaixo de 768px a biblioteca troca a
+     barra para `column`, e aí o `flex-basis` do rótulo passa a valer como
+     ALTURA — o título do mês virava um bloco de 128px de altura com um vazio
+     enorme antes dos botões. */
+  .calendario-marca .rbc-toolbar {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .calendario-marca .rbc-toolbar .rbc-toolbar-label {
+    flex: none;
+    order: -1;
+    width: 100%;
+    padding: 0;
+    text-align: start;
+    font-family: var(--font-display), sans-serif;
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    text-transform: capitalize;
+    color: var(--text-primary);
+  }
+
+  .calendario-marca .rbc-btn-group {
+    display: inline-flex;
+    gap: 0.25rem;
+    border-radius: var(--radius-md);
+    background: var(--surface-subtle);
+    padding: 0.1875rem;
+  }
+
+  .calendario-marca .rbc-btn-group > button {
+    height: 2rem;
+    padding-inline: 0.75rem;
+    border: 0;
+    border-radius: calc(var(--radius-md) - 0.1875rem);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    transition: background var(--transicao), color var(--transicao);
+  }
+
+  .calendario-marca .rbc-btn-group > button:hover {
+    background: var(--surface);
+    color: var(--text-primary);
+  }
+
+  .calendario-marca .rbc-btn-group > button.rbc-active {
+    background: var(--surface);
+    color: var(--brand-700);
+    box-shadow: var(--shadow-nivel-1);
+  }
+
+  .calendario-marca .rbc-month-view,
+  .calendario-marca .rbc-time-view,
+  .calendario-marca .rbc-agenda-view table.rbc-agenda-table {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .calendario-marca .rbc-header {
+    padding: 0.625rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-subtle);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .calendario-marca .rbc-header + .rbc-header,
+  .calendario-marca .rbc-day-bg + .rbc-day-bg,
+  .calendario-marca .rbc-month-row + .rbc-month-row,
+  .calendario-marca .rbc-time-content > * + * > *,
+  .calendario-marca .rbc-timeslot-group {
+    border-color: var(--border);
+  }
+
+  .calendario-marca .rbc-date-cell {
+    padding: 0.375rem 0.5rem 0;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-align: start;
+  }
+
+  .calendario-marca .rbc-off-range-bg {
+    background: color-mix(in oklch, var(--surface-subtle) 70%, transparent);
+  }
+
+  .calendario-marca .rbc-off-range .rbc-button-link {
+    color: var(--text-muted);
+    opacity: 0.6;
+  }
+
+  .calendario-marca .rbc-today {
+    background: var(--rbc-hoje);
+  }
+
+  /* O dia de hoje ganha um disco, não só um fundo: num mês cheio de eventos
+     coloridos, o fundo sozinho some. */
+  .calendario-marca .rbc-now .rbc-button-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 999px;
+    background: var(--brand-600);
+    color: oklch(0.99 0 0);
+    font-weight: 600;
+  }
+
+  .calendario-marca .rbc-event {
+    padding: 0.125rem 0.375rem;
+    border: 0;
+    border-radius: var(--radius-sm);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1.35;
+    box-shadow: none;
+  }
+
+  .calendario-marca .rbc-event:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+  }
+
+  .calendario-marca .rbc-show-more {
+    background: transparent;
+    color: var(--brand-600);
+    font-size: 0.6875rem;
+    font-weight: 600;
+  }
+
+  .calendario-marca .rbc-agenda-view table.rbc-agenda-table thead > tr > th {
+    padding: 0.625rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-subtle);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .calendario-marca .rbc-agenda-view table.rbc-agenda-table tbody > tr > td {
+    padding: 0.625rem 0.75rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.8125rem;
+  }
+
+  .calendario-marca .rbc-agenda-date-cell,
+  .calendario-marca .rbc-agenda-time-cell {
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  /* Na visão agenda a biblioteca aplica o estilo do evento na LINHA inteira, e
+     não só na célula do evento: a cor da categoria cobria data e hora, e o
+     texto riscado dos itens concluídos ficava ilegível sobre o fundo cheio.
+     Aqui a linha volta a ser transparente e a categoria aparece como uma
+     faixa na borda esquerda (ver `eventPropGetter` em calendar-view.tsx). */
+  /* A faixa vai na célula do EVENTO, e não na primeira da linha: quando
+     várias entradas caem no mesmo dia, a biblioteca funde a célula de data com
+     `rowspan` e a "primeira célula" das linhas seguintes passa a ser a da
+     hora — a faixa pulava para o meio da tabela. */
+  .calendario-marca .rbc-agenda-view tbody > tr > .rbc-agenda-event-cell {
+    border-left: 3px solid currentColor;
+    padding-left: 0.75rem;
+  }
+
+  .calendario-marca .rbc-agenda-view tbody > tr:hover > td {
+    background: var(--surface-subtle);
+  }
+
+  .calendario-marca .rbc-overlay {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-nivel-3);
   }
 }

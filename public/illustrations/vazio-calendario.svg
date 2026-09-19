@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 210" role="img" aria-label="Nenhum evento" fill="none">
+  <title>Nenhum evento</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <rect x="48" y="34" width="184" height="148" rx="14" fill="#ffffff" stroke="#8fb8dd" stroke-width="4"/>
+    <path d="M48 72h184" stroke="#8fb8dd" stroke-width="4"/>
+    <path d="M48 48a14 14 0 0 1 14-14h156a14 14 0 0 1 14 14v24H48z" fill="#c3d7ec"/>
+    <path d="M88 22v22M192 22v22" stroke="#8fb8dd" stroke-width="7"/>
+    <g fill="#eef4fb">
+      <rect x="68" y="90" width="32" height="24" rx="6"/><rect x="114" y="90" width="32" height="24" rx="6"/>
+      <rect x="160" y="90" width="32" height="24" rx="6"/><rect x="68" y="126" width="32" height="24" rx="6"/>
+      <rect x="114" y="126" width="32" height="24" rx="6"/><rect x="160" y="126" width="32" height="24" rx="6"/>
+      <rect x="198" y="90" width="14" height="24" rx="6"/><rect x="198" y="126" width="14" height="24" rx="6"/>
+    </g>
+    <rect x="114" y="126" width="32" height="24" rx="6" fill="none" stroke="#fc7824" stroke-width="3.5" stroke-dasharray="6 5"/>
+    <circle cx="36" cy="160" r="7" fill="#d7e5f3"/><circle cx="246" cy="52" r="6" fill="#d7e5f3"/>
+  </g>
+</svg>

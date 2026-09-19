@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 210" role="img" aria-label="Cartão-resposta de prova" fill="none">
+  <title>Cartão-resposta de prova</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <rect x="58" y="14" width="164" height="182" rx="12" fill="#ffffff" stroke="#184878" stroke-width="5"/>
+    <path d="M58 46h164" stroke="#184878" stroke-width="4"/>
+    <path d="M78 30h56" stroke="#8fb8dd" stroke-width="6"/>
+    <g>
+      <g fill="#184878"><circle cx="86" cy="72" r="7"/><circle cx="112" cy="104" r="7"/><circle cx="164" cy="136" r="7"/><circle cx="138" cy="168" r="7"/></g>
+      <g stroke="#c3d7ec" stroke-width="3.5">
+        <circle cx="112" cy="72" r="7"/><circle cx="138" cy="72" r="7"/><circle cx="164" cy="72" r="7"/><circle cx="190" cy="72" r="7"/>
+        <circle cx="86" cy="104" r="7"/><circle cx="138" cy="104" r="7"/><circle cx="164" cy="104" r="7"/><circle cx="190" cy="104" r="7"/>
+        <circle cx="86" cy="136" r="7"/><circle cx="112" cy="136" r="7"/><circle cx="138" cy="136" r="7"/><circle cx="190" cy="136" r="7"/>
+        <circle cx="86" cy="168" r="7"/><circle cx="112" cy="168" r="7"/><circle cx="164" cy="168" r="7"/><circle cx="190" cy="168" r="7"/>
+      </g>
+    </g>
+    <path d="M40 92 26 78" stroke="#549c9c" stroke-width="4" opacity=".6"/>
+    <path d="M244 124h14M248 100l12-8" stroke="#8fb8dd" stroke-width="4" opacity=".7"/>
+    <path d="M232 36c10-10 18-4 9 6l-28 28-15 5 5-15z" fill="#fff3e8" stroke="#fc7824" stroke-width="4.5"/>
+  </g>
+</svg>

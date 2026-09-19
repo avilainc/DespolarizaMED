@@ -32,9 +32,19 @@ export function FavoriteButton({
       disabled={pendente}
       aria-pressed={favorito}
       aria-label={favorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-      className="inline-flex items-center gap-1.5 rounded-md p-1 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+      title={favorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+      // Alvo de 36px mesmo quando é só o ícone: 24px é menor que o mínimo
+      // confortável de toque, e esta estrela aparece no meio de listas densas.
+      className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg text-[0.875rem] font-medium text-text-muted transition-colors hover:bg-surface-subtle hover:text-warning-text disabled:opacity-50 ${
+        rotulo ? "px-3" : "w-9 justify-center"
+      }`}
     >
-      <Star className={`size-4 ${favorito ? "fill-amber-400 text-amber-400" : ""}`} />
+      {/* A cor de "favoritado" é o `--warning` da marca, não um amber solto do
+          Tailwind: é a mesma cor da estrela em todo o produto. */}
+      <Star
+        aria-hidden
+        className={`size-[1.125rem] shrink-0 ${favorito ? "fill-warning text-warning" : ""}`}
+      />
       {rotulo}
     </button>
   );

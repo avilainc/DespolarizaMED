@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 210" role="img" aria-label="Vidraria e molécula" fill="none">
+  <title>Vidraria e molécula</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path d="M110 24h44M120 24v54L74 168a14 14 0 0 0 13 20h90a14 14 0 0 0 13-20l-46-90V24" fill="#ffffff" stroke="#184878" stroke-width="5"/>
+    <path d="M92 130h80l18 38a14 14 0 0 1-13 20H87a14 14 0 0 1-13-20z" fill="#cfe6e6"/>
+    <circle cx="112" cy="158" r="7" fill="#ffffff" opacity=".8"/><circle cx="146" cy="170" r="5" fill="#ffffff" opacity=".8"/><circle cx="160" cy="148" r="4" fill="#ffffff" opacity=".8"/>
+    <g stroke="#4884c0" stroke-width="4">
+      <path d="M216 52 236 68M216 52 200 74M216 52v-22"/>
+    </g>
+    <g fill="#4884c0"><circle cx="216" cy="52" r="10"/></g>
+    <g fill="#8fb8dd"><circle cx="240" cy="72" r="7"/><circle cx="196" cy="78" r="7"/><circle cx="216" cy="26" r="7"/></g>
+    <circle cx="48" cy="62" r="6" fill="#fc7824" opacity=".8"/>
+    <circle cx="40" cy="120" r="9" fill="#d7e5f3"/>
+    <path d="M56 158h-14M252 150h-12" stroke="#8fb8dd" stroke-width="4" opacity=".6"/>
+  </g>
+</svg>

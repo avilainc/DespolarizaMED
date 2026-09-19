@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AlertTriangle, Image as ImageIcon, Info, Quote } from "lucide-react";
 import { requireAssinatura } from "@/lib/auth/require-subscription";
 import { obterQuestao } from "@/features/library/queries";
 import { idsFavoritas, ultimasRespostas } from "@/features/practice/queries";
 import { QuestionCard } from "@/features/library/components/question-card";
-import { ArrowLeft } from "lucide-react";
+import { PageHeader, SectionHeading } from "@/components/ui/page-header";
+import { Tag } from "@/components/ui/chip";
+import { visualDaMateria } from "@/lib/materias";
 
 export const metadata: Metadata = { title: "Questão — DespolarizaMED" };
 
@@ -27,75 +29,104 @@ export default async function QuestaoPage({ params }: { params: Promise<{ id: st
     idsFavoritas(session.user.id, "QUESTION"),
   ]);
 
+  const visual = visualDaMateria(q.disciplinaSugerida);
+
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-      <Link
-        href="/questoes"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" /> Banco de questões
-      </Link>
+    <div className="mx-auto max-w-4xl">
+      <PageHeader
+        migalhas={[
+          { rotulo: "Banco de questões", href: "/questoes" },
+          { rotulo: `${q.instituicaoSlug?.toUpperCase() ?? "Questão"} ${q.ano ?? ""}`.trim() },
+        ]}
+        titulo={
+          <>
+            {q.instituicaoSlug?.toUpperCase()} {q.ano}
+            {q.numero ? (
+              <span className="text-text-muted"> · Questão {q.numero}</span>
+            ) : null}
+          </>
+        }
+        aside={
+          <div className="flex flex-wrap items-center gap-2">
+            {q.fase && <Tag tom="neutro">{q.fase}</Tag>}
+            {q.curso && <Tag tom="neutro">{q.curso}</Tag>}
+            {q.banca && <Tag tom="marca">banca {q.banca}</Tag>}
+            {q.disciplinaSugerida && (
+              <Tag tom="materia" cor={visual.cor} icone={visual.icone}>
+                {q.disciplinaSugerida}
+              </Tag>
+            )}
+          </div>
+        }
+      />
 
       {!q.validada && (
-        <p className="mt-4 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-          Questão não validada: visível só para revisores. O aluno recebe 404 aqui.
-        </p>
-      )}
-      <h1 className="mt-4 text-2xl font-bold text-foreground">
-        {q.instituicaoSlug?.toUpperCase()} {q.ano}
-        {q.numero ? ` · Questão ${q.numero}` : ""}
-      </h1>
-      {(q.fase || q.curso) && (
-        <p className="mt-1 text-sm text-muted-foreground">
-          {[q.fase, q.curso].filter(Boolean).join(" · ")}
+        <p
+          role="status"
+          className="mb-6 flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-[0.875rem] text-danger-text"
+        >
+          <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0" />
+          <span>
+            <strong className="font-semibold">Questão não validada.</strong> Visível só para
+            revisores — o aluno recebe 404 nesta URL.
+          </span>
         </p>
       )}
 
       {q.contexto && (
-        <section className="mt-6 rounded-lg border border-border bg-muted/40 p-5">
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <section className="mb-6 rounded-xl border-l-[3px] border-l-brand-400 border-y border-r border-border bg-surface p-5 shadow-xs">
+          <h2 className="t-eyebrow mb-2 flex items-center gap-1.5">
+            <Quote aria-hidden className="size-3.5" />
             Texto-base (questão {q.contextoNumero})
           </h2>
-          <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{q.contexto}</p>
+          <p className="t-leitura whitespace-pre-line text-text-secondary">{q.contexto}</p>
         </section>
       )}
 
       {q.figuras.length > 0 && (
-        <section className="mt-6 grid gap-4 sm:grid-cols-2">
-          {q.figuras.map((f) => (
-            // eslint-disable-next-line @next/next/no-img-element -- rota autenticada, sem otimização do Next
-            <img
-              key={f.id}
-              src={`/api/figuras/${f.arquivo}`}
-              alt={`Figura ${f.indice + 1} da questão ${q.numero ?? ""}`}
-              width={f.larguraPx ?? undefined}
-              height={f.alturaPx ?? undefined}
-              className="max-w-full rounded-md border border-border bg-white"
-            />
-          ))}
+        <section className="mb-6">
+          <SectionHeading icone={ImageIcon}>
+            {q.figuras.length === 1 ? "Figura da questão" : "Figuras da questão"}
+          </SectionHeading>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {q.figuras.map((f) => (
+              // eslint-disable-next-line @next/next/no-img-element -- rota autenticada, sem otimização do Next
+              <img
+                key={f.id}
+                src={`/api/figuras/${f.arquivo}`}
+                alt={`Figura ${f.indice + 1} da questão ${q.numero ?? ""}`}
+                width={f.larguraPx ?? undefined}
+                height={f.alturaPx ?? undefined}
+                loading="lazy"
+                className="max-w-full rounded-xl border border-border bg-white shadow-xs"
+              />
+            ))}
+          </div>
         </section>
       )}
 
-      <div className="mt-6">
-        <QuestionCard
-          mostrarLinkDetalhe={false}
-          questao={{
-            id: q.id,
-            enunciado: q.enunciado,
-            numero: q.numero,
-            ano: q.ano,
-            instituicaoSlug: q.instituicaoSlug,
-            disciplinaSugerida: q.disciplinaSugerida,
-            alternativas: q.alternativas.map((a) => ({ letra: a.letra, texto: a.texto })),
-            respostaAnterior: respostas.get(q.id) ?? null,
-            favorita: favoritas.includes(q.id),
-          }}
-        />
-      </div>
+      <QuestionCard
+        mostrarLinkDetalhe={false}
+        questao={{
+          id: q.id,
+          enunciado: q.enunciado,
+          numero: q.numero,
+          ano: q.ano,
+          instituicaoSlug: q.instituicaoSlug,
+          disciplinaSugerida: q.disciplinaSugerida,
+          alternativas: q.alternativas.map((a) => ({ letra: a.letra, texto: a.texto })),
+          respostaAnterior: respostas.get(q.id) ?? null,
+          favorita: favoritas.includes(q.id),
+        }}
+      />
 
       {q.temaSugerido && (
-        <p className="mt-4 text-xs text-muted-foreground">
-          Tema sugerido: {q.temaSugerido} · classificação automática, pode estar errada.
+        <p className="t-meta mt-5 flex items-start gap-2 rounded-lg border border-border bg-surface-subtle/60 px-4 py-3">
+          <Info aria-hidden className="mt-0.5 size-4 shrink-0" />
+          <span>
+            Tema sugerido: <strong className="text-text-secondary">{q.temaSugerido}</strong>.
+            Classificação automática — ainda não revisada por um professor, e pode estar errada.
+          </span>
         </p>
       )}
     </div>

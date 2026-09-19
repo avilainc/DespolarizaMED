@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 210" role="img" aria-label="Nenhum plantão agendado" fill="none">
+  <title>Nenhum plantão agendado</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <rect x="42" y="42" width="164" height="112" rx="14" fill="#ffffff" stroke="#8fb8dd" stroke-width="4" stroke-dasharray="12 9"/>
+    <path d="M222 74v48l26 18V56z" fill="#eef4fb" stroke="#8fb8dd" stroke-width="4" stroke-dasharray="10 8"/>
+    <circle cx="124" cy="98" r="26" fill="#eef4fb"/>
+    <path d="m116 88 20 10-20 10z" fill="#c3d7ec"/>
+    <path d="M102 178h44M124 154v24" stroke="#c3d7ec" stroke-width="5"/>
+    <circle cx="246" cy="172" r="8" fill="#d7e5f3"/><circle cx="26" cy="106" r="6" fill="#d7e5f3"/>
+  </g>
+</svg>

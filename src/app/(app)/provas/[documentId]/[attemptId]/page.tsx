@@ -6,6 +6,8 @@ import { obterProva } from "@/features/library/queries";
 import { obterTentativa } from "@/features/practice/queries";
 import { AnswerSheet, type QuestaoDaProva } from "@/features/practice/components/answer-sheet";
 import { ArrowLeft } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { buttonVariants } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "Resolvendo prova — DespolarizaMED" };
 
@@ -43,21 +45,29 @@ export default async function TentativaPage({
   for (const [id, r] of tentativa.respostas) respostasIniciais[id] = r.letra.toUpperCase();
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <Link
-            href={`/provas/${documentId}`}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-4" /> Sair (as respostas ficam salvas)
-          </Link>
-          <h1 className="mt-2 text-xl font-bold text-foreground">
+    <div className="mx-auto max-w-5xl">
+      <PageHeader
+        migalhas={[
+          { rotulo: "Provas antigas", href: "/provas" },
+          {
+            rotulo: `${prova.instituicao ?? "Prova"} ${prova.ano ?? ""}`.trim(),
+            href: `/provas/${documentId}`,
+          },
+          { rotulo: "Resolvendo" },
+        ]}
+        titulo={
+          <>
             {prova.instituicao} {prova.ano}
-            {prova.fase ? ` · ${prova.fase}` : ""}
-          </h1>
-        </div>
-      </div>
+            {prova.fase ? <span className="text-text-muted"> · {prova.fase}</span> : null}
+          </>
+        }
+        acoes={
+          <Link href={`/provas/${documentId}`} className={buttonVariants({ variant: "outline" })}>
+            <ArrowLeft data-icon="inline-start" aria-hidden />
+            Sair — as respostas ficam salvas
+          </Link>
+        }
+      />
 
       <AnswerSheet
         attemptId={attemptId}

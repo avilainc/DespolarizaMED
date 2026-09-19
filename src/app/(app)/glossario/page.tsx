@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Search } from "lucide-react";
 import { requireAssinatura } from "@/lib/auth/require-subscription";
 import { getGlossaryTerms } from "@/lib/payload/glossary";
 import { getSubjects } from "@/lib/payload/queries";
+import { visualDaMateria } from "@/lib/materias";
 import { idsFavoritas } from "@/features/practice/queries";
 import { FavoriteButton } from "@/features/practice/components/favorite-button";
-import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Field, SelectField, TextField } from "@/components/ui/field";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Tag } from "@/components/ui/chip";
 
 export const metadata: Metadata = { title: "Glossário — DespolarizaMED" };
 
@@ -29,7 +35,11 @@ export default async function GlossarioPage({
   // mostra a lista corrida.
   const porLetra = new Map<string, typeof termos>();
   for (const t of termos) {
-    const inicial = t.term.charAt(0).toLocaleUpperCase("pt-BR").normalize("NFD").replace(/\p{M}/gu, "");
+    const inicial = t.term
+      .charAt(0)
+      .toLocaleUpperCase("pt-BR")
+      .normalize("NFD")
+      .replace(/\p{M}/gu, "");
     const lista = porLetra.get(inicial) ?? [];
     lista.push(t);
     porLetra.set(inicial, lista);
@@ -37,56 +47,82 @@ export default async function GlossarioPage({
   const letras = [...porLetra.keys()].sort((a, b) => a.localeCompare(b, "pt-BR"));
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold text-foreground">Glossário</h1>
-      <p className="mt-1 text-muted-foreground">
-        {termos.length.toLocaleString("pt-BR")} {termos.length === 1 ? "termo" : "termos"} ·
-        definições escritas pelos professores
-      </p>
+    <>
+      <PageHeader
+        titulo="Glossário"
+        descricao={`${termos.length.toLocaleString("pt-BR")} ${
+          termos.length === 1 ? "termo definido" : "termos definidos"
+        } pelos professores, organizados por inicial e por disciplina.`}
+      />
 
-      <form className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto_auto]" role="search">
-        <Input
-          name="q"
-          defaultValue={sp.q ?? ""}
-          placeholder="Buscar termo ou definição…"
-          aria-label="Buscar no glossário"
-        />
-        <select
-          name="disciplina"
-          defaultValue={sp.disciplina ?? ""}
-          aria-label="Disciplina"
-          className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-        >
-          <option value="">Todas as disciplinas</option>
-          {disciplinas.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.name}
-            </option>
-          ))}
-        </select>
-        <button
-          type="submit"
-          className="h-9 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
-        >
-          Buscar
-        </button>
+      <form role="search" className="mb-7 grid gap-3 sm:grid-cols-[minmax(0,1fr)_14rem_auto]">
+        <Field rotulo="Buscar termo ou definição">
+          {({ id }) => (
+            <div className="relative">
+              <Search
+                aria-hidden
+                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-muted"
+              />
+              <TextField
+                id={id}
+                name="q"
+                type="search"
+                defaultValue={sp.q ?? ""}
+                placeholder="Ligação peptídica, fotossíntese…"
+                className="pl-9"
+              />
+            </div>
+          )}
+        </Field>
+
+        <Field rotulo="Disciplina">
+          {({ id }) => (
+            <SelectField id={id} name="disciplina" defaultValue={sp.disciplina ?? ""}>
+              <option value="">Todas as disciplinas</option>
+              {disciplinas.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </SelectField>
+          )}
+        </Field>
+
+        <div className="flex items-end">
+          <Button type="submit" size="lg">
+            Buscar
+          </Button>
+        </div>
       </form>
 
       {termos.length === 0 ? (
-        <p className="py-12 text-center text-muted-foreground">
-          {sp.q || sp.disciplina
-            ? "Nenhum termo para essa busca."
-            : "O glossário ainda está vazio. Os termos são cadastrados pelos professores no painel."}
-        </p>
+        <EmptyState
+          ilustracao={sp.q || sp.disciplina ? "/illustrations/vazio-busca.svg" : "/illustrations/vazio-conteudo.svg"}
+          titulo={
+            sp.q || sp.disciplina ? "Nenhum termo para essa busca" : "O glossário ainda está vazio"
+          }
+          descricao={
+            sp.q || sp.disciplina
+              ? "Tente o termo sozinho, sem o resto da frase, ou tire o filtro de disciplina."
+              : "Os termos são escritos pelos professores no painel de conteúdo. Assim que o primeiro for publicado, ele aparece aqui."
+          }
+          acao={
+            sp.q || sp.disciplina ? (
+              <Link href="/glossario" className={buttonVariants({ variant: "brand" })}>
+                Ver todos os termos
+              </Link>
+            ) : undefined
+          }
+        />
       ) : (
         <>
           {!sp.q && letras.length > 1 && (
-            <nav className="mt-6 flex flex-wrap gap-1.5 text-xs" aria-label="Iniciais">
+            <nav className="mb-7 flex flex-wrap gap-1.5" aria-label="Ir para a inicial">
               {letras.map((l) => (
                 <a
                   key={l}
                   href={`#letra-${l}`}
-                  className="rounded-md border border-border px-2 py-1 font-medium text-muted-foreground hover:bg-muted"
+                  className="inline-flex size-9 items-center justify-center rounded-lg border border-border bg-surface text-[0.8125rem] font-semibold text-text-secondary transition-colors hover:border-brand-300 hover:text-brand-700"
                 >
                   {l}
                 </a>
@@ -94,26 +130,37 @@ export default async function GlossarioPage({
             </nav>
           )}
 
-          <div className="mt-8 space-y-8">
+          <div className="space-y-8">
             {letras.map((l) => (
               <section key={l} id={`letra-${l}`}>
                 {!sp.q && (
-                  <h2 className="mb-3 text-sm font-semibold text-muted-foreground">{l}</h2>
+                  <h2 className="mb-3 flex items-center gap-3">
+                    <span className="font-display text-[1.375rem] font-bold text-brand-600">
+                      {l}
+                    </span>
+                    <span aria-hidden className="h-px flex-1 bg-border" />
+                  </h2>
                 )}
-                <dl className="space-y-3">
+                <dl className="grid gap-3 lg:grid-cols-2">
                   {porLetra.get(l)!.map((t) => {
                     const disciplina =
                       t.subject && typeof t.subject === "object" ? t.subject.name : null;
+                    const visual = visualDaMateria(disciplina);
+
                     return (
-                      <div key={t.id} className="rounded-lg border border-border bg-card p-4">
-                        <dt className="flex items-center gap-2">
-                          <span className="font-semibold text-foreground">{t.term}</span>
+                      <div
+                        key={t.id}
+                        className="rounded-xl border border-border bg-surface p-5 shadow-xs"
+                      >
+                        <dt className="flex flex-wrap items-center gap-2">
+                          <span className="t-card-title text-text-primary">{t.term}</span>
                           {disciplina && (
                             <Link
                               href={`/glossario?disciplina=${typeof t.subject === "object" ? t.subject?.id : ""}`}
-                              className="text-xs text-muted-foreground hover:text-foreground"
                             >
-                              {disciplina}
+                              <Tag tom="materia" cor={visual.cor} icone={visual.icone}>
+                                {disciplina}
+                              </Tag>
                             </Link>
                           )}
                           <span className="ml-auto">
@@ -124,7 +171,7 @@ export default async function GlossarioPage({
                             />
                           </span>
                         </dt>
-                        <dd className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                        <dd className="t-leitura mt-2 whitespace-pre-line text-text-secondary">
                           {t.definition}
                         </dd>
                       </div>
@@ -136,6 +183,6 @@ export default async function GlossarioPage({
           </div>
         </>
       )}
-    </div>
+    </>
   );
 }

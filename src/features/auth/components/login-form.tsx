@@ -4,9 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, TextField } from "@/components/ui/field";
 import { authClient } from "@/lib/auth/client";
 import { mensagemDeErro } from "@/features/auth/mensagens";
 import { Loader2 } from "lucide-react";
@@ -42,59 +40,66 @@ export function LoginForm() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl"><h1>Entrar</h1></CardTitle>
-        <CardDescription>Acesse sua conta para continuar seus estudos.</CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">E-mail</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="voce@email.com"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoComplete="email"
-            />
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Senha</Label>
-              <Link
-                href="/esqueci-a-senha"
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >
-                Esqueceu a senha?
-              </Link>
-            </div>
-            <Input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="current-password"
-            />
-          </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-        </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading && <Loader2 className="me-2 size-4 animate-spin" />}
-            Entrar
-          </Button>
-          <p className="text-center text-sm text-muted-foreground">
-            Ainda não tem conta?{" "}
-            <Link href="/cadastro" className="font-medium text-primary underline underline-offset-4">
-              Criar conta
+    <div className="rounded-2xl border border-border bg-surface p-7 shadow-sm sm:p-8">
+      <h1 className="t-page-title text-text-primary">Entrar</h1>
+      <p className="mt-1.5 text-text-secondary">Acesse sua conta para continuar seus estudos.</p>
+
+      <form onSubmit={handleSubmit} className="mt-7 space-y-4">
+        <Field rotulo="E-mail" obrigatorio htmlFor="email">
+          <TextField
+            id="email"
+            type="email"
+            placeholder="voce@email.com"
+            required
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            autoComplete="email"
+          />
+        </Field>
+
+        <div>
+          <div className="mb-1.5 flex items-baseline justify-between gap-3">
+            <label htmlFor="password" className="t-label">
+              Senha
+              <span className="ml-1 text-danger-text" aria-hidden>
+                *
+              </span>
+            </label>
+            <Link
+              href="/esqueci-a-senha"
+              className="text-[0.8125rem] font-medium text-brand-600 hover:underline"
+            >
+              Esqueceu a senha?
             </Link>
+          </div>
+          <TextField
+            id="password"
+            type="password"
+            required
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete="current-password"
+          />
+        </div>
+
+        {error && (
+          <p role="alert" className="rounded-lg bg-danger-soft px-4 py-3 text-[0.875rem] text-danger-text">
+            {error}
           </p>
-        </CardFooter>
+        )}
+
+        <Button type="submit" size="lg" variant="brand" className="w-full" disabled={loading}>
+          {loading && <Loader2 className="size-4 animate-spin" data-icon="inline-start" aria-hidden />}
+          Entrar
+        </Button>
       </form>
-    </Card>
+
+      <p className="mt-6 border-t border-border pt-5 text-center text-[0.875rem] text-text-muted">
+        Ainda não tem conta?{" "}
+        <Link href="/cadastro" className="font-medium text-brand-600 hover:underline">
+          Criar conta
+        </Link>
+      </p>
+    </div>
   );
 }

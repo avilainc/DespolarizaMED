@@ -4,9 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, TextField } from "@/components/ui/field";
 import { authClient } from "@/lib/auth/client";
 import { mensagemDeErro } from "@/features/auth/mensagens";
 import { Loader2 } from "lucide-react";
@@ -57,45 +55,44 @@ export function SignupForm({ planoEscolhido }: { planoEscolhido?: string }) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl"><h1>Criar conta</h1></CardTitle>
-        <CardDescription>
-          {planoEscolhido
-            ? "Crie sua conta para concluir a assinatura."
-            : "Comece sua preparação para Medicina hoje mesmo."}
-        </CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nome</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Seu nome completo"
-              required
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              autoComplete="name"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">E-mail</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="voce@email.com"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoComplete="email"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
-            <Input
-              id="password"
+    <div className="rounded-2xl border border-border bg-surface p-7 shadow-sm sm:p-8">
+      <h1 className="t-page-title text-text-primary">Criar conta</h1>
+      <p className="mt-1.5 text-text-secondary">
+        {planoEscolhido
+          ? "Crie sua conta para concluir a assinatura."
+          : "Comece sua preparação para Medicina hoje mesmo."}
+      </p>
+
+      <form onSubmit={handleSubmit} className="mt-7 space-y-4">
+        <Field rotulo="Nome" obrigatorio htmlFor="name">
+          <TextField
+            id="name"
+            type="text"
+            placeholder="Seu nome completo"
+            required
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            autoComplete="name"
+          />
+        </Field>
+
+        <Field rotulo="E-mail" obrigatorio htmlFor="email">
+          <TextField
+            id="email"
+            type="email"
+            placeholder="voce@email.com"
+            required
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            autoComplete="email"
+          />
+        </Field>
+
+        <Field rotulo="Senha" obrigatorio htmlFor="password" ajuda="Pelo menos 8 caracteres.">
+          {({ id, describedBy }) => (
+            <TextField
+              id={id}
+              aria-describedby={describedBy || undefined}
               type="password"
               required
               minLength={8}
@@ -103,22 +100,27 @@ export function SignupForm({ planoEscolhido }: { planoEscolhido?: string }) {
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="new-password"
             />
-          </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-        </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading && <Loader2 className="me-2 size-4 animate-spin" />}
-            {planoEscolhido ? "Criar conta e continuar" : "Criar conta"}
-          </Button>
-          <p className="text-center text-sm text-muted-foreground">
-            Já tem conta?{" "}
-            <Link href="/login" className="font-medium text-primary underline underline-offset-4">
-              Entrar
-            </Link>
+          )}
+        </Field>
+
+        {error && (
+          <p role="alert" className="rounded-lg bg-danger-soft px-4 py-3 text-[0.875rem] text-danger-text">
+            {error}
           </p>
-        </CardFooter>
+        )}
+
+        <Button type="submit" size="lg" variant="brand" className="w-full" disabled={loading}>
+          {loading && <Loader2 className="size-4 animate-spin" data-icon="inline-start" aria-hidden />}
+          {planoEscolhido ? "Criar conta e continuar" : "Criar conta"}
+        </Button>
       </form>
-    </Card>
+
+      <p className="mt-6 border-t border-border pt-5 text-center text-[0.875rem] text-text-muted">
+        Já tem conta?{" "}
+        <Link href="/login" className="font-medium text-brand-600 hover:underline">
+          Entrar
+        </Link>
+      </p>
+    </div>
   );
 }

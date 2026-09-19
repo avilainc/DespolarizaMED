@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 210" role="img" aria-label="Dupla hélice de DNA" fill="none">
+  <title>Dupla hélice de DNA</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path d="M104 18c0 26 48 34 48 60s-48 34-48 60 48 34 48 54" stroke="#184878" stroke-width="5"/>
+    <path d="M176 18c0 26-48 34-48 60s48 34 48 60-48 34-48 54" stroke="#4884c0" stroke-width="5"/>
+    <g stroke="#8fb8dd" stroke-width="4">
+      <path d="M110 34h60M104.5 52h71M104 70h72M110.5 88h59"/>
+      <path d="M110 118h60M104.5 136h71M104 154h72M110.5 172h59"/>
+    </g>
+    <g fill="#fc7824"><circle cx="152" cy="78" r="6"/><circle cx="128" cy="78" r="6"/></g>
+    <g fill="#549c9c"><circle cx="104" cy="18" r="5"/><circle cx="176" cy="18" r="5"/><circle cx="104" cy="192" r="5"/><circle cx="176" cy="192" r="5"/></g>
+    <g stroke="#8fb8dd" stroke-width="3.5" opacity=".7">
+      <circle cx="42" cy="52" r="11"/><circle cx="238" cy="150" r="11"/>
+      <path d="M42 41v-9M42 63v9M31 52h-9M53 52h9"/>
+      <path d="M238 139v-9M238 161v9M227 150h-9M249 150h9"/>
+    </g>
+    <circle cx="46" cy="160" r="6" fill="#d7e5f3"/><circle cx="234" cy="44" r="8" fill="#d7e5f3"/>
+  </g>
+</svg>

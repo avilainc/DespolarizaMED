@@ -43,3 +43,23 @@ export async function assinaturaVigente(studentId: string) {
 export async function temAcesso(studentId: string) {
   return (await assinaturaVigente(studentId)) !== null;
 }
+
+/**
+ * Só o nome do plano vigente, para o rodapé da barra lateral.
+ *
+ * Consulta própria, e não `assinaturaDoAluno()` (que traz pagamentos e datas),
+ * porque isto roda no layout de TODA rota autenticada: trazer o extrato
+ * inteiro para escrever "Plano Semestral" seria pagar caro em cada navegação.
+ */
+export async function nomeDoPlanoVigente(studentId: string) {
+  const assinatura = await assinaturaVigente(studentId);
+  if (!assinatura) return null;
+
+  const [plano] = await db
+    .select({ name: plans.name })
+    .from(plans)
+    .where(eq(plans.id, assinatura.planId))
+    .limit(1);
+
+  return plano?.name ?? null;
+}

@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSessionWithRole } from "@/lib/auth/require-session";
 import { getSubjects } from "@/lib/payload/queries";
 import { obterQuestaoAutoral, temasAutorais } from "@/features/questions/queries";
 import { QuestionForm } from "@/features/questions/components/question-form";
-import { ArrowLeft } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const metadata: Metadata = { title: "Editar questão — DespolarizaMED" };
 
@@ -20,14 +19,15 @@ export default async function EditarQuestaoPage({ params }: { params: Promise<{ 
   if (!q) notFound();
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-      <Link
-        href="/professor/questoes"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" /> Questões autorais
-      </Link>
-      <h1 className="mt-4 mb-8 text-2xl font-bold text-foreground">Editar questão</h1>
+    <div className="mx-auto max-w-3xl">
+      <PageHeader
+        migalhas={[
+          { rotulo: "Área do professor", href: "/professor" },
+          { rotulo: "Questões autorais", href: "/professor/questoes" },
+          { rotulo: "Editar" },
+        ]}
+        titulo="Editar questão"
+      />
 
       <QuestionForm
         disciplinas={disciplinas.map((d) => ({ id: d.id, name: d.name }))}

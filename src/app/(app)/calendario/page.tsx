@@ -1,12 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CalendarCheck, CalendarClock, CalendarDays, GraduationCap } from "lucide-react";
 import { requireAssinatura } from "@/lib/auth/require-subscription";
 import { diaParaData } from "@/lib/datas";
 import { itensDoPeriodo, planoDoAluno } from "@/features/study-plan/queries";
 import { palestrasNoPeriodo, plantoesNoPeriodo } from "@/features/live/queries";
 import { CalendarView, type EventoCalendario } from "@/features/study-plan/components/calendar-view";
+import { PageHeader } from "@/components/ui/page-header";
+import { MetricCard } from "@/components/ui/metric-card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { buttonVariants } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "Calendário — DespolarizaMED" };
+
+function quandoCurto(d: Date, agora: Date) {
+  const mesmoDia = d.toDateString() === agora.toDateString();
+  const hora = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  if (mesmoDia) return `Hoje, ${hora}`;
+  return `${d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}, ${hora}`;
+}
 
 /**
  * Junta num calendário só: itens do plano de estudos (pessoais), plantões,
@@ -81,24 +93,82 @@ export default async function CalendarioPage() {
     });
   }
 
+  // Cartões do topo: só aparecem quando há dado real por trás. Um cartão
+  // "Próxima atividade — —" é pior que nenhum cartão.
+  const agora = new Date();
+  const hoje = itens.filter(
+    (i) => i.scheduledFor.toDateString() === agora.toDateString() && !i.completed,
+  );
+  const proximoPlantao = plantoes.find((p) => p.startsAt.getTime() > agora.getTime());
+  const diasParaProva = plano?.examDate
+    ? Math.ceil((diaParaData(plano.examDate).getTime() - agora.getTime()) / 86_400_000)
+    : null;
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Calendário</h1>
-          <p className="mt-1 text-muted-foreground">
-            Plano de estudos, plantões, palestras e a data da sua prova, tudo junto.
-          </p>
+    <>
+      <PageHeader
+        titulo="Calendário"
+        descricao="Seu cronograma, plantões, palestras e provas em um só lugar."
+        acoes={
+          !plano ? (
+            <Link href="/plano" className={buttonVariants({ variant: "brand" })}>
+              <CalendarCheck data-icon="inline-start" aria-hidden />
+              Montar plano de estudos
+            </Link>
+          ) : undefined
+        }
+      />
+
+      {(hoje.length > 0 || proximoPlantao || diasParaProva !== null) && (
+        <div className="mb-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {hoje.length > 0 && (
+            <MetricCard
+              icone={CalendarDays}
+              rotulo="Hoje"
+              valor={hoje.length}
+              apoio={`${hoje.length === 1 ? "item pendente" : "itens pendentes"} no plano`}
+              href="/plano"
+            />
+          )}
+          {proximoPlantao && (
+            <MetricCard
+              icone={CalendarClock}
+              rotulo="Próximo plantão"
+              valor={
+                <span className="text-[1.25rem] leading-snug">{proximoPlantao.title}</span>
+              }
+              apoio={quandoCurto(proximoPlantao.startsAt, agora)}
+              href="/plantoes"
+            />
+          )}
+          {diasParaProva !== null && plano && (
+            <MetricCard
+              icone={GraduationCap}
+              rotulo={`Prova · ${plano.targetVestibular ?? "vestibular"}`}
+              valor={diasParaProva}
+              apoio={diasParaProva === 1 ? "dia" : "dias"}
+              href="/plano"
+              tom={diasParaProva <= 30 ? "atencao" : "neutro"}
+            />
+          )}
         </div>
-        {!plano && (
-          <Link href="/plano" className="text-sm text-primary hover:underline">
-            Montar plano de estudos →
-          </Link>
-        )}
-      </div>
-      <div className="mt-6">
+      )}
+
+      {eventos.length === 0 ? (
+        <EmptyState
+          ilustracao="/illustrations/vazio-calendario.svg"
+          titulo="Nada marcado ainda"
+          descricao="Monte seu plano de estudos e o cronograma aparece aqui, junto dos plantões, das palestras e da data da sua prova."
+          acao={
+            <Link href="/plano" className={buttonVariants({ variant: "brand" })}>
+              <CalendarCheck data-icon="inline-start" aria-hidden />
+              Montar plano de estudos
+            </Link>
+          }
+        />
+      ) : (
         <CalendarView eventos={eventos} />
-      </div>
-    </div>
+      )}
+    </>
   );
 }
