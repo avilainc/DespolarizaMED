@@ -48,18 +48,25 @@ export function Hero() {
         </div>
 
         {/* Era um <img> para /perfil.jpg, que nunca existiu em public/ (404 em
-            produção) e, mesmo se existisse, era o próprio logo em 128 px
-            servindo de "foto do professor". Enquanto não houver foto real da
-            equipe, o emblema da marca em alta é mais honesto que um retrato
-            que não existe. */}
-        <div className="relative mx-auto flex aspect-square w-full max-w-sm items-center justify-center overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-card to-accent/20 shadow-xl sm:max-w-md">
+            produção). Depois virou o próprio emblema ampliado — honesto, mas
+            é o logotipo repetido a 30 cm do logotipo do cabeçalho.
+            Agora é a ilustração da marca: o neurônio despolarizando do emblema,
+            desenhado em linha, com a onda do potencial de ação. Diz de onde vem
+            o nome sem precisar escrever, e é desenho próprio — não uma foto de
+            banco de imagens que qualquer curso poderia usar. */}
+        <div className="relative mx-auto flex w-full max-w-sm items-center justify-center overflow-hidden rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-50 via-surface to-accent/25 p-8 shadow-md sm:max-w-md">
+          <div
+            aria-hidden
+            className="trama-axonio pointer-events-none absolute inset-0 opacity-50 [mask-image:radial-gradient(ellipse_at_center,black,transparent_72%)]"
+          />
           <Image
-            src="/logo.png"
-            alt="DespolarizaMED"
-            width={512}
-            height={512}
+            src="/illustrations/marca-axonio.svg"
+            alt=""
+            aria-hidden
+            width={420}
+            height={233}
             priority
-            className="w-3/4 drop-shadow-xl"
+            className="relative h-auto w-full"
           />
         </div>
       </div>

@@ -5,7 +5,7 @@ import { contarQuestoesAutorais, listarQuestoesAutorais } from "@/features/quest
 import { getSubjects } from "@/lib/payload/queries";
 import { renderizarMath } from "@/lib/math-html";
 import { AuthoredQuestionCard } from "@/features/questions/components/authored-question-card";
-import { ArrowLeft } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const metadata: Metadata = { title: "Questões dos professores — DespolarizaMED" };
 
@@ -46,17 +46,15 @@ export default async function QuestoesAutoraisPage({
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-      <Link
-        href="/questoes"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" /> Banco de questões
-      </Link>
-      <h1 className="mt-4 text-2xl font-bold text-foreground">Questões dos professores</h1>
-      <p className="mt-1 text-muted-foreground">
-        {total} {total === 1 ? "questão" : "questões"} escritas pela equipe, com resolução comentada.
-      </p>
+    <div className="mx-auto max-w-4xl">
+      <PageHeader
+        migalhas={[
+          { rotulo: "Banco de questões", href: "/questoes" },
+          { rotulo: "Questões dos professores" },
+        ]}
+        titulo="Questões dos professores"
+        descricao={`${total} ${total === 1 ? "questão escrita" : "questões escritas"} pela equipe, com resolução comentada — disciplina e tema definidos por quem escreveu, não sugeridos por algoritmo.`}
+      />
 
       <div className="mt-6 flex flex-wrap gap-2 text-xs">
         <Link href={link({ disciplina: undefined, p: undefined })} className={`rounded-full border px-2.5 py-1 ${!subjectId ? "border-primary bg-primary/10" : "border-border hover:bg-muted"}`}>

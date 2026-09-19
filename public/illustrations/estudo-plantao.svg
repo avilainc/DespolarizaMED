@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 210" role="img" aria-label="Plantão ao vivo" fill="none">
+  <title>Plantão ao vivo</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <rect x="34" y="34" width="176" height="118" rx="14" fill="#ffffff" stroke="#184878" stroke-width="5"/>
+    <rect x="34" y="34" width="176" height="26" rx="13" fill="#184878"/>
+    <g fill="#ffffff" opacity=".65"><circle cx="52" cy="47" r="4"/><circle cx="66" cy="47" r="4"/><circle cx="80" cy="47" r="4"/></g>
+    <circle cx="122" cy="106" r="30" fill="#e6eef8"/>
+    <path d="m114 94 22 12-22 12z" fill="#4884c0"/>
+    <path d="M226 78v50l30 20V58z" fill="#cfe6e6" stroke="#549c9c" stroke-width="5"/>
+    <path d="M100 176h44M122 152v24" stroke="#8fb8dd" stroke-width="5"/>
+    <g fill="#fc7824"><circle cx="186" cy="47" r="6"/></g>
+    <path d="M198 42h6M198 52h6" stroke="#fc7824" stroke-width="3" opacity=".6"/>
+    <circle cx="30" cy="172" r="8" fill="#d7e5f3"/>
+  </g>
+</svg>

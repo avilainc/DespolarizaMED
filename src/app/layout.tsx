@@ -1,16 +1,44 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Bricolage_Grotesque, Geist_Mono, Inter } from "next/font/google";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+/**
+ * Duas famílias, com papéis separados.
+ *
+ * `Inter` é a fonte de interface: rótulo, botão, tabela, enunciado. Foi a
+ * escolhida em vez de continuar com a Geist por um motivo concreto — o
+ * `--font-sans` do tema apontava para uma variável que NUNCA era definida
+ * (`@theme inline { --font-sans: var(--font-sans) }` é circular), e o
+ * `@apply font-sans` no <html> caía no serifado padrão do navegador. A
+ * plataforma inteira estava sendo renderizada em Times New Roman; era daí que
+ * vinha a impressão de tipografia "antiquada".
+ *
+ * `Bricolage Grotesque` é a fonte de display: título de página, título de
+ * seção e número de métrica. É uma grotesca editorial, com personalidade
+ * própria sem virar fonte de cartaz — o contraponto sério ao logotipo, que é
+ * arredondado e informal. Só entra em tamanho grande, nunca em texto corrido.
+ *
+ * Ambas variáveis e com `display: "swap"`: o texto aparece na primeira pintura
+ * com a fonte do sistema e troca quando a fonte chega, em vez de segurar o LCP.
+ */
+const interfaceFont = Inter({
+  variable: "--font-interface",
+  subsets: ["latin", "latin-ext"],
+  display: "swap",
+});
+
+const displayFont = Bricolage_Grotesque({
+  variable: "--font-display",
+  subsets: ["latin", "latin-ext"],
+  weight: ["500", "600", "700"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const DESCRICAO =
@@ -60,13 +88,24 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * `themeColor` pinta a barra do navegador no Android e a status bar do PWA com
+ * o azul institucional; sem ele o app instalado abre com uma faixa branca por
+ * cima da marca. `maximumScale` fica livre de propósito — travar o zoom é uma
+ * falha de acessibilidade.
+ */
+export const viewport: Viewport = {
+  themeColor: "#184878",
+  colorScheme: "light",
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${interfaceFont.variable} ${displayFont.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }

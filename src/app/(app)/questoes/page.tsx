@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ChevronLeft, ChevronRight, PenLine } from "lucide-react";
 import { requireAssinatura } from "@/lib/auth/require-subscription";
+import { visualDaMateria } from "@/lib/materias";
 import {
   buscarQuestoes,
   contarQuestoes,
@@ -14,19 +16,23 @@ import {
   ultimasRespostas,
 } from "@/features/practice/queries";
 import { QuestionCard } from "@/features/library/components/question-card";
-import { Input } from "@/components/ui/input";
+import { QuestionFilters } from "@/features/library/components/question-filters";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FilterChip } from "@/components/ui/chip";
+import { buttonVariants } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "Banco de questões — DespolarizaMED" };
 
 const POR_PAGINA = 20;
 
 const SITUACOES = [
-  { valor: "", rotulo: "Todas" },
+  { valor: "", rotulo: "Situação: todas" },
   { valor: "nao-respondidas", rotulo: "Não respondidas" },
   { valor: "respondidas", rotulo: "Já respondidas" },
   { valor: "erradas", rotulo: "Que errei" },
   { valor: "favoritas", rotulo: "Favoritas" },
-] as const;
+];
 
 type Params = {
   q?: string;
@@ -94,162 +100,163 @@ export default async function QuestoesPage({ searchParams }: { searchParams: Pro
     return s ? `/questoes?${s}` : "/questoes";
   };
 
+  const temFiltro = Boolean(sp.q || sp.banca || sp.ano || sp.disciplina || sp.tema || sp.situacao);
+
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold text-foreground">Banco de questões</h1>
-      <p className="mt-1 text-muted-foreground">
-        {total.toLocaleString("pt-BR")}{" "}
-        {total === 1 ? "questão encontrada" : "questões encontradas"} · extraídas de provas
-        originais, com gabarito conferido ·{" "}
-        <Link href="/questoes/autorais" className="text-primary hover:underline">
-          ver questões dos professores
-        </Link>
-      </p>
-
-      {/* Busca e filtros por GET: o estado fica na URL, então dá para
-          compartilhar um recorte ("FUVEST 2024 de genética") e voltar a ele
-          pelo histórico. */}
-      <form className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto_auto]" role="search">
-        <Input
-          name="q"
-          defaultValue={sp.q ?? ""}
-          placeholder="Buscar por assunto: ciclo de Krebs, mitose…"
-          aria-label="Buscar no enunciado"
-        />
-        <select
-          name="banca"
-          defaultValue={sp.banca ?? ""}
-          aria-label="Vestibular"
-          className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-        >
-          <option value="">Todas as bancas</option>
-          {facetas.instituicoes.map((i) => (
-            <option key={i.valor} value={i.valor ?? ""}>
-              {i.valor?.toUpperCase()} ({i.total})
-            </option>
-          ))}
-        </select>
-        <select
-          name="ano"
-          defaultValue={sp.ano ?? ""}
-          aria-label="Ano"
-          className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-        >
-          <option value="">Todos os anos</option>
-          {facetas.anos.map((a) => (
-            <option key={a.ano} value={a.ano ?? ""}>
-              {a.ano} ({a.total})
-            </option>
-          ))}
-        </select>
-        <select
-          name="situacao"
-          defaultValue={sp.situacao ?? ""}
-          aria-label="Situação"
-          className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-        >
-          {SITUACOES.map((s) => (
-            <option key={s.valor} value={s.valor}>
-              {s.valor ? s.rotulo : "Situação: todas"}
-            </option>
-          ))}
-        </select>
-        {sp.disciplina && <input type="hidden" name="disciplina" value={sp.disciplina} />}
-        {sp.disciplina && temasDaDisciplina.length > 0 ? (
-          <select
-            name="tema"
-            defaultValue={sp.tema ?? ""}
-            aria-label="Tema"
-            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-          >
-            <option value="">Todos os temas de {sp.disciplina}</option>
-            {temasDaDisciplina.map((t) => (
-              <option key={t.tema} value={t.tema ?? ""}>
-                {t.tema} ({t.total})
-              </option>
-            ))}
-          </select>
-        ) : (
-          <span />
-        )}
-        <button
-          type="submit"
-          className="h-9 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
-        >
-          Filtrar
-        </button>
-      </form>
-
-      {facetas.disciplinas.length > 0 && (
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-muted-foreground">Disciplina sugerida:</span>
-          <Link
-            href={linkCom({ disciplina: undefined, tema: undefined })}
-            className={`rounded-full border px-2.5 py-1 ${!sp.disciplina ? "border-primary bg-primary/10" : "border-border hover:bg-muted"}`}
-          >
-            todas
+    <>
+      <PageHeader
+        titulo="Banco de questões"
+        descricao="Questões extraídas de provas originais, com o gabarito conferido contra o caderno oficial. Responda direto no card: a resposta fica registrada no seu desempenho."
+        acoes={
+          <Link href="/questoes/autorais" className={buttonVariants({ variant: "outline" })}>
+            <PenLine data-icon="inline-start" aria-hidden />
+            Questões dos professores
           </Link>
-          {facetas.disciplinas.map((d) => (
-            <Link
-              key={d.disciplina}
-              href={linkCom({ disciplina: d.disciplina ?? undefined, tema: undefined })}
-              className={`rounded-full border px-2.5 py-1 ${sp.disciplina === d.disciplina ? "border-primary bg-primary/10" : "border-border hover:bg-muted"}`}
-            >
-              {d.disciplina} ({d.total})
-            </Link>
-          ))}
-        </div>
+        }
+      />
+
+      <QuestionFilters
+        total={total}
+        valores={{
+          q: sp.q,
+          banca: sp.banca,
+          ano: sp.ano,
+          tema: sp.tema,
+          situacao: sp.situacao,
+          disciplina: sp.disciplina,
+        }}
+        bancas={facetas.instituicoes
+          .filter((i) => i.valor)
+          .map((i) => ({
+            valor: i.valor!,
+            rotulo: i.valor!.toUpperCase(),
+            total: i.total,
+          }))}
+        anos={facetas.anos
+          .filter((a) => a.ano)
+          .map((a) => ({ valor: String(a.ano), rotulo: String(a.ano), total: a.total }))}
+        temas={temasDaDisciplina
+          .filter((t) => t.tema)
+          .map((t) => ({ valor: t.tema!, rotulo: t.tema!, total: t.total }))}
+        situacoes={SITUACOES}
+      />
+
+      {/* Disciplina por chip e não por <select>: são poucas, cada uma tem cor e
+          ícone próprios, e o chip mostra o volume de cada uma sem abrir nada. */}
+      {facetas.disciplinas.length > 0 && (
+        <nav aria-label="Filtrar por disciplina" className="mb-6 flex flex-wrap gap-2">
+          <FilterChip
+            href={linkCom({ disciplina: undefined, tema: undefined })}
+            ativo={!sp.disciplina}
+          >
+            Todas as disciplinas
+          </FilterChip>
+          {facetas.disciplinas.map((d) => {
+            const visual = visualDaMateria(d.disciplina);
+            return (
+              <FilterChip
+                key={d.disciplina}
+                href={linkCom({ disciplina: d.disciplina ?? undefined, tema: undefined })}
+                ativo={sp.disciplina === d.disciplina}
+                icone={visual.icone}
+                cor={visual.cor}
+                contagem={d.total}
+              >
+                {d.disciplina}
+              </FilterChip>
+            );
+          })}
+        </nav>
       )}
 
-      <div className="mt-8 space-y-5">
-        {questoes.length === 0 && (
-          <p className="py-12 text-center text-muted-foreground">
-            {sp.situacao === "erradas"
-              ? "Nenhuma questão errada pendente. Bom sinal."
+      <p className="t-meta tabular mb-4">
+        {total.toLocaleString("pt-BR")}{" "}
+        {total === 1 ? "questão encontrada" : "questões encontradas"}
+        {paginas > 1 && ` · página ${pagina} de ${paginas.toLocaleString("pt-BR")}`}
+      </p>
+
+      {questoes.length === 0 ? (
+        <EmptyState
+          ilustracao="/illustrations/vazio-busca.svg"
+          titulo={
+            sp.situacao === "erradas"
+              ? "Nenhuma questão errada pendente"
               : sp.situacao === "favoritas"
-                ? "Você ainda não favoritou nenhuma questão. Use a estrela no card."
-                : "Nenhuma questão para esses filtros."}
-          </p>
-        )}
-        {questoes.map((q) => (
-          <QuestionCard
-            key={q.id}
-            questao={{
-              id: q.id,
-              enunciado: q.enunciado,
-              numero: q.numero,
-              ano: q.ano,
-              instituicaoSlug: q.instituicaoSlug,
-              disciplinaSugerida: q.disciplinaSugerida,
-              alternativas: q.alternativas.map((a) => ({ letra: a.letra, texto: a.texto })),
-              respostaAnterior: respostas.get(q.id) ?? null,
-              favorita: favoritasSet.has(q.id),
-            }}
-          />
-        ))}
-      </div>
+                ? "Você ainda não favoritou nenhuma questão"
+                : "Nenhuma questão para esse recorte"
+          }
+          descricao={
+            sp.situacao === "erradas"
+              ? "Bom sinal: tudo que você errou já foi refeito. Escolha outra situação para continuar praticando."
+              : sp.situacao === "favoritas"
+                ? "Use a estrela no canto de cada questão para guardar as que você quer revisar depois."
+                : "Tente afrouxar um filtro — menos anos, outra banca, ou uma busca mais curta."
+          }
+          acao={
+            temFiltro ? (
+              <Link href="/questoes" className={buttonVariants({ variant: "brand" })}>
+                Limpar filtros
+              </Link>
+            ) : undefined
+          }
+        />
+      ) : (
+        <ol className="space-y-5">
+          {questoes.map((q, i) => (
+            <li key={q.id}>
+              <QuestionCard
+                ordem={(pagina - 1) * POR_PAGINA + i + 1}
+                questao={{
+                  id: q.id,
+                  enunciado: q.enunciado,
+                  numero: q.numero,
+                  ano: q.ano,
+                  instituicaoSlug: q.instituicaoSlug,
+                  disciplinaSugerida: q.disciplinaSugerida,
+                  alternativas: q.alternativas.map((a) => ({ letra: a.letra, texto: a.texto })),
+                  respostaAnterior: respostas.get(q.id) ?? null,
+                  favorita: favoritasSet.has(q.id),
+                }}
+              />
+            </li>
+          ))}
+        </ol>
+      )}
 
       {paginas > 1 && (
-        <nav className="mt-8 flex items-center justify-between text-sm" aria-label="Paginação">
+        <nav
+          className="mt-8 flex items-center justify-between gap-3 border-t border-border pt-6"
+          aria-label="Paginação"
+        >
           {pagina > 1 ? (
-            <Link href={linkCom({ p: pagina > 2 ? String(pagina - 1) : undefined })} className="text-primary hover:underline">
-              ← Anterior
+            <Link
+              href={linkCom({ p: pagina > 2 ? String(pagina - 1) : undefined })}
+              className={buttonVariants({ variant: "outline" })}
+            >
+              <ChevronLeft data-icon="inline-start" aria-hidden />
+              Anterior
             </Link>
           ) : (
             <span />
           )}
-          <span className="text-muted-foreground">
-            Página {pagina} de {paginas.toLocaleString("pt-BR")}
+
+          <span className="tabular text-[0.875rem] text-text-muted">
+            {pagina} / {paginas.toLocaleString("pt-BR")}
           </span>
+
           {pagina < paginas ? (
-            <Link href={linkCom({ p: String(pagina + 1) })} className="text-primary hover:underline">
-              Próxima →
+            <Link
+              href={linkCom({ p: String(pagina + 1) })}
+              className={buttonVariants({ variant: "outline" })}
+            >
+              Próxima
+              <ChevronRight data-icon="inline-end" aria-hidden />
             </Link>
           ) : (
             <span />
           )}
         </nav>
       )}
-    </div>
+    </>
   );
 }

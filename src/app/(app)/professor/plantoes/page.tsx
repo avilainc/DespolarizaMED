@@ -9,7 +9,8 @@ import { DeleteLiveButton, NotifyButton } from "@/features/live/components/live-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { Pencil } from "lucide-react";
 
 export const metadata: Metadata = { title: "Plantões e palestras — DespolarizaMED" };
 
@@ -34,19 +35,17 @@ export default async function ProfessorPlantoesPage({
   const agora = new Date();
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <Link
-        href="/professor"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" /> Área do professor
-      </Link>
-      <h1 className="mt-4 text-2xl font-bold text-foreground">Plantões e palestras</h1>
-      <p className="mt-1 text-muted-foreground">
-        Agende o plantão, cole o link do Meet e avise os alunos. Depois, adicione a gravação.
-      </p>
+    <div className="mx-auto max-w-5xl">
+      <PageHeader
+        migalhas={[
+          { rotulo: "Área do professor", href: "/professor" },
+          { rotulo: "Plantões e palestras" },
+        ]}
+        titulo="Plantões e palestras"
+        descricao="Agende o plantão, cole o link do Meet e avise os alunos. Depois, adicione a gravação."
+      />
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_23rem]">
         <div className="space-y-10">
           <section>
             <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Plantões</h2>

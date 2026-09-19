@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 210" role="img" aria-label="Folha de questões com alternativas" fill="none">
+  <title>Folha de questões com alternativas</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <rect x="52" y="22" width="150" height="176" rx="12" fill="#eef4fb" stroke="#8fb8dd" stroke-width="4"/>
+    <rect x="70" y="8" width="150" height="176" rx="12" fill="#ffffff" stroke="#184878" stroke-width="5"/>
+    <path d="M90 34h72M90 48h108" stroke="#8fb8dd" stroke-width="5"/>
+    <g stroke="#4884c0" stroke-width="4">
+      <circle cx="97" cy="76" r="9"/><circle cx="97" cy="104" r="9"/><circle cx="97" cy="160" r="9"/>
+    </g>
+    <circle cx="97" cy="132" r="9" fill="#184878"/>
+    <path d="m92 132 4 4 7-8" stroke="#ffffff" stroke-width="3.5"/>
+    <g stroke="#c3d7ec" stroke-width="5">
+      <path d="M116 76h78M116 104h64M116 160h70"/>
+    </g>
+    <path d="M116 132h72" stroke="#184878" stroke-width="5"/>
+    <path d="M222 128c14-14 24-6 12 8l-38 38-20 6 6-20z" fill="#fff3e8" stroke="#fc7824" stroke-width="4.5"/>
+    <path d="m212 138 12 12" stroke="#fc7824" stroke-width="4"/>
+    <circle cx="44" cy="150" r="8" fill="#d7e5f3"/><circle cx="238" cy="34" r="6" fill="#549c9c"/>
+  </g>
+</svg>

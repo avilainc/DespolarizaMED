@@ -6,18 +6,28 @@ import {
   getFinancialMetrics,
   getEngagementMetrics,
 } from "@/features/admin/queries";
-import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, DollarSign, TrendingUp } from "lucide-react";
+import {
+  BookOpen,
+  CircleDollarSign,
+  FolderTree,
+  Info,
+  Layers,
+  PlayCircle,
+  Repeat,
+  TrendingUp,
+  UserPlus,
+  Users,
+} from "lucide-react";
+import { PageHeader, SectionHeading } from "@/components/ui/page-header";
+import { MetricCard } from "@/components/ui/metric-card";
+import { ActionCard } from "@/components/ui/surface";
 
 export const metadata: Metadata = {
   title: "Administração — DespolarizaMED",
 };
 
 function formatBRL(cents: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-    cents / 100,
-  );
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 }
 
 export default async function AdminPage() {
@@ -30,154 +40,108 @@ export default async function AdminPage() {
     getEngagementMetrics(),
   ]);
 
+  const totalAulasEmCurso = engagement.lessonsCompleted + engagement.lessonsInProgress;
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold text-foreground">Administração</h1>
-      <p className="mt-1 text-muted-foreground">Visão geral da plataforma.</p>
+    <>
+      <PageHeader
+        titulo="Administração"
+        descricao="Visão geral da plataforma: base de alunos, receita, catálogo e engajamento."
+      />
 
-      <nav className="mt-6 flex flex-wrap gap-2">
-        <Link
-          href="/gestao/usuarios"
-          className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-muted"
-        >
-          Usuários
-        </Link>
-        <Link
-          href="/gestao/acervo"
-          className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-muted"
-        >
-          Acervo
-        </Link>
-      </nav>
+      <div className="mb-9 grid gap-4 sm:grid-cols-2">
+        <ActionCard href="/gestao/usuarios" icone={Users} titulo="Usuários">
+          Buscar contas, conferir e-mail confirmado e trocar o papel de cada pessoa.
+        </ActionCard>
+        <ActionCard href="/gestao/acervo" icone={FolderTree} titulo="Acervo">
+          Fila de curadoria das questões extraídas das provas, com gabarito a conferir.
+        </ActionCard>
+      </div>
 
-      <div className="mt-8 space-y-10">
+      <div className="space-y-9">
         <section>
-          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-            <Users className="size-4" /> Alunos
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total de alunos
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-3xl font-bold text-foreground">
-                {students.total}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Novos (últimos 30 dias)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-3xl font-bold text-foreground">
-                {students.newThisMonth}
-              </CardContent>
-            </Card>
+          <SectionHeading icone={Users}>Alunos</SectionHeading>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricCard icone={Users} rotulo="Total de alunos" valor={students.total} />
+            <MetricCard
+              icone={UserPlus}
+              rotulo="Novos (últimos 30 dias)"
+              valor={students.newThisMonth}
+              apoio={
+                students.total > 0
+                  ? `${Math.round((students.newThisMonth / students.total) * 100)}% da base`
+                  : undefined
+              }
+              tom={students.newThisMonth > 0 ? "positivo" : "neutro"}
+            />
           </div>
         </section>
 
         <section>
-          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-            <DollarSign className="size-4" /> Financeiro
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Assinaturas ativas
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-3xl font-bold text-foreground">
-                {financial.activeSubscriptions}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  MRR
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-foreground">
-                  {formatBRL(financial.mrrCents)}
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Zerado até a integração com Mercado Pago
-                </p>
-              </CardContent>
-            </Card>
+          <SectionHeading icone={CircleDollarSign}>Financeiro</SectionHeading>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricCard
+              icone={Repeat}
+              rotulo="Assinaturas ativas"
+              valor={financial.activeSubscriptions}
+              apoio={
+                students.total > 0
+                  ? `${Math.round((financial.activeSubscriptions / students.total) * 100)}% dos alunos`
+                  : undefined
+              }
+            />
+            <MetricCard
+              icone={CircleDollarSign}
+              rotulo="MRR"
+              valor={formatBRL(financial.mrrCents)}
+              apoio={
+                // A ressalva continua exatamente onde estava: sem a integração
+                // com o Mercado Pago o número é zero por ausência de dado, e
+                // não por queda de receita. Um gráfico bonito aqui seria
+                // decoração em cima de nada.
+                financial.mrrCents === 0 ? "Zerado até a integração com Mercado Pago" : undefined
+              }
+              tom={financial.mrrCents === 0 ? "atencao" : "positivo"}
+            />
           </div>
         </section>
 
         <section>
-          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-            <BookOpen className="size-4" /> Conteúdo
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Disciplinas
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-3xl font-bold text-foreground">
-                {content.subjects}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Módulos
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-3xl font-bold text-foreground">
-                {content.modules}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Aulas
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-3xl font-bold text-foreground">
-                {content.lessons}
-              </CardContent>
-            </Card>
+          <SectionHeading icone={BookOpen}>Conteúdo</SectionHeading>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricCard icone={Layers} rotulo="Disciplinas" valor={content.subjects} />
+            <MetricCard icone={FolderTree} rotulo="Módulos" valor={content.modules} />
+            <MetricCard icone={PlayCircle} rotulo="Aulas" valor={content.lessons} />
           </div>
         </section>
 
         <section>
-          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-            <TrendingUp className="size-4" /> Engajamento
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Aulas concluídas
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-3xl font-bold text-foreground">
-                {engagement.lessonsCompleted}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Aulas em andamento
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-3xl font-bold text-foreground">
-                {engagement.lessonsInProgress}
-              </CardContent>
-            </Card>
+          <SectionHeading icone={TrendingUp}>Engajamento</SectionHeading>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricCard
+              icone={TrendingUp}
+              rotulo="Aulas concluídas"
+              valor={engagement.lessonsCompleted.toLocaleString("pt-BR")}
+              apoio={
+                totalAulasEmCurso > 0
+                  ? `${Math.round((engagement.lessonsCompleted / totalAulasEmCurso) * 100)}% das aulas iniciadas`
+                  : undefined
+              }
+            />
+            <MetricCard
+              icone={PlayCircle}
+              rotulo="Aulas em andamento"
+              valor={engagement.lessonsInProgress.toLocaleString("pt-BR")}
+            />
           </div>
         </section>
       </div>
-    </div>
+
+      <p className="t-meta mt-9 flex items-start gap-2 rounded-lg border border-border bg-surface-subtle/60 px-4 py-3">
+        <Info aria-hidden className="mt-0.5 size-4 shrink-0" />
+        Todos os números vêm de consultas diretas ao banco, sem cache. Nenhum gráfico é exibido
+        enquanto não houver série histórica que o sustente.
+      </p>
+    </>
   );
 }

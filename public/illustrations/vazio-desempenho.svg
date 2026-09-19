@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 210" role="img" aria-label="Sem dados de desempenho" fill="none">
+  <title>Sem dados de desempenho</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <rect x="44" y="32" width="192" height="146" rx="14" fill="#ffffff" stroke="#8fb8dd" stroke-width="4"/>
+    <path d="M70 148V58M70 148h140" stroke="#c3d7ec" stroke-width="5"/>
+    <g fill="#eef4fb">
+      <rect x="88" y="116" width="22" height="32" rx="6"/><rect x="122" y="100" width="22" height="48" rx="6"/>
+      <rect x="156" y="124" width="22" height="24" rx="6"/><rect x="190" y="88" width="22" height="60" rx="6"/>
+    </g>
+    <path d="M88 130c22 6 34-18 56-12s34-24 56-16" stroke="#c3d7ec" stroke-width="4.5" stroke-dasharray="9 8"/>
+    <circle cx="200" cy="102" r="7" fill="#fc7824" opacity=".45"/>
+    <circle cx="32" cy="150" r="7" fill="#d7e5f3"/>
+  </g>
+</svg>

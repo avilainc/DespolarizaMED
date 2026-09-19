@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { PageHeader } from "@/components/ui/page-header";
+import { MetricCard } from "@/components/ui/metric-card";
 import Link from "next/link";
 import { requireSessionWithRole } from "@/lib/auth/require-session";
 import {
@@ -9,7 +11,6 @@ import {
   resumoDoAcervo,
 } from "@/features/library/queries";
 import { ReviewActions } from "@/features/library/components/review-actions";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, FileStack, History } from "lucide-react";
 
@@ -38,12 +39,12 @@ export default async function AcervoPage({ searchParams }: { searchParams: Promi
   ]);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold text-foreground">Acervo</h1>
-      <p className="mt-1 text-muted-foreground">
-        Provas ingeridas do pipeline de extração e fila de revisão do que ficou duvidoso. Toda decisão
-        aqui fica registrada com autor e hora.
-      </p>
+    <>
+      <PageHeader
+        migalhas={[{ rotulo: "Administração", href: "/gestao" }, { rotulo: "Acervo" }]}
+        titulo="Acervo"
+        descricao="Provas ingeridas do pipeline de extração e fila de revisão do que ficou duvidoso. Toda decisão aqui fica registrada com autor e hora."
+      />
 
       <section className="mt-8">
         <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
@@ -185,19 +186,21 @@ export default async function AcervoPage({ searchParams }: { searchParams: Promi
           </ol>
         )}
       </section>
-    </div>
+    </>
   );
 }
 
+/**
+ * Número do acervo. `destaque` só é usado no que exige AÇÃO (pendentes de
+ * revisão, conflitos de duplicata) — os outros ficam neutros, para que o
+ * vermelho continue significando alguma coisa.
+ */
 function StatCard({ label, value, destaque }: { label: string; value: number; destaque?: boolean }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
-      </CardHeader>
-      <CardContent className={`text-3xl font-bold ${destaque ? "text-destructive" : "text-foreground"}`}>
-        {value.toLocaleString("pt-BR")}
-      </CardContent>
-    </Card>
+    <MetricCard
+      rotulo={label}
+      valor={value.toLocaleString("pt-BR")}
+      tom={destaque ? "negativo" : "neutro"}
+    />
   );
 }

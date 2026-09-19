@@ -1,16 +1,20 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { ArrowRight, Clock3, Download, FileText, PlayCircle } from "lucide-react";
 import { getLessonBySlug, getLessonMaterials } from "@/lib/payload/queries";
 import { requireAssinatura } from "@/lib/auth/require-subscription";
 import { db } from "@/lib/db";
 import { lessonProgress } from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
+import { visualDaMateria } from "@/lib/materias";
 import { LessonPlayer } from "@/features/courses/components/lesson-player";
 import { FavoriteButton } from "@/features/practice/components/favorite-button";
 import { idsFavoritas } from "@/features/practice/queries";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText } from "lucide-react";
+import { PageHeader, SectionHeading } from "@/components/ui/page-header";
+import { IconTile } from "@/components/ui/surface";
+import { Tag } from "@/components/ui/chip";
+import { buttonVariants } from "@/components/ui/button";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -62,29 +66,45 @@ export default async function AulaPage({ params }: Props) {
   }
 
   const moduleName = typeof lesson.module === "object" ? lesson.module.name : null;
-  const subjectSlug =
+  const subject =
     typeof lesson.module === "object" && typeof lesson.module.subject === "object"
-      ? lesson.module.subject.slug
+      ? lesson.module.subject
       : null;
+  const visual = visualDaMateria(subject?.slug ?? subject?.name);
+  const minutos = lesson.durationSeconds
+    ? `${Math.round(lesson.durationSeconds / 60)} min`
+    : null;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-      {subjectSlug && (
-        <Link
-          href={`/disciplinas/${subjectSlug}`}
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
-          ← {moduleName ?? "Voltar"}
-        </Link>
-      )}
+    <>
+      <PageHeader
+        migalhas={[
+          { rotulo: "Disciplinas", href: "/disciplinas" },
+          ...(subject ? [{ rotulo: subject.name, href: `/disciplinas/${subject.slug}` }] : []),
+          { rotulo: lesson.title },
+        ]}
+        titulo={lesson.title}
+        descricao={lesson.description ?? undefined}
+        acoes={<FavoriteButton tipo="LESSON" id={String(lesson.id)} inicial={favorita} rotulo="Favoritar" />}
+        aside={
+          <div className="flex flex-wrap items-center gap-2">
+            {subject && (
+              <Tag tom="materia" cor={visual.cor} icone={visual.icone}>
+                {subject.name}
+              </Tag>
+            )}
+            {moduleName && <Tag tom="neutro">{moduleName}</Tag>}
+            {minutos && (
+              <span className="t-meta inline-flex items-center gap-1.5">
+                <Clock3 aria-hidden className="size-3.5" />
+                {minutos}
+              </span>
+            )}
+          </div>
+        }
+      />
 
-      <div className="mt-2 flex items-start justify-between gap-3">
-        <h1 className="text-2xl font-bold text-foreground">{lesson.title}</h1>
-        <FavoriteButton tipo="LESSON" id={String(lesson.id)} inicial={favorita} rotulo="Favoritar" />
-      </div>
-      {lesson.description && <p className="mt-1 text-muted-foreground">{lesson.description}</p>}
-
-      <div className="mt-6">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
         {lesson.videoUrl ? (
           <LessonPlayer
             lessonId={lesson.id}
@@ -93,38 +113,60 @@ export default async function AulaPage({ params }: Props) {
             initialPositionSeconds={initialPositionSeconds}
           />
         ) : (
-          <div className="flex aspect-video items-center justify-center rounded-xl border border-dashed text-sm text-muted-foreground">
-            Vídeo ainda não disponível para esta aula.
+          /* Vídeo ausente é um estado legítimo — a aula pode existir só como
+             material. O bloco explica em vez de mostrar um retângulo tracejado
+             com uma frase em cinza. */
+          <div className="flex aspect-video flex-col items-center justify-center gap-3 bg-surface-subtle px-6 text-center">
+            <IconTile icone={PlayCircle} cor={visual.cor} tamanho="lg" />
+            <p className="t-card-title text-text-primary">Vídeo ainda não disponível</p>
+            <p className="max-w-[44ch] text-[0.875rem] text-text-muted">
+              Esta aula já está no catálogo, mas a gravação ainda não foi publicada.
+              {materials.length > 0 && " Os materiais abaixo já podem ser baixados."}
+            </p>
           </div>
         )}
       </div>
 
       {materials.length > 0 && (
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle className="text-lg">Materiais</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="divide-y">
-              {materials.map((material) => (
-                <li key={material.id}>
-                  <a
-                    href={typeof material.file === "object" ? (material.file.url ?? "#") : "#"}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-3 py-3 text-sm transition-colors hover:text-primary"
-                  >
-                    <FileText className="size-5 shrink-0 text-primary/70" />
-                    <span className="text-foreground">
-                      {MATERIAL_LABELS[material.type] ?? material.type} — {material.title}
+        <section className="mt-8">
+          <SectionHeading icone={FileText}>Materiais da aula</SectionHeading>
+          <ul className="grid gap-3 md:grid-cols-2">
+            {materials.map((material) => (
+              <li key={material.id}>
+                <a
+                  href={typeof material.file === "object" ? (material.file.url ?? "#") : "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex h-full items-center gap-3 rounded-xl border border-border bg-surface p-4 shadow-xs cartao-interativo"
+                >
+                  <IconTile icone={FileText} cor={visual.cor} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[0.9375rem] font-medium text-text-primary">
+                      {material.title}
                     </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+                    <span className="t-meta block">
+                      {MATERIAL_LABELS[material.type] ?? material.type}
+                    </span>
+                  </span>
+                  <Download aria-hidden className="size-4 shrink-0 text-text-muted" />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
-    </div>
+
+      {subject && (
+        <div className="mt-8 border-t border-border pt-6">
+          <Link
+            href={`/disciplinas/${subject.slug}`}
+            className={buttonVariants({ variant: "outline" })}
+          >
+            Ver todas as aulas de {subject.name}
+            <ArrowRight data-icon="inline-end" aria-hidden />
+          </Link>
+        </div>
+      )}
+    </>
   );
 }

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 210" role="img" aria-label="Cronograma de estudos" fill="none">
+  <title>Cronograma de estudos</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <rect x="42" y="30" width="196" height="156" rx="14" fill="#ffffff" stroke="#184878" stroke-width="5"/>
+    <path d="M42 68h196" stroke="#184878" stroke-width="5"/>
+    <path d="M42 44a14 14 0 0 1 14-14h168a14 14 0 0 1 14 14v24H42z" fill="#184878"/>
+    <path d="M84 18v22M196 18v22" stroke="#4884c0" stroke-width="7"/>
+    <g fill="#e6eef8">
+      <rect x="62" y="86" width="34" height="26" rx="6"/><rect x="110" y="86" width="34" height="26" rx="6"/>
+      <rect x="158" y="86" width="34" height="26" rx="6"/><rect x="62" y="124" width="34" height="26" rx="6"/>
+      <rect x="158" y="124" width="34" height="26" rx="6"/><rect x="110" y="156" width="34" height="22" rx="6"/>
+      <rect x="206" y="86" width="12" height="26" rx="6"/>
+    </g>
+    <rect x="110" y="124" width="34" height="26" rx="6" fill="#4884c0"/>
+    <rect x="62" y="156" width="34" height="22" rx="6" fill="#549c9c" opacity=".35"/>
+    <rect x="158" y="156" width="34" height="22" rx="6" fill="#fc7824" opacity=".3"/>
+    <circle cx="214" cy="160" r="26" fill="#ffffff" stroke="#fc7824" stroke-width="5"/>
+    <path d="M214 146v14l9 6" stroke="#fc7824" stroke-width="5"/>
+  </g>
+</svg>
