@@ -226,6 +226,42 @@
   --shadow-nivel-3:
     0 4px 8px -4px oklch(0.255 0.028 249 / 0.06), 0 16px 32px -12px oklch(0.255 0.028 249 / 0.12);
 
+  /* ------------------------------------------------------------------
+     Ritmo vertical
+     ------------------------------------------------------------------
+     A escala é 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64. Nada fora dela.
+
+     Isto existe porque o levantamento do próprio código encontrou SEIS
+     valores diferentes para "espaço entre seções" (mt-6, 7, 8, 9, 10 e 12)
+     e SEIS para "padding de card" (p-3 a p-8). Cor tinha token e rigor;
+     espaço era escolhido no olho, arquivo a arquivo. O efeito não aparece
+     numa tela isolada — aparece ao navegar, como a sensação de que algo
+     está torto sem se conseguir apontar o quê.
+
+     São três medidas, e só três:
+       --espaco-secao   entre blocos de uma página
+       --espaco-bloco   entre o cabeçalho de uma seção e o conteúdo dela
+       --card-p-*       o interior de um cartão (três tamanhos, não seis)
+     ------------------------------------------------------------------ */
+  --espaco-1: 0.25rem;
+  --espaco-2: 0.5rem;
+  --espaco-3: 0.75rem;
+  --espaco-4: 1rem;
+  --espaco-5: 1.5rem;
+  --espaco-6: 2rem;
+  --espaco-7: 3rem;
+  --espaco-8: 4rem;
+
+  --espaco-secao: var(--espaco-7);
+  /* A vitrine respira mais que o painel: ali o visitante percorre a página
+     inteira de uma vez e o ar entre as seções é o que separa um assunto do
+     outro. `clamp` porque 5,5rem em 390px vira rolagem vazia. */
+  --espaco-vitrine: clamp(3.5rem, 2.2rem + 5vw, 5.5rem);
+  --espaco-bloco: var(--espaco-5);
+  --card-p-sm: var(--espaco-4);
+  --card-p-md: var(--espaco-5);
+  --card-p-lg: var(--espaco-6);
+
   /* Medidas do layout. Ficam aqui para que sidebar, cabeçalho fixo e o
      `scroll-margin` das âncoras não se desencontrem quando uma delas mudar. */
   --shell-sidebar: 16.5rem;
@@ -566,6 +602,66 @@
 }
 
 /* ==========================================================================
+   Ritmo e superfície
+   --------------------------------------------------------------------------
+   As classes que impõem as decisões do bloco de tokens. Uma página escreve
+   `.secao`, não `mt-8` — e aí o ritmo da plataforma inteira muda num lugar só.
+   ========================================================================== */
+@layer components {
+  /* Espaço entre blocos de uma página. É a ÚNICA medida para isso. */
+  .secao {
+    margin-top: var(--espaco-secao);
+  }
+
+  /* Espaço entre o cabeçalho de uma página/seção e o que vem abaixo. */
+  .bloco {
+    margin-bottom: var(--espaco-bloco);
+  }
+
+  /* Uma faixa da landing. Era `py-20` copiado em seis arquivos; agora o ritmo
+     da página pública muda num lugar só. */
+  .secao-vitrine {
+    padding-block: var(--espaco-vitrine);
+  }
+
+  /* ------------------------------------------------------------------
+     Uma linguagem de elevação, não duas.
+
+     Antes, quase todo cartão tinha `border` E `shadow` ao mesmo tempo —
+     as duas formas de dizer "isto está acima do fundo", aplicadas juntas.
+     Ler como hesitação é justo, porque era hesitação.
+
+     A regra agora: no repouso o cartão é BORDA (o fundo da página já é
+     levemente azulado, então a borda basta para separar). Sombra fica
+     reservada para o que de fato flutua — gaveta, popover, barra fixa — e
+     para o hover de um cartão clicável, onde ela é mudança de ESTADO e
+     não decoração.
+     ------------------------------------------------------------------ */
+  .cartao {
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .cartao-p-sm {
+    padding: var(--card-p-sm);
+  }
+  .cartao-p-md {
+    padding: var(--card-p-md);
+  }
+  .cartao-p-lg {
+    padding: var(--card-p-lg);
+  }
+
+  /* O que realmente paira sobre o conteúdo: aí sim, sombra e sem borda. */
+  .flutuante {
+    border-radius: var(--radius-xl);
+    background: var(--surface);
+    box-shadow: var(--shadow-nivel-3);
+  }
+}
+
+/* ==========================================================================
    Microinterações
    --------------------------------------------------------------------------
    150–200ms, nada além disso, e tudo desligado sob `prefers-reduced-motion`.
@@ -616,6 +712,17 @@
     background-image: radial-gradient(
       circle at center,
       color-mix(in oklch, var(--brand-500) 16%, transparent) 1.5px,
+      transparent 1.6px
+    );
+    background-size: 18px 18px;
+  }
+
+  /* A mesma trama sobre fundo escuro. Em azul-marinho o desenho em
+     `--brand-500` some; o motivo é o mesmo, a cor é que inverte. */
+  .trama-axonio-clara {
+    background-image: radial-gradient(
+      circle at center,
+      oklch(1 0 0 / 0.16) 1.5px,
       transparent 1.6px
     );
     background-size: 18px 18px;

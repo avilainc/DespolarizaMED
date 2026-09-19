@@ -40,7 +40,7 @@ export function LoginForm() {
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-surface p-7 shadow-sm sm:p-8">
+    <div className="rounded-2xl cartao cartao-p-lg sm:p-8">
       <h1 className="t-page-title text-text-primary">Entrar</h1>
       <p className="mt-1.5 text-text-secondary">Acesse sua conta para continuar seus estudos.</p>
 
@@ -88,7 +88,7 @@ export function LoginForm() {
           </p>
         )}
 
-        <Button type="submit" size="lg" variant="brand" className="w-full" disabled={loading}>
+        <Button type="submit" size="lg" className="w-full" disabled={loading}>
           {loading && <Loader2 className="size-4 animate-spin" data-icon="inline-start" aria-hidden />}
           Entrar
         </Button>

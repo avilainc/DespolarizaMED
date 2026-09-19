@@ -50,7 +50,7 @@ export function DataTable<T>({
   return (
     <div className={className}>
       {/* desktop */}
-      <div className="hidden overflow-hidden rounded-xl border border-border bg-surface shadow-xs md:block">
+      <div className="hidden overflow-hidden cartao md:block">
         <table className="w-full table-fixed border-collapse text-[0.875rem]">
           <thead>
             <tr className="border-b border-border bg-surface-subtle">
@@ -121,12 +121,12 @@ export function DataTable<T>({
               {href ? (
                 <a
                   href={href}
-                  className="block rounded-xl border border-border bg-surface p-4 shadow-xs cartao-interativo"
+                  className="block cartao cartao-p-sm cartao-interativo"
                 >
                   {corpo}
                 </a>
               ) : (
-                <div className="rounded-xl border border-border bg-surface p-4 shadow-xs">
+                <div className="cartao cartao-p-sm">
                   {corpo}
                 </div>
               )}

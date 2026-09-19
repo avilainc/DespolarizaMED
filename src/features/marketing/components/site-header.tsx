@@ -20,16 +20,16 @@ import { MenuDoSite } from "./site-nav";
  */
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4 sm:px-6">
         <Logo prioridade nomeSoDesdeSm />
 
         <nav
           aria-label="Navegação principal"
-          className="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex"
+          className="hidden items-center gap-7 text-[0.9375rem] font-medium text-text-secondary md:flex"
         >
           {navLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="transition-colors hover:text-foreground">
+            <Link key={link.href} href={link.href} className="rounded-md transition-colors hover:text-brand-700">
               {link.label}
             </Link>
           ))}

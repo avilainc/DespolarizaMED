@@ -139,7 +139,7 @@ export default async function PlanosPage({
                   </p>
                 )}
 
-                <div className="flex flex-1 flex-col p-6">
+                <div className="flex flex-1 flex-col cartao-p-lg">
                   <div className="flex items-start justify-between gap-2">
                     <h2 className="t-section text-text-primary">{plano.name}</h2>
                     {esteEhOAtual && <Tag tom="positivo">seu plano</Tag>}
@@ -200,7 +200,7 @@ export default async function PlanosPage({
                         <Button
                           type="submit"
                           size="lg"
-                          variant={destaque ? "brand" : "outline"}
+                          variant={destaque ? "default" : "outline"}
                           className="w-full"
                         >
                           Assinar o {plano.name.toLocaleLowerCase("pt-BR")}

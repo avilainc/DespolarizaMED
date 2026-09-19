@@ -18,10 +18,11 @@ export function Surface({
   padding?: "none" | "sm" | "md" | "lg";
   as?: "div" | "section" | "article" | "aside";
 }) {
-  const p = { none: "", sm: "p-4", md: "p-5", lg: "p-6 sm:p-7" }[padding];
+  // Tres tamanhos, vindos de `--card-p-*`. Nao existe um quarto.
+  const p = { none: "", sm: "cartao-p-sm", md: "cartao-p-md", lg: "cartao-p-lg" }[padding];
   return (
     <Tag
-      className={cn("rounded-xl border border-border bg-surface shadow-xs", p, className)}
+      className={cn("cartao", p, className)}
       {...props}
     >
       {children}
@@ -60,7 +61,7 @@ export function ActionCard({
       href={href}
       {...(externo ? { target: "_blank", rel: "noopener noreferrer" } : {})}
       className={cn(
-        "group/acao flex h-full flex-col rounded-xl border border-border bg-surface p-5 shadow-xs cartao-interativo",
+        "group/acao flex h-full flex-col cartao cartao-p-md cartao-interativo",
         className,
       )}
     >

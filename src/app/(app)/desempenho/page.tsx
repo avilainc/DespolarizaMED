@@ -68,7 +68,7 @@ export default async function DesempenhoPage() {
           descricao="Assim que você responder a primeira questão, esta página passa a mostrar seu aproveitamento, os temas que já domina e os que precisam de revisão."
           acao={
             <>
-              <Link href="/questoes" className={buttonVariants({ variant: "brand" })}>
+              <Link href="/questoes" className={buttonVariants()}>
                 Ir para o banco de questões
               </Link>
               <Link href="/provas" className={buttonVariants({ variant: "outline" })}>
@@ -115,11 +115,11 @@ export default async function DesempenhoPage() {
         />
       </div>
 
-      <section className="mt-9">
+      <section className="secao">
         <SectionHeading icone={TrendingUp} descricao="Cada barra é um dia; a parte cheia são os acertos.">
           Últimos 30 dias
         </SectionHeading>
-        <div className="rounded-xl border border-border bg-surface p-5 shadow-xs">
+        <div className="cartao cartao-p-md">
           <div
             className="flex h-32 items-end gap-[3px]"
             role="img"
@@ -161,7 +161,7 @@ export default async function DesempenhoPage() {
         </div>
       </section>
 
-      <section className="mt-9">
+      <section className="secao">
         <SectionHeading icone={Target}>Por disciplina</SectionHeading>
         <ul className="grid gap-3 lg:grid-cols-2">
           {stats.porDisciplina.map((d) => {
@@ -170,7 +170,7 @@ export default async function DesempenhoPage() {
             return (
               <li
                 key={d.disciplina}
-                className="rounded-xl border border-border bg-surface p-4 shadow-xs"
+                className="cartao cartao-p-sm"
               >
                 <div className="flex items-center gap-3">
                   <visual.icone
@@ -263,7 +263,7 @@ export default async function DesempenhoPage() {
       </div>
 
       {finalizadas.length > 0 && (
-        <section className="mt-9">
+        <section className="secao">
           <SectionHeading icone={FileText}>Provas finalizadas</SectionHeading>
           <ul className="grid gap-3 lg:grid-cols-2">
             {finalizadas.map((t) => {
@@ -272,7 +272,7 @@ export default async function DesempenhoPage() {
                 <li key={t.id}>
                   <Link
                     href={`/provas/${t.documentId}/${t.id}/resultado`}
-                    className="flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 shadow-xs cartao-interativo"
+                    className="flex items-center gap-3 rounded-xl cartao px-4 py-3 cartao-interativo"
                   >
                     <span className="min-w-0 flex-1 text-[0.9375rem] text-text-primary">
                       {t.instituicao} {t.ano}

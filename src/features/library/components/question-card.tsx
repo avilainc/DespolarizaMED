@@ -112,7 +112,7 @@ export function QuestionCard({
 
   return (
     <article
-      className="overflow-hidden rounded-xl border border-border bg-surface shadow-xs"
+      className="overflow-hidden cartao"
       data-testid="question-card"
       data-question-id={questao.id}
     >

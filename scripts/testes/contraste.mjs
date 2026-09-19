@@ -102,6 +102,14 @@ const PARES = [
   ["erro: danger-text / danger-soft", cor("danger-text"), cor("danger-soft"), 4.5],
   ["laranja da marca como texto / superfície", cor("brand-orange-texto"), cor("surface"), 4.5],
   ["texto do painel de login (brand-100) / brand-800", cor("brand-100"), cor("brand-800"), 4.5],
+  // Faixa final da landing: azul-marinho cheio, com título branco e apoio
+  // em brand-100. É o único bloco escuro da página pública.
+  ["branco / faixa final (brand-900)", BRANCO, cor("brand-900"), 4.5],
+  ["texto da faixa final (brand-100) / brand-900", cor("brand-100"), cor("brand-900"), 4.5],
+  ["botão claro da faixa final (brand-800) / brand-50", cor("brand-800"), cor("brand-50"), 4.5],
+  // Sobretítulo de seção da landing, sobre os dois fundos em que aparece.
+  ["sobretítulo (brand-600) / superfície sutil", cor("brand-600"), cor("surface-subtle"), 4.5],
+  ["texto secundário / superfície sutil", cor("text-secondary"), cor("surface-subtle"), 4.5],
   // Matérias: aparecem como ícone, faixa e número grande — o mínimo de
   // componente gráfico e texto grande é 3:1.
   ["matéria biologia / superfície", cor("materia-bio"), cor("surface"), 3],

@@ -5,24 +5,34 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { faqs } from "@/features/marketing/content";
+import { CabecalhoDeSecao } from "./secao";
 
 export function FaqSection() {
   return (
-    <section id="faq" className="mx-auto max-w-3xl px-4 py-20 sm:px-6">
-      <div className="text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          Perguntas frequentes
-        </h2>
-      </div>
+    <section id="faq" className="secao-vitrine bg-surface-subtle">
+      <div className="mx-auto max-w-3xl px-4 sm:px-6">
+        <CabecalhoDeSecao
+          sobretitulo="Dúvidas"
+          titulo="Perguntas frequentes"
+          descricao="O que mais perguntam antes de assinar."
+        />
 
-      <Accordion className="mt-10">
-        {faqs.map((faq, index) => (
-          <AccordionItem key={faq.question} value={index}>
-            <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
-            <AccordionContent className="text-muted-foreground">{faq.answer}</AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
+        {/* As perguntas dentro de um cartão, e não soltas sobre o fundo: o
+            acordeão abre e fecha altura, e sem uma superfície por trás a
+            página parece pular. */}
+        <Accordion className="cartao mt-10 px-5">
+          {faqs.map((faq, index) => (
+            <AccordionItem key={faq.question} value={index} className="not-last:border-border">
+              <AccordionTrigger className="gap-4 py-4 text-[1rem] text-text-primary hover:no-underline">
+                {faq.question}
+              </AccordionTrigger>
+              <AccordionContent className="pb-4 text-[0.9375rem] leading-relaxed text-text-secondary">
+                {faq.answer}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </div>
     </section>
   );
 }

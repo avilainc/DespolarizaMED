@@ -36,7 +36,7 @@ export function MenuDoSite() {
         <nav
           id="menu-do-site"
           aria-label="Navegação principal"
-          className="absolute inset-x-0 top-16 z-40 border-b border-border bg-background px-4 py-3 shadow-md"
+          className="absolute inset-x-0 top-16 z-40 border-b border-border bg-surface px-4 py-3 shadow-lg"
         >
           <ul className="grid gap-1">
             {navLinks.map((link) => (

@@ -70,7 +70,7 @@ export default async function AtividadesPage() {
           titulo="Nada por aqui ainda"
           descricao="Assista a uma aula, responda uma questão ou resolva uma prova — tudo isso passa a aparecer nesta linha do tempo."
           acao={
-            <Link href="/disciplinas" className={buttonVariants({ variant: "brand" })}>
+            <Link href="/disciplinas" className={buttonVariants()}>
               Começar pelas disciplinas
             </Link>
           }
@@ -94,7 +94,7 @@ export default async function AtividadesPage() {
                       <span className="relative z-10 rounded-full bg-background p-0.5">
                         <IconTile icone={visual.icone} cor={visual.cor} tamanho="sm" />
                       </span>
-                      <div className="min-w-0 flex-1 rounded-lg border border-border bg-surface px-4 py-2.5 shadow-xs">
+                      <div className="min-w-0 flex-1 rounded-lg cartao px-4 py-2.5">
                         <div className="flex flex-wrap items-baseline gap-x-3">
                           <span className="t-meta tabular shrink-0">
                             {h.quando.toLocaleTimeString("pt-BR", {

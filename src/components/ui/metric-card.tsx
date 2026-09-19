@@ -62,7 +62,7 @@ export function MetricCard({
   );
 
   const classe = cn(
-    "block rounded-xl border border-border bg-surface p-5 shadow-xs",
+    "block cartao cartao-p-md",
     href && "cartao-interativo",
     className,
   );

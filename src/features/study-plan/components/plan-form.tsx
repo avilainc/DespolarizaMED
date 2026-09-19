@@ -177,7 +177,7 @@ export function PlanForm({
       )}
 
       <div className="flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center">
-        <Button type="submit" size="lg" variant="brand" disabled={pendente}>
+        <Button type="submit" size="lg" disabled={pendente}>
           {pendente ? (
             <Loader2 className="animate-spin" data-icon="inline-start" aria-hidden />
           ) : (

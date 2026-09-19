@@ -61,7 +61,7 @@ export default async function FavoritosPage() {
           descricao="Use a estrela nas aulas, nas questões e nos termos do glossário para guardar o que você quer revisar antes da prova."
           acao={
             <>
-              <Link href="/questoes" className={buttonVariants({ variant: "brand" })}>
+              <Link href="/questoes" className={buttonVariants()}>
                 <CircleHelp data-icon="inline-start" aria-hidden />
                 Explorar questões
               </Link>
@@ -86,7 +86,7 @@ export default async function FavoritosPage() {
                   return (
                     <li
                       key={a.id}
-                      className="flex items-center gap-3 rounded-xl border border-border bg-surface p-4 shadow-xs"
+                      className="flex items-center gap-3 cartao cartao-p-sm"
                     >
                       <IconTile icone={visual.icone} cor={visual.cor} />
                       <Link href={`/aulas/${a.slug}`} className="min-w-0 flex-1">
@@ -128,7 +128,7 @@ export default async function FavoritosPage() {
                   return (
                     <li
                       key={q.id}
-                      className="rounded-xl border border-border bg-surface p-4 shadow-xs"
+                      className="cartao cartao-p-sm"
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         {q.instituicaoSlug && (
@@ -164,7 +164,7 @@ export default async function FavoritosPage() {
                 {termos.map((t) => (
                   <div
                     key={t.id}
-                    className="rounded-xl border border-border bg-surface p-4 shadow-xs"
+                    className="cartao cartao-p-sm"
                   >
                     <dt className="flex items-center gap-2">
                       <span className="t-card-title text-text-primary">{t.term}</span>

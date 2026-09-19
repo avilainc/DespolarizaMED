@@ -74,7 +74,7 @@ export default async function QuestaoPage({ params }: { params: Promise<{ id: st
       )}
 
       {q.contexto && (
-        <section className="mb-6 rounded-xl border-l-[3px] border-l-brand-400 border-y border-r border-border bg-surface p-5 shadow-xs">
+        <section className="mb-6 cartao cartao-p-md border-l-[3px] border-l-brand-400">
           <h2 className="t-eyebrow mb-2 flex items-center gap-1.5">
             <Quote aria-hidden className="size-3.5" />
             Texto-base (questão {q.contextoNumero})
@@ -98,7 +98,7 @@ export default async function QuestaoPage({ params }: { params: Promise<{ id: st
                 width={f.larguraPx ?? undefined}
                 height={f.alturaPx ?? undefined}
                 loading="lazy"
-                className="max-w-full rounded-xl border border-border bg-white shadow-xs"
+                className="max-w-full rounded-xl border border-border bg-white"
               />
             ))}
           </div>

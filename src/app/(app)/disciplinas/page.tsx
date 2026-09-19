@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { headers } from "next/headers";
 import type { Metadata } from "next";
@@ -65,7 +64,7 @@ export default async function DisciplinasPage() {
               <li key={disciplina.id}>
                 <Link
                   href={`/disciplinas/${disciplina.slug}`}
-                  className="relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-surface p-5 shadow-xs cartao-interativo"
+                  className="relative flex h-full flex-col overflow-hidden cartao cartao-p-md cartao-interativo"
                 >
                   {/* Faixa da cor da matéria no topo: é o que torna o cartão
                       reconhecível de relance sem pintar o card inteiro. */}
@@ -84,16 +83,6 @@ export default async function DisciplinasPage() {
                         {concluidas > 0 && ` · ${concluidas} concluídas`}
                       </p>
                     </div>
-                    {visual.ilustracao && (
-                      <Image
-                        src={visual.ilustracao}
-                        alt=""
-                        aria-hidden
-                        width={72}
-                        height={54}
-                        className="hidden h-auto w-16 shrink-0 opacity-90 sm:block"
-                      />
-                    )}
                   </div>
 
                   {disciplina.description && (

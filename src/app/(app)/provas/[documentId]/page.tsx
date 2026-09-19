@@ -57,7 +57,7 @@ export default async function ProvaPage({ params }: { params: Promise<{ document
         }
       />
 
-      <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
+      <section className="overflow-hidden rounded-xl cartao">
         <div className="border-b border-border bg-gradient-to-br from-brand-50 to-surface px-6 py-6">
           <p className="t-eyebrow">Como funciona</p>
           <p className="mt-2 text-[1.0625rem] leading-relaxed text-text-secondary">
@@ -114,7 +114,7 @@ export default async function ProvaPage({ params }: { params: Promise<{ document
       </section>
 
       {anteriores.length > 0 && (
-        <section className="mt-8">
+        <section className="secao">
           <SectionHeading icone={History}>Tentativas anteriores</SectionHeading>
           <ul className="space-y-2">
             {anteriores.map((t) => {
@@ -123,7 +123,7 @@ export default async function ProvaPage({ params }: { params: Promise<{ document
                 <li key={t.id}>
                   <Link
                     href={`/provas/${documentId}/${t.id}/resultado`}
-                    className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 shadow-xs cartao-interativo"
+                    className="flex flex-wrap items-center gap-3 rounded-xl cartao px-4 py-3 cartao-interativo"
                   >
                     <CheckCircle2 aria-hidden className="size-4 shrink-0 text-success" />
                     <span className="tabular min-w-0 flex-1 text-[0.875rem] text-text-secondary">

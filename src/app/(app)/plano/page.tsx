@@ -108,11 +108,11 @@ export default async function PlanoPage({
         />
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-start">
-          <div className="rounded-xl border border-border bg-surface p-6 shadow-xs sm:p-8">
+          <div className="cartao cartao-p-lg">
             <PlanForm disciplinas={opcoesDisciplinas} />
           </div>
 
-          <aside className="hidden rounded-xl border border-brand-100 bg-brand-50/60 p-6 lg:block">
+          <aside className="hidden rounded-xl border border-brand-100 bg-brand-50/60 cartao-p-lg lg:block">
             <Image
               src="/illustrations/estudo-calendario.svg"
               alt=""
@@ -190,7 +190,7 @@ export default async function PlanoPage({
         />
       </div>
 
-      <section className="mt-9">
+      <section className="secao">
         <SectionHeading
           icone={CalendarDays}
           acao={
@@ -263,7 +263,7 @@ export default async function PlanoPage({
                   )}
                 </header>
 
-                <div className="flex-1 p-3">
+                <div className="flex-1 cartao-p-sm">
                   {lista.length === 0 ? (
                     <p className="px-1 py-3 text-[0.8125rem] text-text-muted">Descanso</p>
                   ) : (
@@ -298,8 +298,8 @@ export default async function PlanoPage({
         </div>
       </section>
 
-      <section className="mt-10">
-        <details className="group/ajuste overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
+      <section className="secao">
+        <details className="group/ajuste overflow-hidden cartao">
           <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-4 text-[0.9375rem] font-medium text-text-primary transition-colors hover:bg-surface-subtle/60">
             <Settings2 aria-hidden className="size-4 text-text-muted" />
             Ajustar plano
@@ -308,7 +308,7 @@ export default async function PlanoPage({
               className="ml-auto size-4 text-text-muted transition-transform group-open/ajuste:rotate-90"
             />
           </summary>
-          <div className="border-t border-border p-5 sm:p-7">
+          <div className="border-t border-border cartao-p-lg">
             <PlanForm
               disciplinas={opcoesDisciplinas}
               inicial={{

@@ -99,7 +99,7 @@ export function CalendarView({ eventos }: { eventos: EventoCalendario[] }) {
         ))}
       </div>
 
-      <div className="rounded-xl border border-border bg-surface p-3 shadow-xs sm:p-4">
+      <div className="rounded-xl cartao cartao-p-sm sm:p-4">
         <Calendar
           localizer={localizer}
           culture="pt-BR"

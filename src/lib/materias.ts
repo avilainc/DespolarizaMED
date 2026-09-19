@@ -28,7 +28,14 @@ export type Materia = {
   icone: LucideIcon;
   /** Variável CSS da cor da matéria. */
   cor: string;
-  /** Ilustração de apoio em /public/illustrations, quando houver. */
+  /**
+   * Ilustração de apoio em /public/illustrations, quando houver.
+   *
+   * NÃO use abaixo de ~130px de largura. Os desenhos foram traçados num
+   * viewBox de 280 com linha de 4–5px; a 80px o traço cai para ~1,2px e o DNA
+   * vira um borrão cinza. Em cartão pequeno o lugar do símbolo é o `icone`,
+   * que é vetor de interface e foi desenhado para 16–24px.
+   */
   ilustracao: string | null;
 };
 

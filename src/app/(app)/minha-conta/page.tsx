@@ -66,7 +66,7 @@ export default async function MinhaContaPage() {
           pilha, com o mesmo peso do formulário de senha. */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
         <div className="space-y-6">
-          <section className="rounded-xl border border-border bg-surface p-6 shadow-xs">
+          <section className="cartao cartao-p-lg">
             <SectionHeading icone={UserRound}>Perfil</SectionHeading>
 
             <div className="mb-6 flex items-center gap-4">
@@ -94,7 +94,7 @@ export default async function MinhaContaPage() {
             </p>
           </section>
 
-          <section className="rounded-xl border border-border bg-surface p-6 shadow-xs">
+          <section className="cartao cartao-p-lg">
             <SectionHeading
               icone={KeyRound}
               descricao="Use pelo menos 8 caracteres. Trocar a senha não desconecta seus outros dispositivos."
@@ -167,7 +167,7 @@ export default async function MinhaContaPage() {
                   </p>
                   <Link
                     href="/planos"
-                    className={buttonVariants({ variant: "brand", size: "lg", className: "mt-5 w-full" })}
+                    className={buttonVariants({ size: "lg", className: "mt-5 w-full" })}
                   >
                     <Sparkles data-icon="inline-start" aria-hidden />
                     Ver planos

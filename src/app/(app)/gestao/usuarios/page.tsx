@@ -98,7 +98,7 @@ export default async function UsuariosPage({
             descricao="Nenhum usuário corresponde a esse nome, e-mail ou papel."
             acao={
               busca || papel ? (
-                <a href="/gestao/usuarios" className={buttonVariants({ variant: "brand" })}>
+                <a href="/gestao/usuarios" className={buttonVariants()}>
                   Limpar filtros
                 </a>
               ) : undefined
