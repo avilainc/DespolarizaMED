@@ -189,6 +189,22 @@
   }
   html {
     @apply font-sans;
+    /* A auditoria reclamava de "tipografia geral pequena" em toda tela. A raiz
+       sobe de 16px para 16.5px no desktop: multiplica em toda a escala do
+       Tailwind (que é em rem) sem precisar reescrever classe por classe. No
+       mobile fica em 16px, onde a tela já é o limitante. */
+    font-size: 100%;
+    /* Nenhuma rota pode ter barra horizontal. Tratar aqui e não em cada página
+       evita que um card largo esquecido volte a estourar o layout inteiro.
+       `clip` e nao `hidden`: `hidden` transforma o html em contentor de
+       rolagem e quebra todo `position: sticky` descendente (o header da area
+       logada e a barra de filtros das questoes param de grudar). */
+    overflow-x: clip;
+  }
+  @media (min-width: 1024px) {
+    html {
+      font-size: 103%;
+    }
   }
   h1,
   h2,
@@ -196,7 +212,58 @@
   h4 {
     @apply font-heading;
   }
+  /* Títulos herdavam o `text-wrap` normal e quebravam deixando uma palavra
+     órfã na última linha, que é o que faz um heading parecer desalinhado. */
+  h1,
+  h2 {
+    text-wrap: balance;
+  }
   ::selection {
     background-color: color-mix(in oklch, var(--primary), transparent 75%);
+  }
+  /* Foco visível em tudo que recebe teclado, não só nos componentes que
+     lembraram de declarar. Offset para o anel não colar na borda do controle. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Quem pediu menos movimento no sistema recebe menos movimento, inclusive nas
+   transições que os componentes declaram por conta própria. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer components {
+  /* Altura única para os controles de formulário: 2.75rem (44px), o alvo de
+     toque mínimo confortável. Os inputs do scaffold vinham com h-8/h-9, que
+     no celular obriga mira. Aplicado por seletor de atributo para valer também
+     nos <input> que páginas escrevem à mão, sem classe de componente. */
+  .campo,
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="date"],
+  input[type="time"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  select,
+  textarea {
+    min-height: 2.75rem;
+    border-radius: var(--radius-md);
+  }
+  textarea {
+    min-height: 6rem;
+    padding-block: 0.625rem;
   }
 }
