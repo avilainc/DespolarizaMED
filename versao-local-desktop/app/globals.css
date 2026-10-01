@@ -1,0 +1,76 @@
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+
+/* Tokens de tema — dark é o padrão, [data-theme="light"] sobrescreve. */
+:root {
+  --color-app: 15 23 42;       /* slate-900 */
+  --color-surface: 30 41 59;   /* slate-800 */
+  --color-surface-2: 51 65 85; /* slate-700 */
+  --color-edge: 51 65 85;      /* slate-700 */
+  --color-fg: 255 255 255;
+  --color-muted: 148 163 184;  /* slate-400 */
+  --color-faint: 100 116 139;  /* slate-500 */
+}
+
+[data-theme='light'] {
+  --color-app: 219 234 254;    /* blue-100 */
+  --color-surface: 255 255 255;
+  --color-surface-2: 239 246 255; /* blue-50 */
+  --color-edge: 191 219 254;   /* blue-200 */
+  --color-fg: 15 23 42;        /* slate-900 */
+  --color-muted: 71 85 105;    /* slate-600 */
+  --color-faint: 100 116 139;  /* slate-500 */
+}
+
+/* Botão "Área do Aluno" — azul claro translúcido no escuro (contrasta bem
+   com o fundo navy), mas isso mesmo fica ilegível no claro (fundo já é
+   azul claro), então no tema claro vira um bloco azul-marinho sólido. */
+.student-area-btn {
+  background-color: rgb(143 201 232 / 0.2);
+  border-color: rgb(143 201 232 / 0.4);
+  color: rgb(143 201 232);
+}
+[data-theme='light'] .student-area-btn {
+  background-color: rgb(18 32 61);
+  border-color: rgb(18 32 61);
+  color: white;
+}
+
+/* Faixa de logos dos vestibulares — algumas logos têm traços escuros
+   (USP, UFSCar, UECE) que somem contra o navy do tema escuro. No claro
+   o fundo azul-clarinho já dá contraste suficiente, então só forçamos
+   fundo branco no escuro. */
+.vestibulares-strip {
+  background-color: white;
+}
+[data-theme='light'] .vestibulares-strip {
+  background-color: rgb(var(--color-app));
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(140px) rotate(360deg); opacity: 0; }
+}
+.animate-confetti-fall {
+  animation: confetti-fall 1.2s ease-in forwards;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 28s linear infinite;
+}
+
+@keyframes pilha-dash {
+  to { stroke-dashoffset: -32; }
+}
+.pilha-flow {
+  animation: pilha-dash 1.2s linear infinite;
+}
+
+@keyframes mix-progress {
+  from { width: 0%; }
+  to { width: 100%; }
+}

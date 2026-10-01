@@ -1,0 +1,9 @@
+provas
+node_modules
+.next
+*.pdf
+*.png.bak
+depoimentos
+folha redação
+banner yt*.png
+.env.local
