@@ -134,7 +134,7 @@ export default async function PlanosPage({
                 }`}
               >
                 {destaque && (
-                  <p className="bg-brand-600 py-1.5 text-center text-[0.6875rem] font-semibold uppercase tracking-[0.07em] text-white">
+                  <p className="bg-acao py-1.5 text-center text-[0.6875rem] font-semibold uppercase tracking-[0.07em] text-white">
                     Melhor preço por mês
                   </p>
                 )}

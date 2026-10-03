@@ -65,8 +65,20 @@
   --color-materia-quim: var(--materia-quim);
   --color-materia-fis: var(--materia-fis);
   --color-materia-mat: var(--materia-mat);
-  --color-materia-hum: var(--materia-hum);
-  --color-materia-ling: var(--materia-ling);
+  --color-materia-geo: var(--materia-geo);
+  --color-materia-hist: var(--materia-hist);
+  --color-materia-red: var(--materia-red);
+  --color-materia-port: var(--materia-port);
+  --color-materia-ing: var(--materia-ing);
+
+  --color-acao: var(--acao);
+  --color-acao-hover: var(--acao-hover);
+  --color-acao-ativo: var(--acao-ativo);
+  --color-marca-funda: var(--marca-funda);
+  --color-marca-funda-texto: var(--marca-funda-texto);
+  --color-destaque: var(--destaque);
+  --color-destaque-hover: var(--destaque-hover);
+  --color-destaque-texto: var(--destaque-texto);
 
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
@@ -99,6 +111,7 @@
   --color-brand-orange: var(--brand-orange);
   --color-brand-orange-texto: var(--brand-orange-texto);
   --color-brand-teal: var(--brand-teal);
+  --color-brand-teal-texto: var(--brand-teal-texto);
   --color-brand-blue: var(--brand-blue);
   --color-muted-foreground: var(--text-muted);
   --color-muted: var(--surface-subtle);
@@ -199,14 +212,49 @@
   --danger-soft: oklch(0.962 0.03 25);
   --danger-text: oklch(0.505 0.2 27);
 
-  /* Uma cor por matéria. Cinco matizes bem separados, todos na mesma faixa de
-     luminosidade para que nenhum "grite" mais que o outro. */
-  --materia-bio: oklch(0.56 0.115 158);
-  --materia-quim: oklch(0.53 0.145 300);
-  --materia-fis: oklch(0.56 0.105 225);
-  --materia-mat: oklch(0.6 0.145 55);
-  --materia-hum: oklch(0.55 0.13 20);
-  --materia-ling: oklch(0.55 0.1 195);
+  /* Uma cor por matéria, e uma matéria por cor.
+     A paleta é a do Paulo (versão local, `lib/subjectColors.ts`): verde para
+     Biologia, vermelho para Matemática, azul-céu para Física, rosa para
+     Química, terra para Geografia, laranja para História, roxo para Redação,
+     índigo para Português e cinza para Inglês. Antes eram seis tons
+     comportados, com História e Geografia dividindo o mesmo — e foi o pedido
+     dele: a plataforma mais colorida, cada matéria reconhecível de relance.
+
+     Aqui no tema claro cada matiz está um degrau mais escuro que o original
+     (o -600/-700 da mesma família), porque a cor também escreve o nome da
+     matéria nos chips: o verde #22c55e puro mede 2,3:1 sobre branco. No tema
+     escuro, abaixo, entram os tons vivos — sobre o azul-marinho eles passam
+     de sobra. `node scripts/testes/contraste.mjs` mede os dois. */
+  --materia-bio: oklch(0.527 0.154 150);
+  --materia-quim: oklch(0.56 0.215 359);
+  --materia-fis: oklch(0.5 0.134 242.7);
+  --materia-mat: oklch(0.55 0.22 27);
+  --materia-geo: oklch(0.52 0.105 61);
+  --materia-hist: oklch(0.553 0.195 38.4);
+  --materia-red: oklch(0.54 0.25 302.3);
+  --materia-port: oklch(0.511 0.24 277);
+  --materia-ing: oklch(0.47 0.03 257);
+
+  /* Ação sólida: o preenchimento que leva texto branco (botão principal,
+     letra marcada, selo "recomendado"). Tem token próprio porque a escala
+     `brand-*` inverte no tema escuro — `brand-600` vira cor de TEXTO claro
+     lá — e um botão não pode inverter junto. */
+  --acao: var(--brand-600);
+  /* O hover ESCURECE, não clareia: o antigo `hover:bg-brand-500` derrubava o
+     texto branco para 3,9:1 bem no instante em que o aluno ia clicar. */
+  --acao-hover: var(--brand-700);
+  --acao-ativo: var(--brand-800);
+  /* O azul-marinho institucional em bloco (painel do login, faixa final da
+     landing). Fica escuro nos dois temas, com texto claro por cima. */
+  --marca-funda: var(--brand-900);
+  --marca-funda-texto: var(--brand-100);
+  /* O laranja do "MED" como PREENCHIMENTO de chamada principal — o "Assinar
+     agora" e o "Criar conta" da versão do Paulo. Escreve em azul-marinho, não
+     em branco: branco sobre este laranja mede 2,6:1, o marinho passa de 7:1.
+     Igual nos dois temas, de propósito: é a cor que o aluno reconhece. */
+  --destaque: oklch(0.74 0.17 52);
+  --destaque-hover: oklch(0.69 0.175 49);
+  --destaque-texto: oklch(0.21 0.04 262);
 
   --radius-sm: 0.375rem;
   --radius-md: 0.625rem;
@@ -295,6 +343,8 @@
      escrever. */
   --brand-orange-texto: oklch(0.5 0.183 47.5);
   --brand-teal: oklch(0.646 0.072 195.5);
+  /* O teal como texto (número da faixa "em números") sobre fundo claro. */
+  --brand-teal-texto: oklch(0.5 0.08 192);
   --brand-blue: var(--brand-500);
   --chart-1: var(--brand-500);
   --chart-2: var(--materia-bio);
@@ -311,46 +361,98 @@
   --sidebar-ring: var(--focus);
 }
 
-/* O tema escuro usa o azul-escuro do emblema (#182430) e promove o azul do
-   disco a cor de ação — sobre fundo escuro ele tem contraste de sobra e é a
-   cor que o aluno reconhece. Nada aplica `.dark` hoje; o bloco fica coerente
-   para quando for ligado. */
+/* Tema escuro: o azul-marinho da versão do Paulo, e o tema PADRÃO.
+   Foi a identidade que ele construiu na versão local (fundo slate-900,
+   superfícies slate-800, matérias em cor viva por cima) e o que ele pediu
+   ao rever a plataforma: menos "ERP claro", mais cor. O tema claro continua
+   inteiro e a um clique (ThemeToggle); quem escolhe fica salvo.
+
+   Três coisas mudam de natureza aqui, e por isso estão explícitas:
+   1. A escala `brand-*` INVERTE. Na interface ela é usada de duas formas —
+      tons 50–300 como fundo/borda suave, tons 600–800 como texto — e as duas
+      precisam trocar de lado no escuro, senão o item ativo do menu vira um
+      bloco branco com texto azul-escuro.
+   2. Por causa disso, quem PREENCHE com cor sólida e escreve branco por cima
+      não usa a escala: usa `--acao` / `--marca-funda`, redefinidos aqui com
+      valor literal (um `var(--brand-600)` herdado do :root resolveria para a
+      escala já invertida).
+   3. As matérias passam para os tons vivos originais da paleta do Paulo. */
 .dark {
-  --background: oklch(0.225 0.026 249);
-  --surface: oklch(0.278 0.028 249);
-  --surface-subtle: oklch(0.322 0.03 249);
-  --surface-strong: oklch(0.34 0.045 250);
+  color-scheme: dark;
 
-  --text-primary: oklch(0.972 0.005 250);
-  --text-secondary: oklch(0.8 0.018 250);
-  --text-muted: oklch(0.71 0.02 250);
+  --brand-50: oklch(0.305 0.05 252);
+  --brand-100: oklch(0.34 0.06 252);
+  --brand-200: oklch(0.4 0.075 252);
+  --brand-300: oklch(0.49 0.09 251.5);
+  --brand-400: oklch(0.6 0.11 251);
+  --brand-500: oklch(0.66 0.12 250.5);
+  --brand-600: oklch(0.77 0.1 248);
+  --brand-700: oklch(0.83 0.08 247);
+  --brand-800: oklch(0.88 0.06 246);
+  --brand-900: oklch(0.93 0.035 246);
+  --brand-950: oklch(0.17 0.035 258);
 
-  --border: oklch(1 0 0 / 12%);
-  --border-strong: oklch(1 0 0 / 20%);
-  --focus: var(--brand-400);
+  --background: oklch(0.2 0.04 262);
+  --surface: oklch(0.255 0.042 260);
+  --surface-subtle: oklch(0.295 0.042 259);
+  --surface-strong: oklch(0.33 0.05 256);
 
-  --success-soft: oklch(0.38 0.07 158);
-  --success-text: oklch(0.85 0.11 158);
-  --warning-soft: oklch(0.4 0.08 68);
-  --warning-text: oklch(0.87 0.12 78);
-  --danger: oklch(0.704 0.191 22.216);
-  --danger-soft: oklch(0.38 0.1 25);
-  --danger-text: oklch(0.85 0.13 25);
+  --text-primary: oklch(0.975 0.006 250);
+  --text-secondary: oklch(0.82 0.022 252);
+  --text-muted: oklch(0.72 0.026 255);
 
-  --shadow-nivel-0: 0 1px 1px 0 oklch(0 0 0 / 0.2);
+  --border: oklch(0.36 0.04 258);
+  --border-strong: oklch(0.56 0.035 256);
+  --focus: oklch(0.72 0.12 245);
+
+  --success: oklch(0.54 0.14 152);
+  --success-soft: oklch(0.33 0.07 158);
+  --success-text: oklch(0.86 0.13 155);
+  --warning-soft: oklch(0.36 0.07 68);
+  --warning-text: oklch(0.88 0.13 80);
+  --danger: oklch(0.58 0.2 25);
+  --danger-soft: oklch(0.34 0.09 25);
+  --danger-text: oklch(0.86 0.12 22);
+
+  /* Os hex do Paulo, convertidos: #22c55e, #ec4899, #38bdf8, #f87171,
+     #c17f3e (um pouco mais claro), #f97316, #c084fc, #818cf8, #9ca3af.
+     Vermelho, roxo e índigo entram no tom -400 da família em vez do -500:
+     o -500 media perto de 3,5:1 contra a superfície e o chip escreve com
+     essa cor. */
+  --materia-bio: oklch(0.723 0.192 149.6);
+  --materia-quim: oklch(0.7 0.19 354);
+  --materia-fis: oklch(0.754 0.139 232.7);
+  --materia-mat: oklch(0.704 0.191 22.2);
+  --materia-geo: oklch(0.72 0.12 63);
+  --materia-hist: oklch(0.735 0.18 50);
+  --materia-red: oklch(0.722 0.177 305.5);
+  --materia-port: oklch(0.69 0.16 277);
+  --materia-ing: oklch(0.75 0.02 261);
+
+  --acao: oklch(0.545 0.13 251);
+  --acao-hover: oklch(0.5 0.13 251);
+  --acao-ativo: oklch(0.46 0.12 251);
+  --marca-funda: oklch(0.32 0.085 254);
+  --marca-funda-texto: oklch(0.9 0.04 246);
+
+  --shadow-nivel-0: 0 1px 1px 0 oklch(0 0 0 / 0.25);
   --shadow-nivel-1: 0 1px 2px 0 oklch(0 0 0 / 0.3), 0 1px 3px 0 oklch(0 0 0 / 0.25);
-  --shadow-nivel-2: 0 2px 4px -2px oklch(0 0 0 / 0.3), 0 6px 14px -4px oklch(0 0 0 / 0.35);
-  --shadow-nivel-3: 0 4px 8px -4px oklch(0 0 0 / 0.35), 0 16px 32px -12px oklch(0 0 0 / 0.45);
+  --shadow-nivel-2: 0 2px 4px -2px oklch(0 0 0 / 0.3), 0 6px 14px -4px oklch(0 0 0 / 0.4);
+  --shadow-nivel-3: 0 4px 8px -4px oklch(0 0 0 / 0.35), 0 16px 32px -12px oklch(0 0 0 / 0.5);
 
-  --primary: var(--brand-500);
-  --secondary: oklch(0.34 0.03 249);
+  --primary: oklch(0.545 0.13 251);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.3 0.045 258);
   --secondary-foreground: var(--text-primary);
-  --accent: oklch(0.38 0.05 195.5);
+  --accent: oklch(0.34 0.05 195.5);
   --accent-foreground: var(--text-primary);
-  --input: oklch(1 0 0 / 16%);
-  --brand-orange-texto: oklch(0.8 0.15 47.5);
+  --input: var(--border-strong);
+  --brand-orange-texto: oklch(0.8 0.15 50);
+  --brand-teal: oklch(0.76 0.11 185);
+  --brand-teal-texto: oklch(0.8 0.11 183);
   --sidebar: var(--surface);
-  --sidebar-accent: oklch(0.34 0.045 250);
+  --sidebar-primary: oklch(0.545 0.13 251);
+  --sidebar-accent: var(--brand-50);
   --sidebar-accent-foreground: var(--text-primary);
 }
 
@@ -416,6 +518,14 @@
   /* Âncoras (#letra-A do glossário) precisam parar ABAIXO do cabeçalho fixo. */
   [id] {
     scroll-margin-top: calc(var(--shell-header) + 1.5rem);
+  }
+
+  /* As ilustrações de /public/illustrations foram desenhadas para fundo
+     claro, com preenchimento quase branco. No tema escuro elas viravam o
+     ponto mais claro da tela, mais forte que o texto. Um degrau de brilho a
+     menos as devolve ao segundo plano sem redesenhar os SVGs. */
+  .dark img[src*="illustrations"] {
+    filter: brightness(0.86);
   }
 
   ::selection {
@@ -885,7 +995,7 @@
     min-width: 1.5rem;
     height: 1.5rem;
     border-radius: 999px;
-    background: var(--brand-600);
+    background: var(--acao);
     color: oklch(0.99 0 0);
     font-weight: 600;
   }

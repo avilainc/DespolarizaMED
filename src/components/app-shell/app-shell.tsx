@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Search, Star } from "lucide-react";
 import type { UserRole } from "@/lib/auth/rbac";
 import { InitialsAvatar } from "@/components/ui/chip";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { GlobalSearch } from "./global-search";
 import { MobileNav } from "./mobile-nav";
 import { NavGroups } from "./nav-links";
@@ -43,7 +44,7 @@ export function AppShell({
           página — em toda navegação. O link fica invisível até receber foco. */}
       <a
         href="#conteudo"
-        className="sr-only z-50 focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:inline-flex focus:h-11 focus:items-center focus:rounded-lg focus:bg-brand-800 focus:px-4 focus:text-[0.875rem] focus:font-medium focus:text-white focus:shadow-lg"
+        className="sr-only z-50 focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:inline-flex focus:h-11 focus:items-center focus:rounded-lg focus:bg-acao focus:px-4 focus:text-[0.875rem] focus:font-medium focus:text-white focus:shadow-lg"
       >
         Pular para o conteúdo
       </a>
@@ -58,7 +59,7 @@ export function AppShell({
           >
             <Image src="/logo.png" alt="" aria-hidden width={32} height={32} priority />
             <span className="font-display text-[0.9375rem] font-semibold tracking-tight text-text-primary">
-              Despolariza<span className="text-brand-600">MED</span>
+              Despolariza<span className="text-brand-orange-texto">MED</span>
             </span>
           </Link>
         </div>
@@ -82,7 +83,7 @@ export function AppShell({
           >
             <Image src="/logo.png" alt="" aria-hidden width={28} height={28} priority />
             <span className="font-display text-[0.875rem] font-semibold tracking-tight text-text-primary">
-              Despolariza<span className="text-brand-600">MED</span>
+              Despolariza<span className="text-brand-orange-texto">MED</span>
             </span>
           </Link>
 
@@ -90,6 +91,7 @@ export function AppShell({
             <GlobalSearch />
 
             <div className="flex shrink-0 items-center gap-0.5">
+              <ThemeToggle />
               <Link
                 href="/busca"
                 aria-label="Buscar"

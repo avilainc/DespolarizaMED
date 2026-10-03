@@ -17,7 +17,12 @@ const variantesDoBotao = cva(
         // cor que ninguem usava, e todo `<Button>` escrito sem variante saia
         // errado em silencio. Agora ha um azul preenchido so, e ele e o
         // padrao.
-        default: "bg-brand-600 text-white shadow-xs hover:bg-brand-500 active:bg-brand-700",
+        default: "bg-acao text-white shadow-xs hover:bg-acao-hover active:bg-acao-ativo",
+        // O laranja do "MED", para a UMA chamada que mais importa na tela
+        // (criar conta, assinar o plano recomendado). Veio da versão do Paulo.
+        // Usado em toda parte deixaria de destacar — por isso não é o padrão.
+        destaque:
+          "bg-destaque font-semibold text-destaque-texto shadow-xs hover:bg-destaque-hover",
         outline:
           "border-border bg-surface shadow-xs hover:bg-surface-subtle hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:

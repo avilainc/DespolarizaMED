@@ -90,7 +90,7 @@ export function QuestionFilters({
           <SlidersHorizontal data-icon="inline-start" aria-hidden />
           Filtros
           {ativos > 0 && (
-            <span className="ml-1 inline-flex size-5 items-center justify-center rounded-full bg-brand-600 text-[0.6875rem] font-semibold text-white">
+            <span className="ml-1 inline-flex size-5 items-center justify-center rounded-full bg-acao text-[0.6875rem] font-semibold text-white">
               {ativos}
             </span>
           )}

@@ -22,7 +22,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="w-full max-w-sm">{children}</div>
       </main>
 
-      <aside className="relative hidden overflow-hidden bg-brand-800 lg:flex lg:flex-col lg:justify-center lg:px-12">
+      <aside className="relative hidden overflow-hidden bg-marca-funda lg:flex lg:flex-col lg:justify-center lg:px-12">
         <div
           aria-hidden
           className="trama-axonio pointer-events-none absolute inset-0 opacity-[0.18] [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]"
@@ -31,7 +31,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <p className="font-display text-[2rem] font-semibold leading-tight tracking-tight text-white">
             Preparação para vestibulares de Medicina.
           </p>
-          <p className="mt-4 text-[1.0625rem] leading-relaxed text-brand-100">
+          <p className="mt-4 text-[1.0625rem] leading-relaxed text-marca-funda-texto">
             Aulas, banco de questões com gabarito conferido, provas antigas para resolver do começo
             ao fim, plano de estudos e plantões ao vivo com os professores.
           </p>

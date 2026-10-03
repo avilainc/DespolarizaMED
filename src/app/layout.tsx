@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Geist_Mono, Inter } from "next/font/google";
 import { SITE_URL } from "@/lib/site";
+import { SCRIPT_TEMA } from "@/lib/tema";
 import "./globals.css";
 
 /**
@@ -96,15 +97,23 @@ export const metadata: Metadata = {
  */
 export const viewport: Viewport = {
   themeColor: "#184878",
-  colorScheme: "light",
+  colorScheme: "dark light",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
+    // `dark` já sai do servidor porque é o tema padrão (ver `lib/tema.ts`);
+    // o script do <head> tira a classe de quem escolheu o claro antes da
+    // primeira pintura. Como ele mexe no `class` do <html> antes da
+    // hidratação, o aviso de divergência é esperado — e só neste elemento.
     <html
       lang="pt-BR"
-      className={`${interfaceFont.variable} ${displayFont.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={`dark ${interfaceFont.variable} ${displayFont.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} />
+      </head>
       <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );

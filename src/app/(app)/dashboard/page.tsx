@@ -198,6 +198,10 @@ export default async function DashboardPage() {
             rotulo="Aulas concluídas"
             valor={semana.aulasConcluidas}
             apoio="nos últimos 7 dias"
+            // Teal e laranja da marca nos dois primeiros, como os números da
+            // versão do Paulo: decoração de identidade, não de significado — o
+            // único cartão cuja cor SIGNIFICA algo é a taxa de acerto.
+            cor="var(--brand-teal-texto)"
           />
           <MetricCard
             icone={CircleHelp}
@@ -205,6 +209,7 @@ export default async function DashboardPage() {
             valor={semana.questoesRespondidas.toLocaleString("pt-BR")}
             apoio="nos últimos 7 dias"
             href="/questoes"
+            cor="var(--brand-orange-texto)"
           />
           <MetricCard
             icone={Target}

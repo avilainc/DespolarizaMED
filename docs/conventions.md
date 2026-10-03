@@ -86,6 +86,18 @@ Sem bloqueios conhecidos aqui, `drizzle-kit generate`/`migrate` funcionam normal
 
 ---
 
+## 5.1 Cor e tema
+
+A identidade visual segue a versão local do Paulo (branch `local-version-review`, pasta `versao-local-desktop`): **tema escuro azul-marinho como padrão**, matérias em cor viva e o laranja do "MED" nas chamadas principais. O tema claro continua completo, a um clique (`src/components/ui/theme-toggle.tsx`, escolha salva em `localStorage`, ver `src/lib/tema.ts`).
+
+- **Nenhum componente escreve hex.** Toda cor vem de token em `src/app/globals.css` (`:root` para o claro, `.dark` para o escuro).
+- **A escala `brand-*` inverte no escuro**: `brand-50…300` são fundo suave, `brand-600…800` são texto. Por isso, preenchimento sólido com texto branco usa `bg-acao` (botão, letra marcada) ou `bg-marca-funda` (painel institucional), nunca `bg-brand-600`.
+- **Laranja (`variant: "destaque"` no botão)** só para a chamada que mais importa na tela (criar conta, plano recomendado). Escreve em azul-marinho, não em branco.
+- **Uma cor por matéria** via `visualDaMateria()` (`src/lib/materias.ts`) → `--materia-*`. Nove disciplinas, nove cores; nenhuma divide cor com outra.
+- Ao mexer em qualquer cor, rodar `node scripts/testes/contraste.mjs`: ele mede os **dois** temas contra a WCAG AA e falha se algum par cair.
+
+---
+
 ## 6. Segredos e ambiente
 
 - `.env.local` e `.env.production` **nunca** são commitados (já no `.gitignore`), contêm valores reais.

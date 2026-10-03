@@ -1,4 +1,5 @@
 import { Hero } from "@/features/marketing/components/hero";
+import { NumerosSection } from "@/features/marketing/components/numeros-section";
 import { SubjectsSection } from "@/features/marketing/components/subjects-section";
 import { TeachersSection } from "@/features/marketing/components/teachers-section";
 import { PlansSection } from "@/features/marketing/components/plans-section";
@@ -32,6 +33,7 @@ export default function Home() {
     <>
       <DadosEstruturados />
       <Hero />
+      <NumerosSection />
       <SubjectsSection />
       <TeachersSection />
       <PlansSection />

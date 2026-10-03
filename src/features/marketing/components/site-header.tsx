@@ -3,6 +3,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Logo } from "./logo";
 import { navLinks } from "@/features/marketing/nav";
 import { MenuDoSite } from "./site-nav";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 /**
  * Cabeçalho do site público.
@@ -36,6 +37,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle className="hidden sm:inline-flex" />
           {/* "Entrar" some abaixo de `sm` e reaparece dentro do menu: em 320px
               não cabem emblema, dois botões e o menu na mesma linha. O CTA
               principal ("Criar conta") é o que fica, porque é o que converte. */}
@@ -51,7 +53,11 @@ export function SiteHeader() {
           </Link>
           <Link
             href="/cadastro"
-            className={buttonVariants({ size: "sm", className: "h-10 px-2.5 text-xs sm:px-3 sm:text-sm" })}
+            className={buttonVariants({
+              size: "sm",
+              variant: "destaque",
+              className: "h-10 px-2.5 text-xs sm:px-3 sm:text-sm",
+            })}
           >
             Criar conta
           </Link>

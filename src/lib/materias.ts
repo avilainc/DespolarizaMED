@@ -1,10 +1,13 @@
 import {
   Atom,
   BookOpen,
+  BookOpenText,
   Dna,
   FlaskConical,
   Globe2,
+  Landmark,
   Languages,
+  PenLine,
   Sigma,
   type LucideIcon,
 } from "lucide-react";
@@ -16,6 +19,10 @@ import {
  * dashboard, no filtro do banco de questões, no evento do calendário e no
  * gráfico de desempenho. Antes cada tela escolhia um ícone (`BookOpen` para
  * tudo) e nenhuma escolhia cor, então nada era reconhecível de relance.
+ *
+ * Uma cor por disciplina — a paleta da versão do Paulo (ver o comentário de
+ * `--materia-*` em globals.css). História e Geografia, Português e Inglês
+ * dividiam cor antes; agora nenhuma matéria se confunde com outra.
  *
  * As cores vêm de `--materia-*` em globals.css. Nenhum componente escreve hex:
  * pede `cor` e usa como `color` / `background-color` via `style`, que é a
@@ -71,16 +78,22 @@ const MATERIAS: Record<string, Materia> = {
     cor: "var(--materia-mat)",
     ilustracao: null,
   },
-  historia: { chave: "historia", icone: Globe2, cor: "var(--materia-hum)", ilustracao: null },
-  geografia: { chave: "geografia", icone: Globe2, cor: "var(--materia-hum)", ilustracao: null },
-  portugues: { chave: "portugues", icone: Languages, cor: "var(--materia-ling)", ilustracao: null },
-  ingles: { chave: "ingles", icone: Languages, cor: "var(--materia-ling)", ilustracao: null },
-  literatura: {
-    chave: "literatura",
-    icone: Languages,
-    cor: "var(--materia-ling)",
+  historia: {
+    chave: "historia",
+    icone: Landmark,
+    cor: "var(--materia-hist)",
     ilustracao: null,
   },
+  geografia: { chave: "geografia", icone: Globe2, cor: "var(--materia-geo)", ilustracao: null },
+  redacao: { chave: "redacao", icone: PenLine, cor: "var(--materia-red)", ilustracao: null },
+  portugues: { chave: "portugues", icone: BookOpenText, cor: "var(--materia-port)", ilustracao: null },
+  literatura: {
+    chave: "literatura",
+    icone: BookOpenText,
+    cor: "var(--materia-port)",
+    ilustracao: null,
+  },
+  ingles: { chave: "ingles", icone: Languages, cor: "var(--materia-ing)", ilustracao: null },
 };
 
 /** "Física e Química" -> "fisica-e-quimica"; acentos e caixa saem fora. */
