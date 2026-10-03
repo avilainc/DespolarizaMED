@@ -50,7 +50,9 @@ pnpm payload:migrate:create nome-descritivo-da-mudanca
 pnpm payload:migrate
 ```
 
-Isso gera um arquivo em `src/migrations/` (SQL real, revisável) e aplica no Postgres. Commitar o arquivo gerado junto com a mudança na collection.
+Isso gera um arquivo em `src/migrations/` (SQL real, revisável), registra em `src/migrations/index.ts` e aplica no Postgres local. Commitar os dois junto com a mudança na collection.
+
+Em produção não há passo manual: o container aplica as migrations do Payload ao subir (`prodMigrations` + `src/instrumentation.ts`, ver `docs/roadmap.md` seção 8). Só roda o que está no `index.ts` — um teste (`src/lib/db/migracoes-payload.test.ts`) falha se houver arquivo em `src/migrations/` fora dele.
 
 Se `pnpm payload:migrate` perguntar sobre "dev mode... data loss" (aparece quando alguém rodou `pnpm dev` sem `PAYLOAD_DISABLE_PUSH`, e o Payload fez um push automático), responda considerando se há dados reais no banco que não podem ser perdidos. Em dev local isso normalmente é seguro de aceitar.
 
