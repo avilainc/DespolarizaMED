@@ -1,12 +1,17 @@
 #!/bin/sh
 # Entrypoint da imagem: migra o banco e só então sobe o servidor.
 #
+# Aqui roda a cadeia do Drizzle. A do Payload roda no start do próprio
+# servidor (src/instrumentation.ts), antes da primeira requisição, porque o
+# Payload só carrega dentro do bundle do Next. Falha lá também derruba o
+# processo.
+#
 # `set -e` é o ponto todo do arquivo: se `migrar.mjs` sair diferente de zero, o
 # container morre aqui e o deploy falha de forma visível. Sem isso, o servidor
 # subiria com o schema velho, responderia 200 no healthcheck e o defeito só
 # apareceria na tela do aluno.
 #
-# MIGRAR=0 desliga o passo, para o caso de precisar subir a app sem tocar no
+# MIGRAR=0 desliga o passo (as duas cadeias), para o caso de precisar subir a app sem tocar no
 # banco (investigar um incidente, por exemplo). /v1/ready continua reprovando
 # enquanto houver drift, então isso não vira um jeito silencioso de contornar.
 set -e

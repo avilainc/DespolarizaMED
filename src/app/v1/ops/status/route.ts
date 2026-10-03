@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { estadoDasMigracoes } from "@/lib/db/migracoes";
+import { estadoDasMigracoesPayload } from "@/lib/db/migracoes-payload";
+import { MIGRACOES_PAYLOAD_DA_IMAGEM } from "@/lib/db/migracoes-payload-imagem";
 import { loadManifest, buildInfo } from "@/lib/gapp/manifest";
 import { harnessTokenOk, unauthorized } from "@/lib/gapp/auth";
 
@@ -15,6 +17,17 @@ export async function GET(request: Request) {
   // null em `migrations_pending` é "não sei" (banco fora do ar), que o motor de
   // normas trata como não verificável — diferente de 0, que afirma estar em dia.
   const migracoes = await estadoDasMigracoes(db).catch(() => null);
+  const payload = await estadoDasMigracoesPayload(db, MIGRACOES_PAYLOAD_DA_IMAGEM).catch(
+    () => null,
+  );
+  // O contrato GAPP tem um contador só. As duas cadeias somam nele, e as tags
+  // do Payload vêm prefixadas para dizer de qual cadeia é cada pendência. Se
+  // qualquer uma não puder ser medida, o total é "não sei", não um número
+  // parcial que afirmaria estar em dia.
+  const pendentes =
+    migracoes && payload
+      ? [...migracoes.pendentes, ...payload.pendentes.map((n) => `payload/${n}`)]
+      : null;
 
   return NextResponse.json({
     deploy: {
@@ -32,8 +45,9 @@ export async function GET(request: Request) {
       mode: "native",
       role: manifest.db.role,
       migration_version: migracoes?.versao ?? null,
-      migrations_pending: migracoes ? migracoes.pendentes.length : null,
-      migrations_pending_tags: migracoes?.pendentes ?? null,
+      payload_migration_version: payload?.versao ?? null,
+      migrations_pending: pendentes ? pendentes.length : null,
+      migrations_pending_tags: pendentes,
       // Sem rotina de backup ainda: null é "não sei", que o motor de normas
       // trata como não verificável. Preencher com uma data inventada aqui
       // seria transformar uma pendência real em conformidade falsa.

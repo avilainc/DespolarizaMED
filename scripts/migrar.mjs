@@ -12,9 +12,10 @@
  * NÃO o `drizzle-kit`, que é devDependency e traria o pacote inteiro para o
  * runtime. É o mesmo código que `pnpm db:migrate` executa por baixo.
  *
- * Só cuida do Drizzle: o Payload tem a própria cadeia (`src/migrations/`), e
- * hoje não há migration de Payload pendente além da `init`, já aplicada. Se um
- * dia houver, ela entra aqui — ver docs/roadmap.md, seção 3.
+ * Só cuida do Drizzle. A cadeia do Payload (`src/migrations/`) não cabe aqui:
+ * o Payload não carrega fora do bundle do Next. Ela roda logo depois, no start
+ * do servidor, via `prodMigrations` + `src/instrumentation.ts` — ver
+ * docs/roadmap.md, seção 8.
  */
 import { existsSync } from "node:fs";
 import path from "node:path";

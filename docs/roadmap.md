@@ -385,10 +385,41 @@ standalone só tem `graphql`, `next`, `react`, `typescript`). E
 pacotes inteiros do build stage: nenhum dos dois tem dependência de runtime,
 então é autocontido e travado na versão do lockfile.
 
-**Limite conhecido:** o `migrar.mjs` cuida só do Drizzle. O Payload tem cadeia
-própria (`src/migrations/`) e hoje não há migration de Payload pendente além da
-`init`, já aplicada. Quando houver, ela precisa entrar aqui também — e o
-`/v1/ready` não a enxerga.
+**Migrations do Payload (desde 2026-10-03).** O `migrar.mjs` cuida só do
+Drizzle; a cadeia do Payload (`src/migrations/`) roda em outro ponto do start,
+porque o Payload não carrega fora do bundle do Next (é o mesmo problema do CLI,
+seção 3) e o `.next/standalone` nem tem `src/migrations/`:
+
+- `payload.config.ts` passa o array de `src/migrations/index.ts` em
+  `prodMigrations`. Com `NODE_ENV=production`, o adapter aplica o que falta ao
+  conectar — caminho oficial do Payload, regra por **nome** em
+  `payload_migrations` (o Drizzle decide por tempo).
+- `src/instrumentation.ts` conecta o Payload no `register()`, que o Next espera
+  antes de atender qualquer requisição (`handleRequest` aguarda `prepare()`).
+  Sem isso a conexão — e a migration — ficaria para o primeiro aluno que abrisse
+  uma aula. Fica de fora do `next build`, de `next dev` e do runtime edge.
+- Antes de entregar o banco ao adapter, uma sonda (`bloqueioDoPayload`, em
+  `src/lib/db/migracoes-payload.ts`) recusa dois estados em que o `migrate` do
+  Payload faria mal sem TTY: registro de push de dev (`batch = -1`), em que ele
+  pergunta interativamente se pode prosseguir com perda de dados; e tabelas já
+  existentes sem a `init` registrada, em que ele tentaria recriá-las. Nos dois o
+  processo sai com 1 e a mensagem traz o SQL do remédio.
+- Falha derruba o processo, como no lado Drizzle. `MIGRAR=0` desliga as duas
+  cadeias.
+- `/v1/ready` e `/v1/ops/status` medem as duas cadeias. Pendência do Payload
+  aparece com prefixo (`payload/20260811_105519_init`); `migrations_pending` é a
+  soma, e vira `null` se qualquer cadeia não puder ser medida.
+
+Validado contra Postgres real com uma cópia da imagem montada do
+`.next/standalone` compilado como no Dockerfile: banco virgem (as duas cadeias
+aplicadas, `/v1/ready` 200), tabelas sem registro (sai 1 com o `insert`),
+registro de dev (sai 1 com o `delete`), e `MIGRAR=0` (sobe, nada migra,
+`/v1/ready` 503 nomeando `payload/20260811_105519_init`).
+
+**Antes do primeiro deploy com isso**, conferir em produção que
+`select name, batch from payload_migrations` traz `20260811_105519_init` com
+`batch = 1` e nenhuma linha `-1`. Se não trouxer, a sonda impede o container de
+subir — o certo, mas melhor descobrir antes do que no deploy.
 
 **Concorrência:** hoje o `runtime.services` do manifesto declara um único
 serviço `web`, então não há duas réplicas migrando ao mesmo tempo. Se algum dia
