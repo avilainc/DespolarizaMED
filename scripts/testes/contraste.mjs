@@ -8,6 +8,11 @@
  * o `--text-muted` ou clarear o `--surface`, a medida acompanha — que é o
  * ponto. Um arquivo com números fixos mentiria no primeiro ajuste de paleta.
  *
+ * Mede os DOIS temas: o claro (`:root`) e o escuro (`:root` com as
+ * sobrescritas de `.dark` por cima, que é como o navegador resolve). O escuro
+ * é o padrão desde a paleta do Paulo; medir só o claro deixaria a tela que o
+ * aluno mais vê sem garantia nenhuma.
+ *
  * Uso: node scripts/testes/contraste.mjs
  * Sai diferente de zero se algum par reprovar.
  */
@@ -17,13 +22,25 @@ import process from "node:process";
 
 const CSS = readFileSync(path.join(process.cwd(), "src/app/globals.css"), "utf8");
 
-/** Só o primeiro bloco `:root` — o `.dark` tem os próprios valores. */
-const raiz = CSS.slice(CSS.indexOf(":root {"), CSS.indexOf("/* O tema escuro"));
-
-const tokens = new Map();
-for (const [, nome, valor] of raiz.matchAll(/--([\w-]+):\s*([^;]+);/g)) {
-  tokens.set(nome, valor.trim());
+function lerTokens(bloco, base = new Map()) {
+  const mapa = new Map(base);
+  for (const [, nome, valor] of bloco.matchAll(/--([\w-]+):\s*([^;]+);/g)) {
+    mapa.set(nome, valor.trim());
+  }
+  return mapa;
 }
+
+/** O primeiro bloco `:root` e o bloco `.dark` logo depois dele. */
+const inicioEscuro = CSS.indexOf(".dark {");
+const raiz = CSS.slice(CSS.indexOf(":root {"), CSS.indexOf("/* Tema escuro"));
+const escuro = CSS.slice(inicioEscuro, CSS.indexOf("}", inicioEscuro));
+
+const TEMAS = [
+  ["claro", lerTokens(raiz)],
+  ["escuro", lerTokens(escuro, lerTokens(raiz))],
+];
+
+let tokens = TEMAS[0][1];
 
 /** Resolve `var(--x)` em cadeia até chegar num oklch() literal. */
 function resolver(valor, profundidade = 0) {
@@ -82,7 +99,8 @@ function contraste(frente, fundo) {
 const BRANCO = [255, 255, 255];
 
 /** [descrição, frente, fundo, mínimo exigido] */
-const PARES = [
+function pares() {
+  return [
   ["texto principal / fundo da página", cor("text-primary"), cor("background"), 4.5],
   ["texto principal / superfície", cor("text-primary"), cor("surface"), 4.5],
   ["texto secundário / superfície", cor("text-secondary"), cor("surface"), 4.5],
@@ -93,50 +111,64 @@ const PARES = [
   ["link e ação (brand-600) / fundo da página", cor("brand-600"), cor("background"), 4.5],
   ["item ativo do menu (brand-800) / brand-50", cor("brand-800"), cor("brand-50"), 4.5],
   ["chip ativo (brand-700) / brand-50", cor("brand-700"), cor("brand-50"), 4.5],
-  ["branco / botão primário (brand-800)", BRANCO, cor("brand-800"), 4.5],
-  ["branco / botão de ação (brand-600)", BRANCO, cor("brand-600"), 4.5],
+  ["branco / botão primário (primary)", BRANCO, cor("primary"), 4.5],
+  ["branco / botão de ação (acao)", BRANCO, cor("acao"), 4.5],
+  ["branco / botão de ação no hover (acao-hover)", BRANCO, cor("acao-hover"), 4.5],
   ["branco / fundo verde (success)", BRANCO, cor("success"), 4.5],
   ["branco / fundo vermelho (danger)", BRANCO, cor("danger"), 4.5],
   ["acerto: success-text / success-soft", cor("success-text"), cor("success-soft"), 4.5],
   ["atenção: warning-text / warning-soft", cor("warning-text"), cor("warning-soft"), 4.5],
   ["erro: danger-text / danger-soft", cor("danger-text"), cor("danger-soft"), 4.5],
   ["laranja da marca como texto / superfície", cor("brand-orange-texto"), cor("surface"), 4.5],
-  ["texto do painel de login (brand-100) / brand-800", cor("brand-100"), cor("brand-800"), 4.5],
+  ["texto do botão laranja / destaque", cor("destaque-texto"), cor("destaque"), 4.5],
+  ["texto do botão laranja / destaque no hover", cor("destaque-texto"), cor("destaque-hover"), 4.5],
+  ["laranja da marca como texto / fundo da página", cor("brand-orange-texto"), cor("background"), 4.5],
+  ["teal como texto / fundo da página", cor("brand-teal-texto"), cor("background"), 4.5],
+  ["texto do selo teal / brand-teal", cor("destaque-texto"), cor("brand-teal"), 4.5],
+  ["texto do painel de login / marca-funda", cor("marca-funda-texto"), cor("marca-funda"), 4.5],
   // Faixa final da landing: azul-marinho cheio, com título branco e apoio
   // em brand-100. É o único bloco escuro da página pública.
-  ["branco / faixa final (brand-900)", BRANCO, cor("brand-900"), 4.5],
-  ["texto da faixa final (brand-100) / brand-900", cor("brand-100"), cor("brand-900"), 4.5],
+  ["branco / faixa final (marca-funda)", BRANCO, cor("marca-funda"), 4.5],
   ["botão claro da faixa final (brand-800) / brand-50", cor("brand-800"), cor("brand-50"), 4.5],
   // Sobretítulo de seção da landing, sobre os dois fundos em que aparece.
   ["sobretítulo (brand-600) / superfície sutil", cor("brand-600"), cor("surface-subtle"), 4.5],
   ["texto secundário / superfície sutil", cor("text-secondary"), cor("surface-subtle"), 4.5],
-  // Matérias: aparecem como ícone, faixa e número grande — o mínimo de
-  // componente gráfico e texto grande é 3:1.
-  ["matéria biologia / superfície", cor("materia-bio"), cor("surface"), 3],
-  ["matéria química / superfície", cor("materia-quim"), cor("surface"), 3],
-  ["matéria física / superfície", cor("materia-fis"), cor("surface"), 3],
-  ["matéria matemática / superfície", cor("materia-mat"), cor("surface"), 3],
-  ["matéria humanas / superfície", cor("materia-hum"), cor("surface"), 3],
-  ["matéria linguagens / superfície", cor("materia-ling"), cor("surface"), 3],
+  // Matérias: além de ícone e faixa, a cor ESCREVE o nome da matéria nos
+  // chips (texto de 11–13px), então a régua é a de texto normal, 4,5:1.
+  ["matéria biologia / superfície", cor("materia-bio"), cor("surface"), 4.5],
+  ["matéria química / superfície", cor("materia-quim"), cor("surface"), 4.5],
+  ["matéria física / superfície", cor("materia-fis"), cor("surface"), 4.5],
+  ["matéria matemática / superfície", cor("materia-mat"), cor("surface"), 4.5],
+  ["matéria geografia / superfície", cor("materia-geo"), cor("surface"), 4.5],
+  ["matéria história / superfície", cor("materia-hist"), cor("surface"), 4.5],
+  ["matéria redação / superfície", cor("materia-red"), cor("surface"), 4.5],
+  ["matéria português / superfície", cor("materia-port"), cor("surface"), 4.5],
+  ["matéria inglês / superfície", cor("materia-ing"), cor("surface"), 4.5],
   // Não-texto: borda de campo e anel de foco precisam de 3:1 contra o vizinho.
   ["borda de campo / superfície", cor("border-strong"), cor("surface"), 3],
   ["anel de foco / superfície", cor("focus"), cor("surface"), 3],
   ["anel de foco / fundo da página", cor("focus"), cor("background"), 3],
 ];
-
-let reprovados = 0;
-for (const [nome, frente, fundo, minimo] of PARES) {
-  const razao = contraste(frente, fundo);
-  const ok = razao >= minimo;
-  if (!ok) reprovados++;
-  console.log(
-    `${ok ? "ok  " : "FALHA"} ${razao.toFixed(2).padStart(6)}:1  (mín ${minimo})  ${nome}`,
-  );
 }
 
-console.log(
-  `\n${PARES.length - reprovados}/${PARES.length} pares aprovados na WCAG 2.1 AA.`,
-);
+
+let reprovados = 0;
+let total = 0;
+for (const [nomeTema, mapa] of TEMAS) {
+  tokens = mapa;
+  console.log(`\n— tema ${nomeTema} —`);
+  for (const [nome, frente, fundo, minimo] of pares()) {
+    total++;
+    const razao = contraste(frente, fundo);
+    const ok = razao >= minimo;
+    if (!ok) reprovados++;
+    console.log(
+      `${ok ? "ok  " : "FALHA"} ${razao.toFixed(2).padStart(6)}:1  (mín ${minimo})  ${nome}`,
+    );
+  }
+}
+
+console.log(`\n${total - reprovados}/${total} pares aprovados na WCAG 2.1 AA.`);
 
 if (reprovados) {
   console.error(`contraste: ${reprovados} par(es) abaixo do mínimo`);

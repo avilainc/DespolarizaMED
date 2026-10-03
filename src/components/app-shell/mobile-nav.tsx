@@ -91,7 +91,7 @@ export function MobileNav({
           >
             <div className="flex h-[var(--shell-header)] shrink-0 items-center justify-between border-b border-border px-4">
               <span className="font-display text-[0.9375rem] font-semibold tracking-tight text-text-primary">
-                Despolariza<span className="text-brand-600">MED</span>
+                Despolariza<span className="text-brand-orange-texto">MED</span>
               </span>
               <button
                 type="button"

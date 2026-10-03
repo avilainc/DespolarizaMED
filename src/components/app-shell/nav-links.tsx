@@ -48,7 +48,7 @@ export function NavLink({
       <span
         aria-hidden
         className={cn(
-          "absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-brand-600 transition-opacity",
+          "absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-acao transition-opacity",
           ativo ? "opacity-100" : "opacity-0",
         )}
       />

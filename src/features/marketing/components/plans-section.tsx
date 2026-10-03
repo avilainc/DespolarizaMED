@@ -59,9 +59,10 @@ export async function PlansSection() {
                 key={plano.id}
                 className={cn(
                   "cartao relative flex flex-col overflow-hidden",
-                  // O plano em destaque é o único cartão da página com sombra.
-                  // É ela, e não uma segunda cor, que diz "olhe para este".
-                  destaque && "border-brand-500 shadow-[var(--shadow-nivel-2)]",
+                  // O plano em destaque é o único cartão com sombra e com o
+                  // laranja do "MED" (tarja, borda e botão) — o "Recomendado"
+                  // da versão do Paulo.
+                  destaque && "border-destaque shadow-[var(--shadow-nivel-2)]",
                 )}
               >
                 {/* A tarja existe nos TRÊS cartões; nos outros dois ela é
@@ -76,7 +77,7 @@ export async function PlansSection() {
                   aria-hidden={!destaque}
                   className={cn(
                     "px-5 py-2 text-center text-[0.75rem] font-semibold tracking-wide",
-                    destaque ? "bg-brand-600 text-white" : "hidden md:invisible md:block",
+                    destaque ? "bg-destaque text-destaque-texto" : "hidden md:invisible md:block",
                   )}
                 >
                   {destaque ? "Melhor preço por mês" : "\u00a0"}
@@ -124,7 +125,7 @@ export async function PlansSection() {
                     href={`/cadastro?plano=${plano.slug}`}
                     className={buttonVariants({
                       size: "lg",
-                      variant: destaque ? "default" : "outline",
+                      variant: destaque ? "destaque" : "outline",
                       className: "mt-7 w-full",
                     })}
                   >

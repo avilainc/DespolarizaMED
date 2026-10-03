@@ -46,7 +46,7 @@ export function Logo({
         <span
           className={`text-lg font-bold tracking-tight text-foreground${nomeSoDesdeSm ? " hidden sm:inline" : ""}`}
         >
-          Despolariza<span className="text-primary">MED</span>
+          Despolariza<span className="text-brand-orange-texto">MED</span>
         </span>
       )}
     </>

@@ -252,7 +252,7 @@ export default async function PlanoPage({
                     </span>
                   </h3>
                   {ehHoje && (
-                    <span className="rounded-md bg-brand-600 px-2 py-0.5 text-[0.6875rem] font-semibold text-white">
+                    <span className="rounded-md bg-acao px-2 py-0.5 text-[0.6875rem] font-semibold text-white">
                       hoje
                     </span>
                   )}

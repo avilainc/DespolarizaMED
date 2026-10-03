@@ -31,7 +31,7 @@ function Monograma({ nome }: { nome: string }) {
   return (
     <span
       aria-hidden
-      className="inline-flex h-11 min-w-11 items-center justify-center rounded-lg bg-brand-800 px-2 font-display text-[0.8125rem] font-bold tracking-tight text-white"
+      className="inline-flex h-11 min-w-11 items-center justify-center rounded-lg bg-acao px-2 font-display text-[0.8125rem] font-bold tracking-tight text-white"
     >
       {sigla}
     </span>

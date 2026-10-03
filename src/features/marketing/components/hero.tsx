@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache";
 import { ArrowRight, Check, CircleHelp, Dna, Star } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { contarQuestoes } from "@/features/library/queries";
+import { visualDaMateria } from "@/lib/materias";
 
 /**
  * O tamanho do acervo, contado no banco e guardado por 5 minutos — a mesma
@@ -13,9 +14,27 @@ import { contarQuestoes } from "@/features/library/queries";
  * continua anunciando o valor de um ano atrás, ou pior, anuncia um volume que
  * o banco não tem. Contar custa uma consulta a cada 5 minutos.
  */
-const totalDeQuestoes = unstable_cache(() => contarQuestoes({}), ["questoes-validadas-vitrine"], {
+export const totalDeQuestoes = unstable_cache(() => contarQuestoes({}), ["questoes-validadas-vitrine"], {
   revalidate: 300,
 });
+
+/**
+ * As matérias do vestibular, cada uma na sua cor — a "prévia do produto com
+ * as matérias e cores que já existem no site" do documento de redesign do
+ * Paulo. São as matérias do BANCO DE QUESTÕES (as provas cobrem todas); aula
+ * gravada ainda é só de Biologia, Física e Química, e a lista de destaques
+ * logo acima diz isso com todas as letras.
+ */
+const materiasDoBanco = [
+  "Biologia",
+  "Física",
+  "Química",
+  "Matemática",
+  "Geografia",
+  "História",
+  "Português",
+  "Redação",
+];
 
 const destaques = [
   "Aulas de Biologia, Física e Química",
@@ -114,7 +133,18 @@ export async function Hero() {
   const questoes = await totalDeQuestoes();
 
   return (
-    <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-brand-50 to-background">
+    <section className="relative isolate overflow-hidden border-b border-border bg-gradient-to-b from-brand-50 to-background">
+      {/* Os dois halos da versão do Paulo: o azul do disco à esquerda e o
+          laranja do "MED" à direita. Feitos com `color-mix` dos tokens, não
+          com rgba fixo, para seguirem o tema claro também. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(circle at 15% 0%, color-mix(in oklch, var(--brand-500) 24%, transparent), transparent 55%), radial-gradient(circle at 85% 15%, color-mix(in oklch, var(--destaque) 16%, transparent), transparent 50%)",
+        }}
+      />
       {/* Trama do axônio do emblema. Fica atrás de tudo, quase invisível, e
           some antes de chegar no card — textura da marca, não gradiente. */}
       <div
@@ -132,7 +162,8 @@ export async function Hero() {
           </span>
 
           <h1 className="t-display mt-5 text-text-primary">
-            Aulas, questões e provas antigas — num lugar só.
+            Aulas, questões e provas antigas —{" "}
+            <span className="text-brand-600">num lugar só.</span>
           </h1>
 
           <p className="mt-4 max-w-[52ch] text-[1.0625rem] leading-relaxed text-text-secondary">
@@ -163,13 +194,36 @@ export async function Hero() {
           </ul>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href="/cadastro" className={buttonVariants({ size: "lg" })}>
+            <Link href="/cadastro" className={buttonVariants({ size: "lg", variant: "destaque" })}>
               Começar agora
               <ArrowRight data-icon="inline-end" aria-hidden />
             </Link>
             <Link href="/#planos" className={buttonVariants({ size: "lg", variant: "outline" })}>
               Ver planos
             </Link>
+          </div>
+
+          <div className="mt-8">
+            <p className="t-meta">Questões de todas as matérias da prova</p>
+            <ul className="mt-2.5 flex flex-wrap gap-2">
+              {materiasDoBanco.map((nome) => {
+                const visual = visualDaMateria(nome);
+                return (
+                  <li
+                    key={nome}
+                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.8125rem] font-semibold"
+                    style={{
+                      background: `color-mix(in oklch, ${visual.cor} 15%, transparent)`,
+                      color: visual.cor,
+                      boxShadow: `inset 0 0 0 1px color-mix(in oklch, ${visual.cor} 30%, transparent)`,
+                    }}
+                  >
+                    <visual.icone aria-hidden className="size-3.5" />
+                    {nome}
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         </div>
 
@@ -181,8 +235,25 @@ export async function Hero() {
         {/* Também no celular. A amostra ficava em `hidden lg:block`, e como o
             tráfego de vestibulando vem sobretudo do Instagram, quem mais chega
             aqui era justamente quem NÃO via o produto — sobrava a promessa. */}
-        <div className="min-w-0">
+        <div className="relative min-w-0">
           <AmostraDeQuestao />
+          {/* Selos flutuantes do redesign do Paulo. Só no desktop: no celular
+              cobririam o enunciado, e o que eles dizem já está no texto ao
+              lado. O número vem do banco; sem número, o selo não aparece. */}
+          {questoes > 0 && (
+            <span
+              aria-hidden
+              className="absolute -top-10 right-2 hidden rounded-full bg-destaque px-4 py-2 text-[0.8125rem] font-semibold text-destaque-texto shadow-lg lg:inline-flex"
+            >
+              {questoes.toLocaleString("pt-BR")} questões reais no banco
+            </span>
+          )}
+          <span
+            aria-hidden
+            className="absolute -bottom-4 -left-6 hidden rounded-full bg-brand-teal px-4 py-2 text-[0.8125rem] font-semibold text-destaque-texto shadow-lg lg:inline-flex"
+          >
+            Provas com gabarito oficial
+          </span>
         </div>
       </div>
     </section>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 
 import { navLinks } from "@/features/marketing/nav";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 /**
  * Menu do site público abaixo de `md`.
@@ -53,6 +54,11 @@ export function MenuDoSite() {
             {/* "Entrar" sai do cabeçalho abaixo de `sm` (não cabe ao lado do
                 emblema, do CTA e deste botão) e reaparece aqui — some do
                 cabeçalho, não do site. */}
+            {/* O botão de tema também sai do cabeçalho abaixo de `sm`. */}
+            <li className="flex items-center justify-between border-t border-border px-3 pt-1 sm:hidden">
+              <span className="text-sm text-foreground">Tema</span>
+              <ThemeToggle />
+            </li>
             <li className="border-t border-border pt-1 sm:hidden">
               <Link
                 href="/login"

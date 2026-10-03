@@ -213,7 +213,7 @@ export function QuestionCard({
                         : errouAqui
                           ? "bg-danger text-white"
                           : marcada
-                            ? "bg-brand-600 text-white"
+                            ? "bg-acao text-white"
                             : "bg-surface-subtle text-text-secondary",
                     ].join(" ")}
                   >
