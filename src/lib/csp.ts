@@ -178,8 +178,13 @@ export async function lerCorpoLimitado(
  *
  * O resumo carrega o que não virou linha própria: quantas vezes cada violação
  * se repetiu (as `maxResumo` mais frequentes; é isso que separa "aconteceu uma
- * vez" de "pega todo aluno") e quantas distintas foram descartadas por falta
- * de orçamento. Janela sem repetição nem descarte não gera resumo.
+ * vez" de "pega todo aluno") e quantos RELATÓRIOS chegaram depois de o
+ * orçamento de violações distintas acabar. É contagem de ocorrências, não de
+ * violações distintas, de propósito: contar distintas exigiria guardar cada
+ * chave descartada, e um atacante gera chaves sem fim — memória sem teto, que
+ * é exatamente o que este filtro existe para impedir. Leitura: um número alto
+ * com poucas violações próprias na janela é ruído concentrado, não problema
+ * espalhado. Janela sem repetição nem descarte não gera resumo.
  *
  * O fechamento não depende de chegar outro relatório: a rota chama
  * `fecharSeVencida()` num timer. `registrar()` também fecha uma janela
@@ -191,7 +196,8 @@ export async function lerCorpoLimitado(
 export class FiltroDeRelatorios {
   private inicioJanela: number;
   private vistos = new Map<string, { relatorio: RelatorioCsp; repeticoes: number }>();
-  private descartados = 0;
+  /** Relatórios (ocorrências) recusados por falta de orçamento na janela. */
+  private relatoriosDescartados = 0;
 
   constructor(
     readonly janelaMs = 60_000,
@@ -211,7 +217,7 @@ export class FiltroDeRelatorios {
     if (visto) {
       visto.repeticoes++;
     } else if (this.vistos.size >= this.maxPorJanela) {
-      this.descartados++;
+      this.relatoriosDescartados++;
     } else {
       this.vistos.set(chave, { relatorio: r, repeticoes: 0 });
       saida.push({ evento: "csp-violation", ...r });
@@ -228,7 +234,7 @@ export class FiltroDeRelatorios {
       .filter((v) => v.repeticoes > 0)
       .sort((a, b) => b.repeticoes - a.repeticoes);
     const resumo =
-      repetidas.length || this.descartados
+      repetidas.length || this.relatoriosDescartados
         ? [
             {
               evento: "csp-violation-resumo",
@@ -236,14 +242,14 @@ export class FiltroDeRelatorios {
                 .slice(0, this.maxResumo)
                 .map((v) => ({ ...v.relatorio, vezes: v.repeticoes })),
               repetidas_fora_do_resumo: Math.max(0, repetidas.length - this.maxResumo),
-              descartadas: this.descartados,
+              relatorios_descartados: this.relatoriosDescartados,
             },
           ]
         : [];
 
     this.inicioJanela = t;
     this.vistos.clear();
-    this.descartados = 0;
+    this.relatoriosDescartados = 0;
     return resumo;
   }
 }

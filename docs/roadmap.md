@@ -295,8 +295,10 @@ e o que ainda é frouxo ficam em `src/lib/csp.ts`; `next.config.ts` só aplica.
   para o log) e sem a amostra de script.
 - **Volume de log limitado entre requisições** (`FiltroDeRelatorios`): por
   minuto, no máximo 30 linhas `csp-violation` (uma por violação distinta) e uma
-  linha `csp-violation-resumo` com as repetições mais frequentes e quantas
-  distintas foram descartadas — teto rígido de 31 linhas/min, testado sob o
+  linha `csp-violation-resumo` com as repetições mais frequentes e quantos
+  relatórios chegaram depois do orçamento acabar (`relatorios_descartados`:
+  ocorrências, não violações distintas — contar distintas exigiria memória sem
+  teto) — teto rígido de 31 linhas/min, testado sob o
   cenário de ataque. Um timer fecha o minuto sem depender de tráfego, e campos
   que não são string viram vazio (um objeto com `toString: null` derrubaria a
   coerção e viraria 500 fora do orçamento).

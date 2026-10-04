@@ -159,9 +159,20 @@ describe("CSP: volume de log entre requisições", () => {
     t = 60_000;
     const [resumo] = f.fecharSeVencida(); // o timer, sem nenhum relatório
     assert.equal(resumo.evento, "csp-violation-resumo");
-    assert.equal(resumo.descartadas, 6);
+    assert.equal(resumo.relatorios_descartados, 6);
     const reps = resumo.repeticoes as { bloqueado: string; vezes: number }[];
     assert.deepEqual(reps.map((x) => [x.bloqueado, x.vezes]), [["https://x.com/1", 499]]);
+  });
+
+  it("descarte conta ocorrências, e o nome do campo diz isso", () => {
+    let t = 0;
+    const f = new FiltroDeRelatorios(60_000, 1, () => t);
+    f.registrar(r(0));
+    for (let i = 0; i < 1000; i++) f.registrar(r(1)); // a mesma violação, sem orçamento
+    t = 60_000;
+    const [resumo] = f.fecharSeVencida();
+    assert.equal(resumo.relatorios_descartados, 1000);
+    assert.ok(!("descartadas" in resumo), "nome antigo sugeria violações distintas");
   });
 
   it("janela sem repetição nem descarte não gera resumo", () => {
