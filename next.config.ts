@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 import { withPayload } from "@payloadcms/next/withPayload";
 
+import { headersDeCsp } from "./src/lib/csp";
+
 /**
  * Headers de segurança — a resposta não trazia nenhum.
  *
@@ -10,11 +12,9 @@ import { withPayload } from "@payloadcms/next/withPayload";
  * Se o Caddy também mandar o mesmo header, o valor dele prevalece — não há
  * conflito, só redundância barata.
  *
- * Não há CSP aqui. Uma CSP séria exige inventariar cada origem de script,
- * estilo, fonte e imagem (Next injeta inline, o Payload roda no /admin, há
- * fontes do Google), e uma CSP mal ajustada quebra a página em produção sem
- * aviso. Fica como passo próprio, com `Content-Security-Policy-Report-Only`
- * primeiro.
+ * A CSP vem de `src/lib/csp.ts`, por enquanto em Report-Only: o navegador só
+ * relata a `/api/csp-report` o que bloquearia. O inventário de origens e o
+ * que ainda está frouxo (e por quê) estão documentados lá.
  */
 const headersDeSeguranca = [
   // HSTS: o site já é HTTPS; isto impede o primeiro acesso em texto puro.
@@ -42,7 +42,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
 
   async headers() {
-    return [{ source: "/:path*", headers: headersDeSeguranca }];
+    return [{ source: "/:path*", headers: [...headersDeSeguranca, ...headersDeCsp] }];
   },
 };
 

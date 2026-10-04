@@ -274,6 +274,51 @@ Dois defeitos só apareceram ao **olhar** a imagem renderizada: a faixa laranja 
 
 **Pendente, porque depende de dado que só a empresa tem**: Termos de Uso, Política de Privacidade e de Cancelamento (exigem razão social, CNPJ e canal de atendimento) e, com elas, o aceite no cadastro exigido pela LGPD; foto e formação real do professor; depoimentos com nome e autorização — hoje são anônimos e ficam em `content.ts` marcados como placeholder.
 
+### CSP em Report-Only (2026-10-04)
+
+A CSP que a Vitrine deixou de fora entrou em **modo relatório**
+(`Content-Security-Policy-Report-Only`): o navegador não bloqueia nada, só avisa
+`/api/csp-report`, que escreve uma linha JSON por violação no log do container
+(`docker logs <container> | grep csp-violation`). Política, inventário de origens
+e o que ainda é frouxo ficam em `src/lib/csp.ts`; `next.config.ts` só aplica.
+
+- **Inventário:** tudo vem do próprio domínio. `next/font/google` baixa as fontes
+  no build, as imagens são locais, e YouTube/Instagram/Meet/Mercado Pago aparecem
+  só como link.
+- **Ainda frouxo:** `script-src` e `style-src` com `'unsafe-inline'`. O Next
+  injeta scripts inline de hidratação; o caminho é nonce por requisição via
+  middleware, que torna toda página dinâmica — decisão à parte.
+- **O endpoint trata o corpo como hostil:** limite de 16 KB aplicado *durante* a
+  leitura do stream (sem `Content-Length`, `request.text()` bufferizaria tudo
+  antes de checar — medido: 200 MB chunked respondem 204 sem a memória crescer);
+  só diretiva + URL bloqueada + página, sem query string (token em URL não vai
+  para o log) e sem a amostra de script.
+- **Volume de log limitado entre requisições** (`FiltroDeRelatorios`): por
+  minuto, no máximo 30 linhas `csp-violation` (uma por violação distinta) e uma
+  linha `csp-violation-resumo` com as repetições mais frequentes e quantos
+  relatórios chegaram depois do orçamento acabar (`relatorios_descartados`:
+  ocorrências, não violações distintas — contar distintas exigiria memória sem
+  teto) — teto rígido de 31 linhas/min, testado sob o
+  cenário de ataque. Um timer fecha o minuto sem depender de tráfego, e campos
+  que não são string viram vazio (um objeto com `toString: null` derrubaria a
+  coerção e viraria 500 fora do orçamento).
+
+**Armadilha medida, para ninguém "modernizar" sem querer:** com `report-uri` e
+`report-to` juntos, o Chromium usa só o `report-to` e ignora o outro — e o
+`report-to` entrega em lote, com atraso (em 65 s de teste não chegou nada). Por
+isso a política tem só `report-uri`, e um teste falha se `report-to` voltar.
+`upgrade-insecure-requests` também saiu: em Report-Only ela é ignorada e gera um
+aviso no console de todo visitante.
+
+**Validado** com a imagem montada do build do Dockerfile e Chromium headless:
+páginas públicas, `/admin/login`, 404 e a área logada (cadastro real) sem
+nenhuma violação; uma violação forçada (imagem externa injetada) chega ao log na
+hora, já sem a query string.
+
+**Próximo passo:** deixar rodar em produção, ler o log, e quando estiver limpo
+trocar `HEADER_CSP` para `Content-Security-Policy` (o teste que trava o nome
+existe para essa troca ser deliberada).
+
 ### Fase 5: Inteligência educacional (pós-MVP)
 - [ ] Pipeline de vídeo completo (FFmpeg worker + BullMQ: transcodificação/HLS/thumbnail)
 - [ ] Transcrição automática (faster-whisper) + legendas `.vtt`
