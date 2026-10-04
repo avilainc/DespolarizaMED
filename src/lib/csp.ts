@@ -123,3 +123,98 @@ export function lerRelatoriosCsp(corpo: unknown): RelatorioCsp[] {
     pagina: semQuery(r["document-uri"] ?? r.documentURL).slice(0, 256),
   }));
 }
+
+/**
+ * Lê o corpo de uma requisição com teto de bytes, parando de bufferizar assim
+ * que o teto estoura. `request.text()` não serve para rota pública: sem
+ * `Content-Length` (chunked), ele carregaria o corpo inteiro na memória antes
+ * de qualquer checagem. Devolve `null` quando passa do teto.
+ */
+export async function lerCorpoLimitado(
+  corpo: ReadableStream<Uint8Array> | null,
+  limiteBytes: number,
+): Promise<string | null> {
+  if (!corpo) return "";
+  const leitor = corpo.getReader();
+  const pedacos: Uint8Array[] = [];
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await leitor.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > limiteBytes) {
+        // Cancela o stream: o resto não chega a ser lido nem guardado.
+        await leitor.cancel().catch(() => {});
+        return null;
+      }
+      pedacos.push(value);
+    }
+  } finally {
+    leitor.releaseLock();
+  }
+  return new TextDecoder().decode(Buffer.concat(pedacos));
+}
+
+/**
+ * Decide o que vai para o log ATRAVÉS das requisições, porque o endpoint é
+ * público e um cliente qualquer pode repetir POST sem fim (não há rate limit
+ * na borda). Duas travas, ambas em memória do processo:
+ *
+ * - **deduplicação:** a mesma violação (diretiva + bloqueado + página) é
+ *   logada uma vez por janela; as repetições só somam um contador, que sai na
+ *   próxima linha dela. Uma página com problema real, visitada por mil alunos,
+ *   vira poucas linhas — e o sinal fica legível;
+ * - **orçamento global:** no máximo `maxPorJanela` linhas por janela, de
+ *   qualquer origem. O que passar disso é descartado e contado, e o total
+ *   descartado aparece numa linha de resumo na janela seguinte.
+ *
+ * Em memória é suficiente aqui: o manifesto declara um único serviço `web`, e
+ * o pior caso de reinício é perder um contador. O mapa é limpo a cada janela,
+ * então não cresce sem limite.
+ */
+export class FiltroDeRelatorios {
+  private inicioJanela = 0;
+  private vistos = new Map<string, number>();
+  private linhasNaJanela = 0;
+  private descartados = 0;
+
+  constructor(
+    private readonly janelaMs = 60_000,
+    private readonly maxPorJanela = 30,
+    private readonly agora: () => number = Date.now,
+  ) {}
+
+  /** Linhas a escrever no log para este relatório (pode ser nenhuma). */
+  registrar(r: RelatorioCsp): Record<string, unknown>[] {
+    const saida: Record<string, unknown>[] = [];
+    const t = this.agora();
+
+    if (t - this.inicioJanela >= this.janelaMs) {
+      if (this.descartados > 0) {
+        saida.push({ evento: "csp-violation-descartadas", quantidade: this.descartados });
+      }
+      this.inicioJanela = t;
+      this.vistos.clear();
+      this.linhasNaJanela = 0;
+      this.descartados = 0;
+    }
+
+    const chave = `${r.diretiva}|${r.bloqueado}|${r.pagina}`;
+    const repeticoes = this.vistos.get(chave);
+    if (repeticoes !== undefined) {
+      this.vistos.set(chave, repeticoes + 1);
+      return saida;
+    }
+
+    if (this.linhasNaJanela >= this.maxPorJanela) {
+      this.descartados++;
+      return saida;
+    }
+
+    this.vistos.set(chave, 0);
+    this.linhasNaJanela++;
+    saida.push({ evento: "csp-violation", ...r });
+    return saida;
+  }
+}

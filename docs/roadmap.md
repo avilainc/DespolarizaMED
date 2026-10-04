@@ -288,9 +288,15 @@ e o que ainda é frouxo ficam em `src/lib/csp.ts`; `next.config.ts` só aplica.
 - **Ainda frouxo:** `script-src` e `style-src` com `'unsafe-inline'`. O Next
   injeta scripts inline de hidratação; o caminho é nonce por requisição via
   middleware, que torna toda página dinâmica — decisão à parte.
-- **O endpoint trata o corpo como hostil:** limite de 16 KB, no máximo 10 linhas
-  por requisição, só diretiva + URL bloqueada + página, sem query string (token
-  em URL não vai para o log) e sem a amostra de script.
+- **O endpoint trata o corpo como hostil:** limite de 16 KB aplicado *durante* a
+  leitura do stream (sem `Content-Length`, `request.text()` bufferizaria tudo
+  antes de checar — medido: 200 MB chunked respondem 204 sem a memória crescer);
+  só diretiva + URL bloqueada + página, sem query string (token em URL não vai
+  para o log) e sem a amostra de script.
+- **Volume de log limitado entre requisições** (`FiltroDeRelatorios`): a mesma
+  violação sai uma vez por minuto, e no máximo 30 linhas por minuto no total; o
+  excedente vira uma linha `csp-violation-descartadas` com a contagem. Medido:
+  100 relatórios iguais + 50 distintos → 30 linhas.
 
 **Armadilha medida, para ninguém "modernizar" sem querer:** com `report-uri` e
 `report-to` juntos, o Chromium usa só o `report-to` e ignora o outro — e o

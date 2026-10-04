@@ -1,7 +1,15 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-import { HEADER_CSP, POLITICA, headersDeCsp, lerRelatoriosCsp, serializarPolitica } from "./csp";
+import {
+  FiltroDeRelatorios,
+  HEADER_CSP,
+  POLITICA,
+  headersDeCsp,
+  lerCorpoLimitado,
+  lerRelatoriosCsp,
+  serializarPolitica,
+} from "./csp";
 
 describe("CSP: a política", () => {
   const valor = serializarPolitica();
@@ -87,5 +95,66 @@ describe("CSP: leitura dos relatórios", () => {
   it("corta campos enormes", () => {
     const [r] = lerRelatoriosCsp({ "csp-report": { "blocked-uri": "https://a.com/" + "x".repeat(5000) } });
     assert.ok(r.bloqueado.length <= 256);
+  });
+});
+
+describe("CSP: leitura do corpo com teto", () => {
+  const stream = (pedacos: string[]) =>
+    new ReadableStream<Uint8Array>({
+      start(c) {
+        for (const p of pedacos) c.enqueue(new TextEncoder().encode(p));
+        c.close();
+      },
+    });
+
+  it("devolve o corpo quando cabe", async () => {
+    assert.equal(await lerCorpoLimitado(stream(['{"a":', "1}"]), 100), '{"a":1}');
+  });
+
+  it("para no primeiro pedaço que estoura, sem ler o resto", async () => {
+    let puxados = 0;
+    const infinito = new ReadableStream<Uint8Array>({
+      pull(c) {
+        puxados++;
+        c.enqueue(new Uint8Array(1024));
+      },
+    });
+    assert.equal(await lerCorpoLimitado(infinito, 4096), null);
+    // highWaterMark padrão do stream é 1, então puxa no máximo um à frente.
+    assert.ok(puxados <= 7, `leu ${puxados} pedaços de um stream sem fim`);
+  });
+
+  it("corpo ausente vira texto vazio", async () => {
+    assert.equal(await lerCorpoLimitado(null, 10), "");
+  });
+});
+
+describe("CSP: volume de log entre requisições", () => {
+  const r = (n: number) => ({ diretiva: "img-src", bloqueado: `https://x.com/${n}`, pagina: "/" });
+
+  it("a mesma violação repetida vira uma linha só na janela", () => {
+    const f = new FiltroDeRelatorios(60_000, 30, () => 1_000);
+    const linhas = Array.from({ length: 500 }, () => f.registrar(r(1))).flat();
+    assert.equal(linhas.length, 1);
+  });
+
+  it("violações distintas param no orçamento, e o excesso aparece resumido depois", () => {
+    let t = 1_000;
+    const f = new FiltroDeRelatorios(60_000, 3, () => t);
+    const naJanela = Array.from({ length: 10 }, (_, i) => f.registrar(r(i))).flat();
+    assert.equal(naJanela.length, 3);
+
+    t += 60_000;
+    const proxima = f.registrar(r(99));
+    assert.deepEqual(proxima[0], { evento: "csp-violation-descartadas", quantidade: 7 });
+    assert.equal(proxima[1].evento, "csp-violation");
+  });
+
+  it("a janela nova esquece o que viu, então um problema persistente reaparece", () => {
+    let t = 1_000;
+    const f = new FiltroDeRelatorios(60_000, 30, () => t);
+    assert.equal(f.registrar(r(1)).length, 1);
+    t += 60_000;
+    assert.equal(f.registrar(r(1)).length, 1);
   });
 });
