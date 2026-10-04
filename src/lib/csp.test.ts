@@ -150,6 +150,20 @@ describe("CSP: volume de log entre requisições", () => {
     assert.equal(proxima[1].evento, "csp-violation");
   });
 
+  it("as repetições saem somadas quando a janela vira", () => {
+    let t = 1_000;
+    const f = new FiltroDeRelatorios(60_000, 30, () => t);
+    for (let i = 0; i < 500; i++) f.registrar(r(1));
+    f.registrar(r(2)); // vista uma vez só: não gera linha de repetição
+
+    t += 60_000;
+    const linhas = f.registrar(r(3));
+    const repeticoes = linhas.filter((l) => l.evento === "csp-violation-repeticoes");
+    assert.equal(repeticoes.length, 1);
+    assert.equal(repeticoes[0].bloqueado, "https://x.com/1");
+    assert.equal(repeticoes[0].repeticoes, 499);
+  });
+
   it("a janela nova esquece o que viu, então um problema persistente reaparece", () => {
     let t = 1_000;
     const f = new FiltroDeRelatorios(60_000, 30, () => t);

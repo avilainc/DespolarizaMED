@@ -162,9 +162,10 @@ export async function lerCorpoLimitado(
  * na borda). Duas travas, ambas em memória do processo:
  *
  * - **deduplicação:** a mesma violação (diretiva + bloqueado + página) é
- *   logada uma vez por janela; as repetições só somam um contador, que sai na
- *   próxima linha dela. Uma página com problema real, visitada por mil alunos,
- *   vira poucas linhas — e o sinal fica legível;
+ *   logada uma vez por janela; as repetições só somam um contador, que sai
+ *   numa linha `csp-violation-repeticoes` quando a janela vira. Uma página com
+ *   problema real, visitada por mil alunos, vira duas linhas — e dá para
+ *   distinguir "aconteceu uma vez" de "pega todo mundo";
  * - **orçamento global:** no máximo `maxPorJanela` linhas por janela, de
  *   qualquer origem. O que passar disso é descartado e contado, e o total
  *   descartado aparece numa linha de resumo na janela seguinte.
@@ -175,7 +176,7 @@ export async function lerCorpoLimitado(
  */
 export class FiltroDeRelatorios {
   private inicioJanela = 0;
-  private vistos = new Map<string, number>();
+  private vistos = new Map<string, { relatorio: RelatorioCsp; repeticoes: number }>();
   private linhasNaJanela = 0;
   private descartados = 0;
 
@@ -191,6 +192,14 @@ export class FiltroDeRelatorios {
     const t = this.agora();
 
     if (t - this.inicioJanela >= this.janelaMs) {
+      // Antes de esquecer a janela, o que se repetiu nela. Limitado pelo mesmo
+      // orçamento: o mapa só tem as chaves que couberam (no máximo
+      // `maxPorJanela`), então isto também é limitado.
+      for (const { relatorio, repeticoes } of this.vistos.values()) {
+        if (repeticoes > 0) {
+          saida.push({ evento: "csp-violation-repeticoes", ...relatorio, repeticoes });
+        }
+      }
       if (this.descartados > 0) {
         saida.push({ evento: "csp-violation-descartadas", quantidade: this.descartados });
       }
@@ -201,9 +210,9 @@ export class FiltroDeRelatorios {
     }
 
     const chave = `${r.diretiva}|${r.bloqueado}|${r.pagina}`;
-    const repeticoes = this.vistos.get(chave);
-    if (repeticoes !== undefined) {
-      this.vistos.set(chave, repeticoes + 1);
+    const visto = this.vistos.get(chave);
+    if (visto) {
+      visto.repeticoes++;
       return saida;
     }
 
@@ -212,7 +221,7 @@ export class FiltroDeRelatorios {
       return saida;
     }
 
-    this.vistos.set(chave, 0);
+    this.vistos.set(chave, { relatorio: r, repeticoes: 0 });
     this.linhasNaJanela++;
     saida.push({ evento: "csp-violation", ...r });
     return saida;

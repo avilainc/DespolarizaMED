@@ -294,8 +294,10 @@ e o que ainda é frouxo ficam em `src/lib/csp.ts`; `next.config.ts` só aplica.
   só diretiva + URL bloqueada + página, sem query string (token em URL não vai
   para o log) e sem a amostra de script.
 - **Volume de log limitado entre requisições** (`FiltroDeRelatorios`): a mesma
-  violação sai uma vez por minuto, e no máximo 30 linhas por minuto no total; o
-  excedente vira uma linha `csp-violation-descartadas` com a contagem. Medido:
+  violação sai uma vez por minuto, com as repetições somadas numa linha
+  `csp-violation-repeticoes` quando o minuto vira; no máximo 30 violações
+  distintas por minuto, e o excedente vira uma linha `csp-violation-descartadas`
+  com a contagem. Medido:
   100 relatórios iguais + 50 distintos → 30 linhas.
 
 **Armadilha medida, para ninguém "modernizar" sem querer:** com `report-uri` e
