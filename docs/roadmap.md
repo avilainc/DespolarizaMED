@@ -293,12 +293,13 @@ e o que ainda é frouxo ficam em `src/lib/csp.ts`; `next.config.ts` só aplica.
   antes de checar — medido: 200 MB chunked respondem 204 sem a memória crescer);
   só diretiva + URL bloqueada + página, sem query string (token em URL não vai
   para o log) e sem a amostra de script.
-- **Volume de log limitado entre requisições** (`FiltroDeRelatorios`): a mesma
-  violação sai uma vez por minuto, com as repetições somadas numa linha
-  `csp-violation-repeticoes` quando o minuto vira; no máximo 30 violações
-  distintas por minuto, e o excedente vira uma linha `csp-violation-descartadas`
-  com a contagem. Medido:
-  100 relatórios iguais + 50 distintos → 30 linhas.
+- **Volume de log limitado entre requisições** (`FiltroDeRelatorios`): por
+  minuto, no máximo 30 linhas `csp-violation` (uma por violação distinta) e uma
+  linha `csp-violation-resumo` com as repetições mais frequentes e quantas
+  distintas foram descartadas — teto rígido de 31 linhas/min, testado sob o
+  cenário de ataque. Um timer fecha o minuto sem depender de tráfego, e campos
+  que não são string viram vazio (um objeto com `toString: null` derrubaria a
+  coerção e viraria 500 fora do orçamento).
 
 **Armadilha medida, para ninguém "modernizar" sem querer:** com `report-uri` e
 `report-to` juntos, o Chromium usa só o `report-to` e ignora o outro — e o

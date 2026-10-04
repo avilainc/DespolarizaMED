@@ -86,6 +86,15 @@ describe("CSP: leitura dos relatórios", () => {
     assert.equal(r.diretiva, "style-src");
   });
 
+  it("campo que não é string vira vazio, sem lançar", () => {
+    // `String(x)` lançaria com toString/valueOf nulos — e viraria um 500.
+    const venenoso = { toString: null, valueOf: null };
+    const [r] = lerRelatoriosCsp({
+      "csp-report": { "effective-directive": venenoso, "blocked-uri": 42, "document-uri": ["x"] },
+    });
+    assert.deepEqual(r, { diretiva: "", bloqueado: "", pagina: "" });
+  });
+
   it("ignora lixo sem quebrar", () => {
     for (const lixo of [null, 42, "x", {}, [], [null], { "csp-report": "x" }]) {
       assert.deepEqual(lerRelatoriosCsp(lixo), []);
@@ -131,6 +140,8 @@ describe("CSP: leitura do corpo com teto", () => {
 
 describe("CSP: volume de log entre requisições", () => {
   const r = (n: number) => ({ diretiva: "img-src", bloqueado: `https://x.com/${n}`, pagina: "/" });
+  const conta = (linhas: Record<string, unknown>[], evento: string) =>
+    linhas.filter((l) => l.evento === evento).length;
 
   it("a mesma violação repetida vira uma linha só na janela", () => {
     const f = new FiltroDeRelatorios(60_000, 30, () => 1_000);
@@ -138,37 +149,65 @@ describe("CSP: volume de log entre requisições", () => {
     assert.equal(linhas.length, 1);
   });
 
-  it("violações distintas param no orçamento, e o excesso aparece resumido depois", () => {
-    let t = 1_000;
+  it("o resumo traz as repetições e os descartes, mesmo sem relatório novo", () => {
+    let t = 0;
     const f = new FiltroDeRelatorios(60_000, 3, () => t);
-    const naJanela = Array.from({ length: 10 }, (_, i) => f.registrar(r(i))).flat();
-    assert.equal(naJanela.length, 3);
-
-    t += 60_000;
-    const proxima = f.registrar(r(99));
-    assert.deepEqual(proxima[0], { evento: "csp-violation-descartadas", quantidade: 7 });
-    assert.equal(proxima[1].evento, "csp-violation");
-  });
-
-  it("as repetições saem somadas quando a janela vira", () => {
-    let t = 1_000;
-    const f = new FiltroDeRelatorios(60_000, 30, () => t);
     for (let i = 0; i < 500; i++) f.registrar(r(1));
-    f.registrar(r(2)); // vista uma vez só: não gera linha de repetição
+    for (let i = 2; i < 10; i++) f.registrar(r(i)); // 2 cabem, 6 descartadas
 
-    t += 60_000;
-    const linhas = f.registrar(r(3));
-    const repeticoes = linhas.filter((l) => l.evento === "csp-violation-repeticoes");
-    assert.equal(repeticoes.length, 1);
-    assert.equal(repeticoes[0].bloqueado, "https://x.com/1");
-    assert.equal(repeticoes[0].repeticoes, 499);
+    assert.deepEqual(f.fecharSeVencida(), [], "janela ainda aberta não fecha");
+    t = 60_000;
+    const [resumo] = f.fecharSeVencida(); // o timer, sem nenhum relatório
+    assert.equal(resumo.evento, "csp-violation-resumo");
+    assert.equal(resumo.descartadas, 6);
+    const reps = resumo.repeticoes as { bloqueado: string; vezes: number }[];
+    assert.deepEqual(reps.map((x) => [x.bloqueado, x.vezes]), [["https://x.com/1", 499]]);
   });
 
-  it("a janela nova esquece o que viu, então um problema persistente reaparece", () => {
-    let t = 1_000;
+  it("janela sem repetição nem descarte não gera resumo", () => {
+    let t = 0;
     const f = new FiltroDeRelatorios(60_000, 30, () => t);
-    assert.equal(f.registrar(r(1)).length, 1);
-    t += 60_000;
-    assert.equal(f.registrar(r(1)).length, 1);
+    f.registrar(r(1));
+    t = 60_000;
+    assert.deepEqual(f.fecharSeVencida(), []);
+  });
+
+  it("teto rígido: nunca mais que maxPorJanela + 1 linhas por janela, sob ataque", () => {
+    let t = 0;
+    const f = new FiltroDeRelatorios(60_000, 30, () => t);
+    // Cenário do revisor: as 30 chaves repetidas, descartes, e virada de janela.
+    for (let janela = 0; janela < 5; janela++) {
+      const linhas: Record<string, unknown>[] = [];
+      for (let k = 0; k < 200; k++) linhas.push(...f.registrar(r(k % 40)));
+      t += 59_999;
+      linhas.push(...f.fecharSeVencida()); // ainda não venceu
+      t += 1;
+      linhas.push(...f.fecharSeVencida());
+      assert.ok(linhas.length <= 31, `janela ${janela}: ${linhas.length} linhas`);
+      assert.ok(conta(linhas, "csp-violation-resumo") <= 1);
+    }
+  });
+
+  it("o resumo é limitado mesmo com muitas violações repetidas", () => {
+    let t = 0;
+    const f = new FiltroDeRelatorios(60_000, 30, () => t, 10);
+    for (let k = 0; k < 30; k++) for (let n = 0; n <= k + 1; n++) f.registrar(r(k));
+    t = 60_000;
+    const [resumo] = f.fecharSeVencida();
+    assert.equal((resumo.repeticoes as unknown[]).length, 10);
+    assert.equal(resumo.repetidas_fora_do_resumo, 20);
+    // as mais frequentes primeiro
+    assert.equal((resumo.repeticoes as { vezes: number }[])[0].vezes, 30);
+  });
+
+  it("registrar fecha a janela vencida se o timer atrasar", () => {
+    let t = 0;
+    const f = new FiltroDeRelatorios(60_000, 30, () => t);
+    f.registrar(r(1));
+    f.registrar(r(1));
+    t = 120_000;
+    const linhas = f.registrar(r(1));
+    assert.equal(conta(linhas, "csp-violation-resumo"), 1);
+    assert.equal(conta(linhas, "csp-violation"), 1, "janela nova: a violação reaparece");
   });
 });

@@ -116,12 +116,22 @@ export function lerRelatoriosCsp(corpo: unknown): RelatorioCsp[] {
   }
 
   return brutos.map((r) => ({
-    diretiva: String(
-      r["effective-directive"] ?? r.effectiveDirective ?? r["violated-directive"] ?? "",
+    diretiva: texto(
+      r["effective-directive"] ?? r.effectiveDirective ?? r["violated-directive"],
     ).slice(0, 64),
-    bloqueado: semQuery(r["blocked-uri"] ?? r.blockedURL).slice(0, 256),
-    pagina: semQuery(r["document-uri"] ?? r.documentURL).slice(0, 256),
+    bloqueado: semQuery(texto(r["blocked-uri"] ?? r.blockedURL)).slice(0, 256),
+    pagina: semQuery(texto(r["document-uri"] ?? r.documentURL)).slice(0, 256),
   }));
+}
+
+/**
+ * Só string passa. O corpo é JSON de qualquer um: um campo pode ser objeto,
+ * número, ou um objeto com `toString: null`, que faz `String(x)` lançar — e
+ * uma exceção aqui viraria um 500 logado pelo Next, fora do orçamento do
+ * filtro. Não coagimos nada: o que não é string vira vazio.
+ */
+function texto(valor: unknown): string {
+  return typeof valor === "string" ? valor : "";
 }
 
 /**
@@ -159,71 +169,81 @@ export async function lerCorpoLimitado(
 /**
  * Decide o que vai para o log ATRAVÉS das requisições, porque o endpoint é
  * público e um cliente qualquer pode repetir POST sem fim (não há rate limit
- * na borda). Duas travas, ambas em memória do processo:
+ * na borda).
  *
- * - **deduplicação:** a mesma violação (diretiva + bloqueado + página) é
- *   logada uma vez por janela; as repetições só somam um contador, que sai
- *   numa linha `csp-violation-repeticoes` quando a janela vira. Uma página com
- *   problema real, visitada por mil alunos, vira duas linhas — e dá para
- *   distinguir "aconteceu uma vez" de "pega todo mundo";
- * - **orçamento global:** no máximo `maxPorJanela` linhas por janela, de
- *   qualquer origem. O que passar disso é descartado e contado, e o total
- *   descartado aparece numa linha de resumo na janela seguinte.
+ * Por janela (1 min), o log recebe no máximo `maxPorJanela` linhas
+ * `csp-violation` (uma por violação DISTINTA, na hora em que aparece) e UMA
+ * linha `csp-violation-resumo` no fechamento — teto rígido de
+ * `maxPorJanela + 1` linhas por minuto, venha o que vier.
  *
- * Em memória é suficiente aqui: o manifesto declara um único serviço `web`, e
- * o pior caso de reinício é perder um contador. O mapa é limpo a cada janela,
- * então não cresce sem limite.
+ * O resumo carrega o que não virou linha própria: quantas vezes cada violação
+ * se repetiu (as `maxResumo` mais frequentes; é isso que separa "aconteceu uma
+ * vez" de "pega todo aluno") e quantas distintas foram descartadas por falta
+ * de orçamento. Janela sem repetição nem descarte não gera resumo.
+ *
+ * O fechamento não depende de chegar outro relatório: a rota chama
+ * `fecharSeVencida()` num timer. `registrar()` também fecha uma janela
+ * vencida antes de contar, para o caso de o timer atrasar.
+ *
+ * Estado em memória do processo: o manifesto declara um único serviço `web`,
+ * e o pior caso de um reinício é perder as contagens de até um minuto.
  */
 export class FiltroDeRelatorios {
-  private inicioJanela = 0;
+  private inicioJanela: number;
   private vistos = new Map<string, { relatorio: RelatorioCsp; repeticoes: number }>();
-  private linhasNaJanela = 0;
   private descartados = 0;
 
   constructor(
-    private readonly janelaMs = 60_000,
+    readonly janelaMs = 60_000,
     private readonly maxPorJanela = 30,
     private readonly agora: () => number = Date.now,
-  ) {}
+    private readonly maxResumo = 10,
+  ) {
+    this.inicioJanela = this.agora();
+  }
 
-  /** Linhas a escrever no log para este relatório (pode ser nenhuma). */
+  /** Linhas a escrever agora para este relatório (zero, uma ou duas). */
   registrar(r: RelatorioCsp): Record<string, unknown>[] {
-    const saida: Record<string, unknown>[] = [];
-    const t = this.agora();
-
-    if (t - this.inicioJanela >= this.janelaMs) {
-      // Antes de esquecer a janela, o que se repetiu nela. Limitado pelo mesmo
-      // orçamento: o mapa só tem as chaves que couberam (no máximo
-      // `maxPorJanela`), então isto também é limitado.
-      for (const { relatorio, repeticoes } of this.vistos.values()) {
-        if (repeticoes > 0) {
-          saida.push({ evento: "csp-violation-repeticoes", ...relatorio, repeticoes });
-        }
-      }
-      if (this.descartados > 0) {
-        saida.push({ evento: "csp-violation-descartadas", quantidade: this.descartados });
-      }
-      this.inicioJanela = t;
-      this.vistos.clear();
-      this.linhasNaJanela = 0;
-      this.descartados = 0;
-    }
+    const saida = this.fecharSeVencida();
 
     const chave = `${r.diretiva}|${r.bloqueado}|${r.pagina}`;
     const visto = this.vistos.get(chave);
     if (visto) {
       visto.repeticoes++;
-      return saida;
-    }
-
-    if (this.linhasNaJanela >= this.maxPorJanela) {
+    } else if (this.vistos.size >= this.maxPorJanela) {
       this.descartados++;
-      return saida;
+    } else {
+      this.vistos.set(chave, { relatorio: r, repeticoes: 0 });
+      saida.push({ evento: "csp-violation", ...r });
     }
-
-    this.vistos.set(chave, { relatorio: r, repeticoes: 0 });
-    this.linhasNaJanela++;
-    saida.push({ evento: "csp-violation", ...r });
     return saida;
+  }
+
+  /** Fecha a janela se o tempo dela acabou; devolve o resumo (ou nada). */
+  fecharSeVencida(): Record<string, unknown>[] {
+    const t = this.agora();
+    if (t - this.inicioJanela < this.janelaMs) return [];
+
+    const repetidas = [...this.vistos.values()]
+      .filter((v) => v.repeticoes > 0)
+      .sort((a, b) => b.repeticoes - a.repeticoes);
+    const resumo =
+      repetidas.length || this.descartados
+        ? [
+            {
+              evento: "csp-violation-resumo",
+              repeticoes: repetidas
+                .slice(0, this.maxResumo)
+                .map((v) => ({ ...v.relatorio, vezes: v.repeticoes })),
+              repetidas_fora_do_resumo: Math.max(0, repetidas.length - this.maxResumo),
+              descartadas: this.descartados,
+            },
+          ]
+        : [];
+
+    this.inicioJanela = t;
+    this.vistos.clear();
+    this.descartados = 0;
+    return resumo;
   }
 }
