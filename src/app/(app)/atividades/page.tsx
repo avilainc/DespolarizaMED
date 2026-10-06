@@ -1,11 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CheckCircle2, FileStack, History, PlayCircle, Target } from "lucide-react";
+
 import { requireAssinatura } from "@/lib/auth/require-subscription";
-import { historicoDoAluno } from "@/features/students/queries";
+import { historicoDoAluno, type Atividade } from "@/features/students/queries";
 import { estatisticasDoAluno } from "@/features/practice/queries";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { PageHeader, PageShell } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
+import { IllustrationCalendar } from "@/components/illustrations";
 
 export const metadata: Metadata = { title: "Atividades — DespolarizaMED" };
+
+/**
+ * Ícone por tipo de atividade. O histórico era uma coluna de badges de texto
+ * todas iguais ("Aula concluída", "Prova finalizada"), e a linha do tempo
+ * lia-se como uma tabela. O ícone dá o tipo antes da leitura.
+ */
+function iconeDe(tipo: string) {
+  if (tipo.startsWith("Aula concluída")) return CheckCircle2;
+  if (tipo.startsWith("Aula")) return PlayCircle;
+  if (tipo.startsWith("Prova")) return FileStack;
+  if (tipo.startsWith("Plano")) return Target;
+  return History;
+}
 
 export default async function AtividadesPage() {
   const { session } = await requireAssinatura();
@@ -14,7 +32,7 @@ export default async function AtividadesPage() {
     estatisticasDoAluno(session.user.id),
   ]);
 
-  const porDia = new Map<string, typeof historico>();
+  const porDia = new Map<string, Atividade[]>();
   for (const h of historico) {
     const k = h.quando.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
     const lista = porDia.get(k) ?? [];
@@ -23,43 +41,85 @@ export default async function AtividadesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold text-foreground">Atividades</h1>
-      <p className="mt-1 text-muted-foreground">
-        Seu histórico na plataforma. {stats.geral.respondidas > 0 && (
-          <>
-            {stats.geral.respondidas.toLocaleString("pt-BR")} questões respondidas ·{" "}
-            <Link href="/desempenho" className="text-primary hover:underline">ver desempenho</Link>
-          </>
-        )}
-      </p>
+    <PageShell largura="estreita">
+      <PageHeader
+        titulo="Atividades"
+        migalhas={[{ rotulo: "Início", href: "/dashboard" }, { rotulo: "Atividades" }]}
+        descricao={
+          stats.geral.respondidas > 0 ? (
+            <>
+              Seu histórico na plataforma. Já são {stats.geral.respondidas.toLocaleString("pt-BR")} questões
+              respondidas.
+            </>
+          ) : (
+            "Seu histórico na plataforma, do mais recente para o mais antigo."
+          )
+        }
+        acoes={
+          stats.geral.respondidas > 0 ? (
+            <Button variant="outline" render={<Link href="/desempenho" />}>
+              Ver desempenho
+            </Button>
+          ) : undefined
+        }
+      />
 
       {historico.length === 0 ? (
-        <p className="py-12 text-center text-muted-foreground">Nada por aqui ainda. Assista a uma aula ou resolva uma prova.</p>
+        <EmptyState
+          ilustracao={<IllustrationCalendar />}
+          titulo="Nada por aqui ainda"
+          descricao="Assim que você assistir a uma aula, resolver questões ou fazer uma prova, tudo aparece nesta linha do tempo."
+          acao={
+            <>
+              <Button render={<Link href="/disciplinas" />}>Começar por uma aula</Button>
+              <Button variant="outline" render={<Link href="/questoes" />}>
+                Ir para as questões
+              </Button>
+            </>
+          }
+        />
       ) : (
-        <div className="mt-8 space-y-8">
+        <div className="space-y-8">
           {[...porDia.entries()].map(([dia, lista]) => (
             <section key={dia}>
-              <h2 className="mb-2 text-sm font-semibold capitalize text-muted-foreground">{dia}</h2>
-              <ol className="space-y-1.5">
-                {lista.map((h) => (
-                  <li key={h.id} className="flex items-start gap-3 rounded-md border border-border bg-card px-3 py-2 text-sm">
-                    <span className="w-12 shrink-0 text-xs text-muted-foreground">
-                      {h.quando.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                    <Badge variant="outline" className="shrink-0">{h.tipo}</Badge>
-                    {h.href ? (
-                      <Link href={h.href} className="text-foreground hover:underline">{h.descricao}</Link>
-                    ) : (
-                      <span className="text-foreground">{h.descricao}</span>
-                    )}
-                  </li>
-                ))}
+              <h2 className="mb-3 text-sm font-semibold capitalize text-muted-foreground">{dia}</h2>
+              <ol className="overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-foreground/8">
+                {lista.map((h, i) => {
+                  const Icone = iconeDe(h.tipo);
+                  return (
+                    <li
+                      key={h.id}
+                      className={`flex items-start gap-3 px-4 py-3.5 ${i > 0 ? "border-t border-border" : ""}`}
+                    >
+                      <span
+                        className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary"
+                        aria-hidden
+                      >
+                        <Icone className="size-4" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[0.9375rem] leading-snug text-foreground">
+                          {h.href ? (
+                            <Link href={h.href} className="hover:underline">
+                              {h.descricao}
+                            </Link>
+                          ) : (
+                            h.descricao
+                          )}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {h.tipo} ·{" "}
+                          {h.quando.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </div>
+                    </li>
+                  );
+                })}
               </ol>
             </section>
           ))}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }
