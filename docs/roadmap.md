@@ -493,6 +493,32 @@ subir — o certo, mas melhor descobrir antes do que no deploy.
 serviço `web`, então não há duas réplicas migrando ao mesmo tempo. Se algum dia
 houver, este passo precisa de lock antes de escalar.
 
+### Monitoramento no n8n (desde 2026-10-09)
+
+**Divisão decidida:** regra de negócio (autorização, cobrança, correção,
+gabarito, migrations) fica no código, com teste e CI. O n8n fica com o que gira
+em volta: monitoramento, avisos e rotinas de operação. Motivo: o deploy ficou
+parado de 03/10 a 09/10 sem ninguém perceber, e nada no código consegue avisar
+que o próprio deploy não chegou.
+
+Workflow **"DespolarizaMED - Sentinela de produção"** (`n8n.avilaops.com`, id
+`wEmvoozMPAM4it2b`, ativo). A cada 10 min lê:
+
+- `/v1/ready` e `/v1/health` de `despolarizamed.com.br` (públicos);
+- o último commit e o último run da `main` pela API pública do GitHub (o
+  repositório é público, então não há credencial; o limite anônimo de 60
+  req/h comporta as 12 leituras por hora).
+
+E abre tarefa no Todoist (mesmo projeto do "Handler de Erro Central") para:
+`/v1/ready` reprovando em 2 leituras seguidas, `db` diferente de `ok`, último
+run da `main` sem sucesso, e produção num commit diferente da `main` há mais de
+1 h. Só alerta quando o **conjunto** de problemas muda — inclusive quando volta
+ao normal —, guardando o estado no static data do workflow.
+
+Não cobre o que só a rede interna lê (`/v1/ops/status`, logs da CSP). Para
+isso o n8n precisaria alcançar a rede interna do servidor ou de um token de
+leitura; fica para quando houver necessidade.
+
 ### Regressão do candidato a release (2026-10-09, `5cea73d`)
 
 Rodada numa sessão de nuvem isolada, sem acesso ao servidor, contra o commit
