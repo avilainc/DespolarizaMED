@@ -390,7 +390,9 @@ Voltar versão é republicar o commit anterior.
 `mirror.gcr.io/library/node:24-slim` e não `node:24-slim` direto do Docker Hub:
 o runner do Actions passou a receber `429 Too Many Requests` (limite de pulls
 anônimos) e o job `image` morria antes do primeiro passo. É a mesma imagem —
-conferido o digest `sha256:d6aa754f…` idêntico nos dois registros. Se o espelho
+conferido o digest `sha256:d6aa754f…` idêntico nos dois registros. Pelo
+mesmo motivo, o `setup-buildx-action` do workflow puxa o BuildKit de
+`mirror.gcr.io/moby/buildkit:buildx-stable-1` (digest também idêntico). Se o espelho
 um dia falhar, a alternativa é `docker/login-action` com conta do Docker Hub.
 
 O `scripts/deploy.sh` (build local → tgz → `docker build` no servidor) foi
