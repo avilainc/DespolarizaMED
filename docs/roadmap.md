@@ -505,15 +505,19 @@ Workflow **"DespolarizaMED - Sentinela de produção"** (`n8n.avilaops.com`, id
 `wEmvoozMPAM4it2b`, ativo). A cada 10 min lê:
 
 - `/v1/ready` e `/v1/health` de `despolarizamed.com.br` (públicos);
-- o último commit e o último run da `main` pela API pública do GitHub (o
-  repositório é público, então não há credencial; o limite anônimo de 60
-  req/h comporta as 12 leituras por hora).
+- o último commit e o último run da `main` pela API do GitHub. **O repositório
+  é privado**: sem credencial o GitHub responde 404, e a primeira versão da
+  sentinela ficou cega em silêncio por isso. Hoje a leitura que falha vira
+  alerta próprio ("Sentinela não conseguiu ler…"); as checagens de deploy só
+  funcionam depois de cadastrar no n8n uma credencial de leitura (token
+  fine-grained com Actions e Contents em modo leitura, só neste repositório).
 
 E abre tarefa no Todoist (mesmo projeto do "Handler de Erro Central") para:
 `/v1/ready` reprovando em 2 leituras seguidas, `db` diferente de `ok`, último
 run da `main` sem sucesso, e produção num commit diferente da `main` há mais de
 1 h. Só alerta quando o **conjunto** de problemas muda — inclusive quando volta
-ao normal —, guardando o estado no static data do workflow.
+ao normal —, guardando o estado no static data do workflow. Falha do próprio
+workflow vai para o Handler de Erro Central (`errorWorkflow`).
 
 Não cobre o que só a rede interna lê (`/v1/ops/status`, logs da CSP). Para
 isso o n8n precisaria alcançar a rede interna do servidor ou de um token de
