@@ -386,6 +386,13 @@ Dockerfile, publica `ghcr.io/avilainc/despolarizamed@sha256:…`) →
 DespolarizaMED") → `deploy` (SSH com `deploy <app> <imagem>` no servidor).
 Voltar versão é republicar o commit anterior.
 
+**Imagem base pelo espelho do Google (desde 2026-10-09).** O Dockerfile usa
+`mirror.gcr.io/library/node:24-slim` e não `node:24-slim` direto do Docker Hub:
+o runner do Actions passou a receber `429 Too Many Requests` (limite de pulls
+anônimos) e o job `image` morria antes do primeiro passo. É a mesma imagem —
+conferido o digest `sha256:d6aa754f…` idêntico nos dois registros. Se o espelho
+um dia falhar, a alternativa é `docker/login-action` com conta do Docker Hub.
+
 O `scripts/deploy.sh` (build local → tgz → `docker build` no servidor) foi
 removido em 2026-10-09: contrariava essa decisão e já não funcionava com o
 Dockerfile atual, que compila a partir do código-fonte e não do tgz.
