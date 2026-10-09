@@ -563,6 +563,21 @@ unitário de `features/live/janela.ts`; a prova pelo HTML é a de 2026-09-16),
 estado das migrations no banco de produção e logs da CSP em produção — os dois
 últimos dependem de o deploy voltar a rodar (acima).
 
+### E-mail transacional (corrigido em 2026-10-09)
+
+A única caixa de envio que existe é **`noreply@avilaops.com`**.
+`noreply@despolarizamed.com.br`, que o código e o `.env.example` usavam como
+padrão, não existe. O código passou a usar `noreply@avilaops.com`; o valor que
+vale em produção, porém, é o de `MAIL_FROM` / `SMTP_USER` / `SMTP_PASSWORD` em
+`/etc/gapp/despolarizamed/secrets.env`, que não foi conferido.
+
+Se ali ainda estiver a caixa inexistente, o efeito é silencioso: o Better Auth
+captura o erro de envio (`runInBackgroundOrAwait`), então o cadastro conclui
+mas o e-mail de confirmação não chega, e a redefinição de senha responde
+"verifique seu e-mail" sem mandar nada. Só o "Avisar alunos" do plantão mostra
+o erro, e para no primeiro destinatário. Conferir com
+`node scripts/testes/smtp.mjs` usando as credenciais do servidor.
+
 ### Mercado Pago
 
 Conta `nicolas@avila.inc` (a da Ávila Ops, não a do cliente): quando o
