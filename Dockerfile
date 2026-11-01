@@ -1,5 +1,8 @@
 # Compilacao executada pelo GitHub Actions.
-FROM node:24-slim AS build
+# A imagem base vem do espelho publico do Docker Hub mantido pelo Google
+# (mesmo digest de docker.io/library/node), porque o runner do Actions bate no
+# limite de pulls anonimos do Docker Hub (429) e o build morria antes de comecar.
+FROM mirror.gcr.io/library/node:24-slim AS build
 WORKDIR /app
 RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -13,7 +16,7 @@ RUN DATABASE_URL=postgresql://build:build@127.0.0.1:1/build \
     PAYLOAD_SECRET=compilacao-sem-acesso-a-producao-0000000000 \
     PAYLOAD_DISABLE_PUSH=true pnpm build
 
-FROM node:24-slim AS runtime
+FROM mirror.gcr.io/library/node:24-slim AS runtime
 
 # Usuario nao root: exigencia do padrao GAPP (runtime.uid != 0). A imagem
 # node ja traz o usuario "node" com uid 1000.

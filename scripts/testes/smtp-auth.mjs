@@ -4,7 +4,7 @@ const t = nodemailer.createTransport({
   auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD },
 });
 const r = await t.sendMail({
-  from: "DespolarizaMED <noreply@despolarizamed.com.br>",
+  from: "DespolarizaMED <noreply@avilaops.com>",
   to: process.env.PARA,
   subject: "Teste de autenticacao SPF/DKIM/DMARC",
   text: "Verificando se SPF, DKIM e DMARC passam depois da correcao.",

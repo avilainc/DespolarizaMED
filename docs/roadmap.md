@@ -172,7 +172,7 @@ Cada pasta de feature tem um `README.md` curto explicando seu escopo e de onde v
 
 ## 5. Fases do MVP (do `product-plan.md`, seção 32)
 
-### Fase 1: Fundação **(em andamento)**
+### Fase 1: Fundação **(implementada; falta o aceite de Termos/Privacidade no cadastro, que depende de dado da empresa — ver "Pendente" na Vitrine)**
 - [x] Estrutura do projeto Next.js + TypeScript + pnpm
 - [x] Schema Drizzle (auth, questões, provas, aprendizado, eventos, billing)
 - [x] Better Auth configurado com RBAC (ADMIN/TEACHER/STUDENT)
@@ -341,27 +341,29 @@ Estes são o diferencial competitivo do produto, não procurar biblioteca pronta
 
 - Postgres: `localhost:5432`, banco `despolarizamed`, user/pass `postgres`/`postgres` (ver `.env.local`). Padrão: container Docker `avilaops-postgres` (postgres:18-alpine, porta 5432) — precisa do Docker Desktop de pé; `docker start avilaops-postgres`. Em 2026-09-16, com o Docker Desktop instável na máquina de dev, a validação desta auditoria rodou contra um Postgres 18 via `embedded-postgres` num diretório temporário (mesma porta/credenciais) — não é infraestrutura permanente, só uma alternativa pontual quando o container não sobe.
 - Figuras do acervo: `DATA_DIR` (padrão `./data`) é a raiz de `figures/**`; `data/` está no `.gitignore`.
-- Migration pendente de aplicar em produção: `src/lib/db/migrations/0006_huge_quentin_quire.sql` (tabelas `practice_*`). Rodar `pnpm db:migrate` antes do próximo deploy.
+- Migrations em produção: não se aplicam mais à mão. Desde 2026-09-17 o
+  container aplica a cadeia do Drizzle no entrypoint e, desde 2026-10-03, a do
+  Payload no start (seção 8, "Migrations no deploy"). O estado real se lê em
+  `/v1/ops/status` (`migrations_pending`, `migrations_pending_tags`) pela rede
+  interna. A nota antiga que mandava rodar `pnpm db:migrate` para a `0006` saiu
+  em 2026-10-09: a `0006` está na cadeia que o container aplica.
 - Variáveis de ambiente: `.env.example` tem a lista completa sem valores. `.env.local`/`.env.production` têm os valores reais e **nunca devem ser commitados** (já no `.gitignore`).
 - Scripts (`package.json`):
   - `pnpm dev` / `pnpm build` / `pnpm start` - Next.js
   - `pnpm db:generate` / `pnpm db:migrate` / `pnpm db:push` / `pnpm db:studio` - Drizzle (schema transacional)
   - `pnpm payload:migrate:create` / `pnpm payload:migrate` - migrations do Payload (schema de conteúdo); ver seção 3 "Bloqueios" para o porquê de não usar `pnpm payload migrate:create` direto
   - `pnpm seed:biologia <staff-email> <staff-password>` - popula a disciplina Biologia (2 módulos, 10 aulas) via API REST do Payload; idempotente, serve de molde para Física/Química
-- **`pnpm build` precisa de um Postgres alcançável.** O Payload conecta durante
-  o build (coleta de rotas e prerender) e, sem banco, o processo morre em
-  "Collecting build traces" sem gerar `.next/standalone` — o erro real
-  (`ECONNREFUSED 127.0.0.1:5432`) aparece dezenas de linhas antes, então é fácil
-  culpar a fase errada. Se o Postgres local estiver parado, aponte o build para
-  o de produção por um túnel:
+- **`pnpm build` não precisa de banco.** O build oficial é o do Dockerfile, que
+  compila de propósito com `DATABASE_URL=postgresql://build:build@127.0.0.1:1/build`
+  (porta inalcançável) e `PAYLOAD_DISABLE_PUSH=true`. Conferido em 2026-10-09 no
+  `5cea73d`: build verde e `.next/standalone` gerado sem Postgres no ar. Para
+  reproduzir o build do CI localmente, use as mesmas variáveis do `RUN pnpm
+  build` do Dockerfile. Consequência: página gerada no build não pode consultar
+  o banco (ver a landing, na Vitrine, seção 5).
 
-  ```bash
-  ssh -f -N -L 15432:127.0.0.1:5432 applications
-  DATABASE_URL="postgres://despolarizamed:<senha>@127.0.0.1:15432/despolarizamed"     PAYLOAD_DISABLE_PUSH=true pnpm build
-  ```
-
-  `PAYLOAD_DISABLE_PUSH=true` é obrigatório aí: sem ele o Payload tentaria
-  sincronizar o schema do banco de produção a partir do código local.
+  Esta nota substitui uma anterior que dizia o contrário e mandava abrir túnel
+  SSH para o **Postgres de produção** durante o build. Não reintroduzir: o build
+  não precisa disso, e conectar um build local à produção é risco sem ganho.
 - **Não use `MSYS_NO_PATHCONV=1` ao chamar `pnpm` no Git Bash.** Ele corrompe o
   caminho do corepack (`Cannot find module 'D:\c\Program Files
 odejs\...'`).
@@ -375,9 +377,39 @@ odejs\...'`).
 ## 8. Produção
 
 A app está no ar no host `applications` (Hetzner), porta **3100** (3080 já é do
-lojas-avilaops), atrás do Caddy. Deploy com `bash scripts/deploy.sh <versao>`:
-build local, tgz, `docker build` no servidor. O build **não** roda no servidor,
-o CX23 não tem folga de RAM para compilar Next sem derrubar os vizinhos.
+lojas-avilaops), atrás do Caddy. O build **não** roda no servidor (o CX23 não
+tem folga de RAM para compilar Next sem derrubar os vizinhos) nem na máquina de
+desenvolvimento: roda no GitHub Actions (`.github/workflows/deploy-production.yml`).
+Um push na `main` executa `quality` (tsc, lint, testes) → `image` (build do
+Dockerfile, publica `ghcr.io/avilainc/despolarizamed@sha256:…`) →
+`deployment-open` (abre o Deployment com o GitHub App "Avila Ops - Deploy
+DespolarizaMED") → `deploy` (SSH com `deploy <app> <imagem>` no servidor).
+Voltar versão é republicar o commit anterior.
+
+**Imagem base pelo espelho do Google (desde 2026-10-09).** O Dockerfile usa
+`mirror.gcr.io/library/node:24-slim` e não `node:24-slim` direto do Docker Hub:
+o runner do Actions passou a receber `429 Too Many Requests` (limite de pulls
+anônimos) e o job `image` morria antes do primeiro passo. É a mesma imagem —
+conferido o digest `sha256:d6aa754f…` idêntico nos dois registros. Pelo
+mesmo motivo, o `setup-buildx-action` do workflow puxa o BuildKit de
+`mirror.gcr.io/moby/buildkit:buildx-stable-1` (digest também idêntico). Se o espelho
+um dia falhar, a alternativa é `docker/login-action` com conta do Docker Hub.
+
+O `scripts/deploy.sh` (build local → tgz → `docker build` no servidor) foi
+removido em 2026-10-09: contrariava essa decisão e já não funcionava com o
+Dockerfile atual, que compila a partir do código-fonte e não do tgz.
+
+**Deploy parado desde 2026-10-03 (conferido em 2026-10-09).** Os runs da `main`
+para `6ce043d`, `844faa4` e `5cea73d` falharam em `deployment-open`:
+`actions/create-github-app-token` recebe 404 em "get a repository installation
+for the authenticated app", isto é, o App `4993452` não está instalado (ou
+perdeu acesso) em `avilainc/DespolarizaMED`. `quality` e `image` passaram nos
+três; `deploy` foi pulado. O último run verde é o de `5f0c395` (2026-10-03
+14:38). Portanto as migrations do Payload no start, a CSP Report-Only e o que
+veio depois **não estão em produção**, a menos que alguém tenha publicado por
+fora do workflow — não verificado daqui. Remédio: instalar o App no repositório
+(configuração do GitHub, decisão do Nicolas) e reexecutar o run do commit
+candidato.
 
 - Segredos: `/etc/gapp/despolarizamed/secrets.env` (root:root 0600), fora do repo.
 - Banco: Postgres 18 nativo, role e database `despolarizamed`, alcançado pela
@@ -396,7 +428,7 @@ o CX23 não tem folga de RAM para compilar Next sem derrubar os vizinhos.
 **O container aplica as próprias migrations antes de servir.** Isso não existia
 até 2026-09-17, e a ausência era perigosa: um `push` na `main` dispara deploy
 automático (`DEPLOY_ENABLED` está ligado), e nada no caminho rodava migration —
-nem o `scripts/deploy.sh`, nem o workflow de `avilaops/infra`, nem a imagem,
+nem o antigo `scripts/deploy.sh`, nem o workflow de `avilaops/infra`, nem a imagem,
 cujo `CMD` ia direto para `node server.js`. Código novo subia contra o schema
 velho, e os dois sinais que deveriam acusar isso não acusavam: `/v1/ready` só
 fazia `select 1`, e `/v1/ops/status` trazia `migrations_pending: 0` como
@@ -469,6 +501,82 @@ subir — o certo, mas melhor descobrir antes do que no deploy.
 **Concorrência:** hoje o `runtime.services` do manifesto declara um único
 serviço `web`, então não há duas réplicas migrando ao mesmo tempo. Se algum dia
 houver, este passo precisa de lock antes de escalar.
+
+### Monitoramento no n8n (desde 2026-10-09)
+
+**Divisão decidida:** regra de negócio (autorização, cobrança, correção,
+gabarito, migrations) fica no código, com teste e CI. O n8n fica com o que gira
+em volta: monitoramento, avisos e rotinas de operação. Motivo: o deploy ficou
+parado de 03/10 a 09/10 sem ninguém perceber, e nada no código consegue avisar
+que o próprio deploy não chegou.
+
+Workflow **"DespolarizaMED - Sentinela de produção"** (`n8n.avilaops.com`, id
+`wEmvoozMPAM4it2b`, ativo). A cada 10 min lê:
+
+- `/v1/ready` e `/v1/health` de `despolarizamed.com.br` (públicos);
+- o último commit e o último run da `main` pela API do GitHub. **O repositório
+  é privado**: sem credencial o GitHub responde 404, e a primeira versão da
+  sentinela ficou cega em silêncio por isso. Hoje a leitura que falha vira
+  alerta próprio ("Sentinela não conseguiu ler…"); as checagens de deploy só
+  funcionam depois de cadastrar no n8n uma credencial de leitura (token
+  fine-grained com Actions e Contents em modo leitura, só neste repositório).
+
+E abre tarefa no Todoist (mesmo projeto do "Handler de Erro Central") para:
+`/v1/ready` reprovando em 2 leituras seguidas, `db` diferente de `ok`, último
+run da `main` sem sucesso, e produção num commit diferente da `main` há mais de
+1 h. Só alerta quando o **conjunto** de problemas muda — inclusive quando volta
+ao normal —, guardando o estado no static data do workflow. Falha do próprio
+workflow vai para o Handler de Erro Central (`errorWorkflow`).
+
+Não cobre o que só a rede interna lê (`/v1/ops/status`, logs da CSP). Para
+isso o n8n precisaria alcançar a rede interna do servidor ou de um token de
+leitura; fica para quando houver necessidade.
+
+### Regressão do candidato a release (2026-10-09, `5cea73d`)
+
+Rodada numa sessão de nuvem isolada, sem acesso ao servidor, contra o commit
+`5cea73d` (head da `main`). **Ambiente:** Node 22.22 (o CI e a imagem usam 24),
+Postgres 16.15 local (produção usa 18), runtime montado como o estágio
+`runtime` do Dockerfile (standalone + static + public + `migrations/` +
+`migrar.mjs` + `postgres`/`drizzle-orm`) e iniciado pelo próprio
+`docker-entrypoint.sh` com `NODE_ENV=production`. Não é a imagem do GHCR nem o
+servidor; o que vale para eles continua a conferir no deploy.
+
+| Verificação | Resultado |
+| --- | --- |
+| `tsc --noEmit`, `pnpm lint`, `pnpm test` | verdes; 94/94 testes, lint com 4 avisos e 0 erros |
+| `pnpm build` com as variáveis do Dockerfile (banco inalcançável) | verde, `.next/standalone` gerado |
+| Banco vazio → entrypoint | Drizzle aplica `0000`–`0009` (10), Payload aplica `20260811_105519_init` com `batch = 1`; `/v1/ready` 200, `/v1/health` com `db: ok` |
+| Registro de push de dev (`batch = -1`) | processo sai com 1 e a mensagem traz o `delete` |
+| Tabelas do Payload sem a `init` registrada | sai com 1 e a mensagem traz o `insert` |
+| `MIGRAR=0` em banco vazio | sobe sem migrar; `/v1/ready` 503 nomeando as 10 do Drizzle e `payload/20260811_105519_init` |
+| `scripts/testes/actions-sem-sessao.mjs` | 25 de 25 actions recusam anônimo |
+| `scripts/testes/fronteiras-de-papel.mjs` | todas as fronteiras ok: REST do Payload 403 sem cookie (6 collections), `role=ADMIN` no cadastro grava STUDENT, gabarito recusado nas duas portas com prova aberta e liberado depois de finalizar, IDOR entre alunos recusado, anônimo redirecionado |
+
+O `fronteiras-de-papel.mjs` exige uma linha em `plans`; como `pnpm
+seed:planos` chama a API do Mercado Pago, o plano foi inserido direto no banco
+de teste.
+
+**Não coberto nesta rodada:** persistência após reload pela interface (só
+pelas actions e pelo banco), janela do Meet em runtime (coberta pelo teste
+unitário de `features/live/janela.ts`; a prova pelo HTML é a de 2026-09-16),
+estado das migrations no banco de produção e logs da CSP em produção — os dois
+últimos dependem de o deploy voltar a rodar (acima).
+
+### E-mail transacional (corrigido em 2026-10-09)
+
+A única caixa de envio que existe é **`noreply@avilaops.com`**.
+`noreply@despolarizamed.com.br`, que o código e o `.env.example` usavam como
+padrão, não existe. O código passou a usar `noreply@avilaops.com`; o valor que
+vale em produção, porém, é o de `MAIL_FROM` / `SMTP_USER` / `SMTP_PASSWORD` em
+`/etc/gapp/despolarizamed/secrets.env`, que não foi conferido.
+
+Se ali ainda estiver a caixa inexistente, o efeito é silencioso: o Better Auth
+captura o erro de envio (`runInBackgroundOrAwait`), então o cadastro conclui
+mas o e-mail de confirmação não chega, e a redefinição de senha responde
+"verifique seu e-mail" sem mandar nada. Só o "Avisar alunos" do plantão mostra
+o erro, e para no primeiro destinatário. Conferir com
+`node scripts/testes/smtp.mjs` usando as credenciais do servidor.
 
 ### Mercado Pago
 

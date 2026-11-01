@@ -7,8 +7,8 @@ console.log("verificando conexao e autenticacao...");
 await t.verify();
 console.log("  AUTH OK");
 const r = await t.sendMail({
-  from: "DespolarizaMED <noreply@despolarizamed.com.br>",
-  to: "noreply@despolarizamed.com.br",
+  from: "DespolarizaMED <noreply@avilaops.com>",
+  to: "noreply@avilaops.com",
   subject: "Teste de envio, DespolarizaMED",
   text: "Se esta mensagem chegou, o SMTP do DespolarizaMED esta funcionando.",
 });

@@ -4,9 +4,11 @@ import nodemailer from "nodemailer";
  * Envio de e-mail pelo mail.avilaops.com, o MTA da casa.
  *
  * Não usamos serviço de terceiro: o padrão da Ávila Ops manda o provedor sair
- * do catálogo próprio, e o remetente é `noreply@despolarizamed.com.br`, com
- * SPF, DKIM e DMARC publicados na zona do domínio. E-mail saindo por outro
- * domínio cairia em spam por conta do `-all` do SPF.
+ * do catálogo próprio. O remetente é `noreply@avilaops.com`, a única caixa de
+ * envio que existe (`noreply@despolarizamed.com.br` não existe; o padrão
+ * antigo apontava para ela). O SPF de avilaops.com autoriza o mail.avilaops.com.
+ * Remetente e conta autenticada no SMTP precisam ser a mesma caixa: e-mail
+ * saindo com outro domínio no From falha no alinhamento do DMARC.
  */
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST ?? "mail.avilaops.com",
@@ -20,7 +22,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const REMETENTE = process.env.MAIL_FROM ?? "DespolarizaMED <noreply@despolarizamed.com.br>";
+const REMETENTE = process.env.MAIL_FROM ?? "DespolarizaMED <noreply@avilaops.com>";
 
 export async function enviarEmail(input: {
   para: string;
