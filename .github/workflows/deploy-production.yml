@@ -116,15 +116,12 @@ jobs:
     outputs:
       deployment_id: ${{ steps.criar.outputs.deployment_id }}
     steps:
-      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
-        id: app-token
-        with:
-          app-id: 4993452
-          private-key: ${{ secrets.DESPOLARIZAMED_APP_PRIVATE_KEY }}
+      # O GITHUB_TOKEN do job já possui deployments:write. O GitHub App
+      # legado não está instalado no repositório avilainc (retornava HTTP 404).
       - name: Criar deployment
         id: criar
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           # required_contexts:[] via --input, não -F: gh api não tem uma forma
@@ -198,14 +195,9 @@ jobs:
       contents: read
       deployments: write
     steps:
-      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
-        id: app-token
-        with:
-          app-id: 4993452
-          private-key: ${{ secrets.DESPOLARIZAMED_APP_PRIVATE_KEY }}
       - name: Fechar deployment
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           if [[ "${{ needs.deploy.result }}" == "success" ]]; then
