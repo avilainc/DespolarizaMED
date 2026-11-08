@@ -38,6 +38,11 @@ export default buildConfig({
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URL,
+      // Mesmo usuário PostgreSQL usado pelo Drizzle (máximo 3 conexões).
+      // Não usar o default de 10 do pg: o conjunto excedia o limite da role.
+      max: 3,
+      idleTimeoutMillis: 20_000,
+      connectionTimeoutMillis: 10_000,
     },
     push: process.env.PAYLOAD_DISABLE_PUSH === "true" ? false : undefined,
     // Em produção (NODE_ENV=production) o adapter aplica estas migrations ao
