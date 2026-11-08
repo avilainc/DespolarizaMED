@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { createPortal } from "react-dom";
 import { Menu, X } from "lucide-react";
 import type { UserRole } from "@/lib/auth/rbac";
 import { NavGroups } from "./nav-links";
@@ -73,8 +74,8 @@ export function MobileNav({
         <Menu className="size-5" aria-hidden />
       </button>
 
-      {aberto && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+      {aberto && createPortal(
+        <div className="fixed inset-0 z-[100] lg:hidden">
           <button
             type="button"
             aria-label="Fechar menu"
@@ -87,7 +88,7 @@ export function MobileNav({
             role="dialog"
             aria-modal="true"
             aria-label="Menu"
-            className="absolute inset-y-0 left-0 flex w-[min(19rem,86vw)] flex-col bg-surface shadow-lg"
+            className="absolute inset-y-0 left-0 flex h-full w-[min(19rem,86vw)] max-w-full flex-col overflow-hidden bg-surface shadow-lg"
           >
             <div className="flex h-[var(--shell-header)] shrink-0 items-center justify-between border-b border-border px-4">
               <span className="font-display text-[0.9375rem] font-semibold tracking-tight text-text-primary">
@@ -112,7 +113,8 @@ export function MobileNav({
 
             <div className="shrink-0">{rodape}</div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
